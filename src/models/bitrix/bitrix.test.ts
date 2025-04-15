@@ -9,12 +9,6 @@ describe("notify function", () => {
   const originalEnv = process.env;
 
   beforeAll(() => {
-    process.env = {
-      ...originalEnv,
-      BITRIX_USER_ID: "1",
-      BITRIX_AUTH_KEY: "test_auth_key",
-    };
-
     mockAxios = new MockAdapter(axios);
   });
 
