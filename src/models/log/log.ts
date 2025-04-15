@@ -4,9 +4,13 @@ import { TriggerType } from "../../enum/TriggerType";
 import { LogLevel } from "../../enum/LogLevel";
 import { promises as fs } from "fs";
 import path from "path";
+import { writeLog as writeLogToDatabase } from "../influxdb/influxdb";
+
+const INFLUXDB_MEASUREMENT = "isplanar-notification-logs";
+const UNKNOWN_SERVICE = "UnknownService";
 
 const getCallerServiceName = (callerService?: string): string => {
-  return callerService || process.env.CALLER_SERVICE || "UnknownService";
+  return callerService || process.env.CALLER_SERVICE || UNKNOWN_SERVICE;
 };
 
 const getTriggerType = (trigger?: TriggerType): TriggerType => {
@@ -19,26 +23,11 @@ const getTriggerType = (trigger?: TriggerType): TriggerType => {
 };
 
 const getCurrentServiceName = (): string => {
-  return process.env.CURRENT_SERVICE || "UnknownService";
-};
-
-const errorToObject = (error?: any): any => {
-  if (!error) return undefined;
-
-  if (error instanceof Error) {
-    return {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      ...((error as any).details && { details: (error as any).details }),
-    };
-  }
-
-  return error;
+  return process.env.CURRENT_SERVICE || UNKNOWN_SERVICE;
 };
 
 const ensureLogDirectoryExists = async (): Promise<void> => {
-  const logDir = path.join(process.cwd(), "log");
+  const logDir = path.join(process.cwd(), "logs");
   try {
     await fs.mkdir(logDir, { recursive: true });
   } catch (err) {
@@ -53,43 +42,53 @@ const getLogFileName = (level: LogLevel, timestamp: Date): string => {
   return `${level}-${dateStr}.log`;
 };
 
+const writeLogToFile = async (log: Log): Promise<void> => {
+  await ensureLogDirectoryExists();
+  const logDir = path.join(process.cwd(), "logs");
+  const fileName = getLogFileName(log.tags.level, new Date());
+  const filePath = path.join(logDir, fileName);
+
+  await fs.writeFile(filePath, JSON.stringify(log, null, 2));
+};
+
 export const log = async (
   level: LogLevel,
   message: string,
   options: {
     callerService?: string;
     trigger?: TriggerType;
-    eventType?: string;
     payload?: any;
     error?: Error;
-    durationMs?: number;
   } = {},
 ): Promise<void> => {
   const log: Log = {
-    id: uuidv4(),
-    timestamp: new Date(),
-    callerService: getCallerServiceName(options.callerService),
-    trigger: getTriggerType(options.trigger),
-    currentService: getCurrentServiceName(),
-    level,
-    message,
-    eventType: options.eventType,
-    payload: options.payload,
-    error: errorToObject(options.error),
-    durationMs: options.durationMs,
+    measurement: INFLUXDB_MEASUREMENT,
+    timestamp: Date.now(),
+    tags: {
+      level,
+      currentService: getCurrentServiceName(),
+      trigger: getTriggerType(options.trigger),
+      callerService: getCallerServiceName(options.callerService),
+    },
+    fields: {
+      id: uuidv4(),
+      message,
+      durationMs: 0,
+      ...(options.payload && { payload: JSON.stringify(options.payload) }),
+      ...(options.error && { error: JSON.stringify(options.error) }),
+    },
   };
 
-  console.log(JSON.stringify(log, null, 2));
-
   try {
-    await ensureLogDirectoryExists();
-    const logDir = path.join(process.cwd(), "log");
-    const fileName = getLogFileName(level, new Date());
-    const filePath = path.join(logDir, fileName);
-
-    await fs.writeFile(filePath, JSON.stringify(log, null, 2));
-  } catch (err) {
-    console.error("Не удалось записать лог в файл:", err);
-    console.log(JSON.stringify(log, null, 2));
+    await writeLogToDatabase(log);
+  } catch (error) {
+    try {
+      console.error("Не удалось записать лог в БД:", error);
+      await writeLogToFile(log);
+    } catch (error) {
+      console.error("Не удалось записать лог в файл:", error);
+      console.log(JSON.stringify(log, null, 2));
+      return;
+    }
   }
 };
