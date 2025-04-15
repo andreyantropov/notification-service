@@ -64,7 +64,7 @@ export const log = async (
 ): Promise<void> => {
   const log: Log = {
     measurement: INFLUXDB_MEASUREMENT,
-    timestamp: Date.now(),
+    timestamp: Date.now() * 1_000_000,
     tags: {
       level,
       currentService: getCurrentServiceName(),
