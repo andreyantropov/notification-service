@@ -7,6 +7,8 @@ import Notification from "./interfaces/Notification";
 import { log } from "./models/log/log";
 import { LogLevel } from "./enum/LogLevel";
 
+const MAX_NOTIFICATION_ATTEMPTS = 3;
+
 const getNotifications = async (): Promise<Notification[]> => {
   return notificationQueueS();
 };
@@ -18,9 +20,9 @@ const deleteNotification = async (id: number): Promise<void> => {
 const sendToBitrix = async (
   contact: number,
   message: string,
+  maxAttempts: number = 1,
 ): Promise<void> => {
   let lastError;
-  const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -49,7 +51,7 @@ const sendNotification = async (notification: Notification): Promise<void> => {
 
   if (contacts.bitrix) {
     try {
-      await sendToBitrix(contacts.bitrix, message);
+      await sendToBitrix(contacts.bitrix, message, MAX_NOTIFICATION_ATTEMPTS);
       return;
     } catch (error) {
       await logNotification(
@@ -59,6 +61,15 @@ const sendNotification = async (notification: Notification): Promise<void> => {
         error,
       );
     }
+  }
+
+  if (contacts.email) {
+    await logNotification(
+      LogLevel.Warning,
+      "Не удалось отправить уведомелние через SMTP-сервер",
+      notification,
+      new Error("Не реализована отправка уведомлений через SMTP-сервер"),
+    );
   }
 
   throw new Error("Не удалось отправить уведомление");
@@ -81,10 +92,6 @@ const processNotifications = async (): Promise<never> => {
     const notifications = await getNotifications();
     for (const notification of notifications) {
       try {
-        const {
-          message,
-          client: { contacts },
-        } = notification;
         await sendNotification(notification);
         await logNotification(
           LogLevel.Info,

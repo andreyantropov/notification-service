@@ -7,7 +7,8 @@ import path from "path";
 import { writeLog as writeLogToDatabase } from "../influxdb/influxdb";
 
 const INFLUXDB_MEASUREMENT = "isplanar-notification-logs";
-const UNKNOWN_SERVICE = "UnknownService";
+const UNKNOWN_SERVICE = "unknown-service";
+const LOGS_DIR_NAME = "logs";
 
 const getCallerServiceName = (callerService?: string): string => {
   return callerService || process.env.CALLER_SERVICE || UNKNOWN_SERVICE;
@@ -27,7 +28,7 @@ const getCurrentServiceName = (): string => {
 };
 
 const ensureLogDirectoryExists = async (): Promise<void> => {
-  const logDir = path.join(process.cwd(), "logs");
+  const logDir = path.join(process.cwd(), LOGS_DIR_NAME);
   try {
     await fs.mkdir(logDir, { recursive: true });
   } catch (err) {
@@ -44,7 +45,7 @@ const getLogFileName = (level: LogLevel, timestamp: Date): string => {
 
 const writeLogToFile = async (log: Log): Promise<void> => {
   await ensureLogDirectoryExists();
-  const logDir = path.join(process.cwd(), "logs");
+  const logDir = path.join(process.cwd(), LOGS_DIR_NAME);
   const fileName = getLogFileName(log.tags.level, new Date());
   const filePath = path.join(logDir, fileName);
 
@@ -67,8 +68,8 @@ export const log = async (
     tags: {
       level,
       currentService: getCurrentServiceName(),
-      trigger: getTriggerType(options.trigger),
       callerService: getCallerServiceName(options.callerService),
+      trigger: getTriggerType(options.trigger),
     },
     fields: {
       id: uuidv4(),
