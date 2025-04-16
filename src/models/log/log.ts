@@ -6,7 +6,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { writeLog as writeLogToDatabase } from "../influxdb/influxdb";
 
-const INFLUXDB_MEASUREMENT = "isplanar-notification-logs";
+const INFLUXDB_MEASUREMENT = "isplanar_notification_logs";
 const UNKNOWN_SERVICE = "unknown-service";
 const LOGS_DIR_NAME = "logs";
 
