@@ -1,7 +1,7 @@
 {
   "name": "isplanar-notification",
   "version": "1.0.0",
-  "description": "To make it easy for you to get started with GitLab, here's a list of recommended next steps.",
+  "description": "Сервис автоматической рассылки уведомлений пользователям ISPlanar через различные каналы связи (Bitrix24, Email). Поддерживает интеграцию с базой данных Firebird и централизованное логирование в InfluxDB.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -13,9 +13,30 @@
     "format": "prettier . --write",
     "test": "jest"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "ISPlanar",
+    "notification-service",
+    "Firebird",
+    "Bitrix24",
+    "Email",
+    "InfluxDB",
+    "TypeScript"
+  ],
+  "author": {
+    "name": "Andrey Antropov",
+    "email": "andrey.antropov@planarchel.ru"
+  },
+  "contributors": [
+    {
+      "name": "Andrey Antropov",
+      "email": "andrey.antropov@planarchel.ru"
+    }
+  ],
   "license": "ISC",
+  "engines": {
+    "node": ">=23.0.0",
+    "npm": ">=9.0.0"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
