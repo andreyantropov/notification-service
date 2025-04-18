@@ -49,6 +49,11 @@ const sendNotification = async (notification: Notification): Promise<void> => {
     throw new Error("Нет доступных каналов для отправки уведомления");
   }
 
+  const hasAnyChannel = contacts.bitrix || contacts.email;
+  if (!hasAnyChannel) {
+    throw new Error("Нет доступных каналов для отправки уведомления");
+  }
+
   if (contacts.bitrix) {
     try {
       await sendToBitrix(contacts.bitrix, message, MAX_NOTIFICATION_ATTEMPTS);
