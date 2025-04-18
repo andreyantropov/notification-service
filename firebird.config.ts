@@ -1,5 +1,5 @@
-import { Options } from "node-firebird";
 import "dotenv/config";
+import { Options } from "node-firebird";
 
 const options: Options = {
   host: process.env.FIREBIRD_DB_HOST,
