@@ -45,7 +45,7 @@ const sendNotification = async (notification: Notification): Promise<void> => {
     client: { contacts },
   } = notification;
 
-  if (!contacts.bitrix && !contacts.email) {
+  if (!contacts) {
     throw new Error("Нет доступных каналов для отправки уведомления");
   }
 
@@ -72,7 +72,7 @@ const sendNotification = async (notification: Notification): Promise<void> => {
     );
   }
 
-  throw new Error("Не удалось отправить уведомление");
+  throw new Error("Не удалось отправить уведомление ни по одному каналу связи");
 };
 
 const logNotification = async (
