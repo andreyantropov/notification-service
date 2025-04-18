@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "cross-env node dist/src/index.js",
-    "dev": "cross-env nodemon --watch src --ext ts --exec \"npx ts-node src/index.ts\"",
+    "start": "cross-env NODE_ENV=production node -r dotenv/config dist/src/index.js dotenv_config_path=.env",
+    "dev": "cross-env NODE_ENV=development nodemon --watch src --ext ts --exec \"npx ts-node -r dotenv/config src/index.ts dotenv_config_path=.env.dev\"",
     "prod": "npm run build && npm run start",
     "lint": "eslint --ext .ts,.tsx .",
     "fix": "eslint --fix --ext .ts,.tsx .",
     "format": "prettier . --write",
-    "test": "jest"
+    "test": "cross-env NODE_ENV=test jest"
   },
   "keywords": [
     "ISPlanar",

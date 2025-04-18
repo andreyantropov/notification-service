@@ -64,7 +64,7 @@ describe("log function", () => {
     expect(normalizedFilePath.startsWith(logsDir)).toBe(true);
     expect(path.extname(normalizedFilePath)).toBe(".log");
 
-    expect(logObject.measurement).toBe("isplanar-notification-logs");
+    expect(logObject.measurement).toBe("isplanar_notification_logs");
     expect(logObject.tags.level).toBe(LogLevel.Error);
     expect(logObject.fields.message).toBe(mockMessage);
     expect(logObject.fields.payload).toBe(JSON.stringify(mockPayload));

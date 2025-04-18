@@ -43,39 +43,53 @@ export const notificationQueueS = async (): Promise<Notification[]> => {
     return result;
   };
 
-  const db = await attachAsync(options);
-
-  return await new Promise<Notification[]>((resolve, reject) => {
-    db.query(
-      "SELECT * FROM NOTIFICATION_QUEUE_S",
-      [],
-      (err: Error, result: RawNotification[]) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result.map(mapper));
-        }
-        db.detach();
-      },
-    );
-  });
+  let db: Firebird.Database | undefined;
+  try {
+    db = await attachAsync(options);
+    return await new Promise<Notification[]>((resolve, reject) => {
+      db.query(
+        "SELECT * FROM NOTIFICATION_QUEUE_S",
+        [],
+        (err: Error, result: RawNotification[]) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result.map(mapper));
+          }
+        },
+      );
+    });
+  } catch (error) {
+    throw error;
+  } finally {
+    if (db) {
+      db.detach();
+    }
+  }
 };
 
 export const notificationQueueD = async (id: number): Promise<number> => {
-  const db = await attachAsync(options);
-
-  return await new Promise<number>((resolve, reject) => {
-    db.query(
-      "SELECT * FROM NOTIFICATION_QUEUE_D(?)",
-      [id],
-      (err: Error, result: { result: number }[]) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result[0].result);
-        }
-        db.detach();
-      },
-    );
-  });
+  let db: Firebird.Database | undefined;
+  try {
+    db = await attachAsync(options);
+    return await new Promise<number>((resolve, reject) => {
+      db.query(
+        "SELECT * FROM NOTIFICATION_QUEUE_D(?)",
+        [id],
+        (err: Error, result: { result: number }[]) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result[0].result);
+          }
+        },
+      );
+    });
+  } catch (error) {
+    throw error;
+  } finally {
+    if (db) {
+      db.detach();
+    }
+  }
 };
