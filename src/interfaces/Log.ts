@@ -13,13 +13,13 @@ export default interface Log {
     environment?: EnvironmentType;
     eventType?: string;
     host?: string;
+    traceId?: string;
+    correlationId?: string;
+    spanId?: string;
   };
   fields: {
     id: string;
     message: string;
-    traceId?: string;
-    correlationId?: string;
-    spanId?: string;
     durationMs: number;
     payload?: string;
     error?: string;

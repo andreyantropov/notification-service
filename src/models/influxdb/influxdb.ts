@@ -31,12 +31,12 @@ export const writeLog = async ({
     .tag("environment", tags.environment)
     .tag("event_type", mappedTags.event_type)
     .tag("host", tags.host)
+    .tag("trace_id", mappedFields.trace_id)
+    .tag("correlation_id", mappedFields.correlation_id)
+    .tag("span_id", mappedFields.span_id)
     .floatField("duration_ms", mappedFields.duration_ms)
     .stringField("id", fields.id)
     .stringField("message", fields.message)
-    .stringField("trace_id", mappedFields.trace_id)
-    .stringField("correlation_id", mappedFields.correlation_id)
-    .stringField("span_id", mappedFields.span_id)
     .stringField("payload", fields.payload)
     .stringField("error", fields.error);
 
