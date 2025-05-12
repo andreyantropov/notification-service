@@ -1,0 +1,1 @@
+docker ps -a | grep isplanar-notification
