@@ -7,12 +7,15 @@ export const notify = async (
   userId: number,
   message: string,
 ): Promise<{ result: string }> => {
-  return await axios
-    .post(`${baseUrl}/im.notify.personal.add.json`, null, {
+  const result = await axios.post(
+    `${baseUrl}/im.notify.personal.add.json`,
+    null,
+    {
       params: {
         user_id: userId,
         message: message,
       },
-    })
-    .then((res) => res.data);
+    },
+  );
+  return result.data;
 };

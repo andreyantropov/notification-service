@@ -5,7 +5,7 @@
 Сервис автоматической рассылки уведомлений пользователям ISPlanar через различные каналы связи:
 
 - Bitrix24
-- Email
+- SMTP
 
 Сервис проверяет очередь уведомлений в базе данных Firebird, определяет оптимальный канал доставки на основе доступных контактных данных пользователя, отправляет уведомления и удаляет успешно отправленные записи из очереди.
 
@@ -43,10 +43,11 @@ BITRIX_API_TOKEN=your_token_here # Webhook токен
 
 ### Настройки Email
 
-EMAIL_SMTP_HOST=smtp.your-email.com # SMTP сервер
-EMAIL_SMTP_PORT=587 # Порт SMTP
-EMAIL_SMTP_USER=your-email@gmail.com # Email адрес отправителя
-EMAIL_SMTP_PASSWORD=your_password # Пароль от почты
+SMTP_HOST=https://your-domain.mail.ru/rest/ # URI SMTP
+SMTP_PORT=25 # Порт подключения
+SMTP_LOGIN=isp # Имя пользователя
+SMTP_PASSWORD=masterkey # Пароль
+SMTP_EMAIL=isp-noreply@planarchel.ru # Данные об отправителе письма
 
 ### Логирование (опционально)
 
