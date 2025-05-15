@@ -6,6 +6,7 @@ import { notify } from "./models/bitrix/bitrix";
 import Notification from "./interfaces/Notification";
 import { log } from "./models/log/log";
 import { LogLevel } from "./enum/LogLevel";
+import { mail } from "./smtp/smtp";
 
 const MAX_NOTIFICATION_ATTEMPTS = 3;
 
@@ -17,16 +18,15 @@ const deleteNotification = async (id: number): Promise<void> => {
   await notificationQueueD(id);
 };
 
-const sendToBitrix = async (
-  contact: number,
-  message: string,
+const retry = async <T>(
+  fn: () => Promise<T>,
   maxAttempts: number = 1,
 ): Promise<void> => {
   let lastError;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      await notify(contact, message);
+      await fn();
       return;
     } catch (error) {
       lastError = error;
@@ -37,6 +37,22 @@ const sendToBitrix = async (
   }
 
   throw lastError;
+};
+
+const sendToBitrix = async (
+  contact: number,
+  message: string,
+  maxAttempts: number = 1,
+): Promise<void> => {
+  await retry(() => notify(contact, message), maxAttempts);
+};
+
+const sendToSMTP = async (
+  email: string,
+  message: string,
+  maxAttempts: number = 1,
+): Promise<void> => {
+  await retry(() => mail(email, message), maxAttempts);
 };
 
 const sendNotification = async (notification: Notification): Promise<void> => {
@@ -69,12 +85,17 @@ const sendNotification = async (notification: Notification): Promise<void> => {
   }
 
   if (contacts.email) {
-    await logNotification(
-      LogLevel.Warning,
-      "Не удалось отправить уведомелние через SMTP-сервер",
-      notification,
-      new Error("Не реализована отправка уведомлений через SMTP-сервер"),
-    );
+    try {
+      await sendToSMTP(contacts.email, message, MAX_NOTIFICATION_ATTEMPTS);
+      return;
+    } catch (error) {
+      await logNotification(
+        LogLevel.Warning,
+        "Не удалось отправить уведомелние через SMTP-сервер",
+        notification,
+        error,
+      );
+    }
   }
 
   throw new Error("Не удалось отправить уведомление ни по одному каналу связи");
