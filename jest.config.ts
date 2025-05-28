@@ -2,7 +2,7 @@ import type { Config } from "@jest/types";
 
 const config: Config.InitialOptions = {
   preset: "ts-jest",
-  testEnvironment: "jsdom",
+  testEnvironment: "node",
   transform: {
     "^.+\\.(js|jsx|ts|tsx)$": [
       "ts-jest",
@@ -12,9 +12,7 @@ const config: Config.InitialOptions = {
     ],
   },
   testPathIgnorePatterns: ["/node_modules/", "/dist/"],
-  moduleNameMapper: {
-    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
-  },
+  transformIgnorePatterns: ["/node_modules/(?!serialize-error)"],
   globals: {
     "ts-jest": {
       useESM: true,

@@ -1,152 +1,26 @@
-import {
-  notificationQueueS,
-  notificationQueueD,
-} from "./models/firebird/firebird";
-import { notify } from "./models/bitrix/bitrix";
-import Notification from "./interfaces/Notification";
-import { log } from "./models/log/log";
-import { LogLevel } from "./enum/LogLevel";
-import { mail } from "./smtp/smtp";
+import { EventType } from "./application/services/notificationLoggerService";
+import { createApp } from "./containers/appContainer";
+import { LogLevel } from "./shared/enums/LogLevel";
 
-const MAX_NOTIFICATION_ATTEMPTS = 3;
+const bootstrap = async () => {
+  const { notificationLogger, notificationProcessService } = createApp();
 
-const getNotifications = async (): Promise<Notification[]> => {
-  return notificationQueueS();
-};
-
-const deleteNotification = async (id: number): Promise<void> => {
-  await notificationQueueD(id);
-};
-
-const retry = async <T>(
-  fn: () => Promise<T>,
-  maxAttempts: number = 1,
-): Promise<void> => {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      await fn();
-      return;
-    } catch (error) {
-      lastError = error;
-      if (attempt < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
-      }
-    }
-  }
-
-  throw lastError;
-};
-
-const sendToBitrix = async (
-  contact: number,
-  message: string,
-  maxAttempts: number = 1,
-): Promise<void> => {
-  await retry(() => notify(contact, message), maxAttempts);
-};
-
-const sendToSMTP = async (
-  email: string,
-  message: string,
-  maxAttempts: number = 1,
-): Promise<void> => {
-  await retry(() => mail(email, message), maxAttempts);
-};
-
-const sendNotification = async (notification: Notification): Promise<void> => {
-  const {
-    message,
-    client: { contacts },
-  } = notification;
-
-  if (!contacts) {
-    throw new Error("Нет доступных каналов для отправки уведомления");
-  }
-
-  const hasAnyChannel = contacts.bitrix || contacts.email;
-  if (!hasAnyChannel) {
-    throw new Error("Нет доступных каналов для отправки уведомления");
-  }
-
-  if (contacts.bitrix) {
-    try {
-      await sendToBitrix(contacts.bitrix, message, MAX_NOTIFICATION_ATTEMPTS);
-      return;
-    } catch (error) {
-      await logNotification(
-        LogLevel.Warning,
-        "Не удалось отправить уведомелние через Bitrix",
-        notification,
-        error,
-      );
-    }
-  }
-
-  if (contacts.email) {
-    try {
-      await sendToSMTP(contacts.email, message, MAX_NOTIFICATION_ATTEMPTS);
-      return;
-    } catch (error) {
-      await logNotification(
-        LogLevel.Warning,
-        "Не удалось отправить уведомелние через SMTP-сервер",
-        notification,
-        error,
-      );
-    }
-  }
-
-  throw new Error("Не удалось отправить уведомление ни по одному каналу связи");
-};
-
-const logNotification = async (
-  level: LogLevel,
-  message: string,
-  notification: Notification,
-  error?: any,
-): Promise<void> => {
-  await log(level, message, {
-    payload: notification,
-    ...(error && { error }),
-  });
-};
-
-const processNotifications = async (): Promise<never> => {
   try {
-    const notifications = await getNotifications();
-    for (const notification of notifications) {
-      try {
-        await sendNotification(notification);
-        await logNotification(
-          LogLevel.Info,
-          "Уведомление успешно отправлено",
-          notification,
-        );
-      } catch (error) {
-        await logNotification(
-          LogLevel.Error,
-          "Ошибка при отправке уведомления",
-          notification,
-          error,
-        );
-      }
-      await deleteNotification(notification.id);
-    }
-  } catch (error) {
-    await logNotification(
-      LogLevel.Critical,
-      "Критическая ошибка при обработке уведомлений",
-      null,
-      error,
-    );
-    process.exit(1);
-  } finally {
+    await notificationProcessService.processNotifications();
     process.exit(0);
+  } catch (error) {
+    await notificationLogger.writeLog({
+      level: LogLevel.Critical,
+      message: "Критическая ошибка в работе приложения",
+      eventType: EventType.BootstrapError,
+      spanId: "bootstrap",
+      payload: null,
+      error: error,
+    });
+    process.exit(1);
   }
 };
 
 (async () => {
-  await processNotifications();
+  await bootstrap();
 })();
