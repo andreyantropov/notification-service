@@ -1,0 +1,69 @@
+import { EnvironmentType } from "../../../shared/enums/EnvironmentType";
+import { TriggerType } from "../../../shared/enums/TriggerType";
+import { Log } from "../../../shared/interfaces/Log";
+import { v4 } from "uuid";
+import os from "os";
+import { NotificationLoggerService } from "./interfaces/NotificationLoggerService";
+import { NotificationLoggerServiceConfig } from "./interfaces/NotificationLoggerServiceConfig";
+import { RawLog } from "./interfaces/RawLog";
+import { serializeError } from "serialize-error";
+
+const MEASUREMENT = "isplanar_notification_logs";
+const UNKNOWN_SERVICE = "unknown-service";
+
+export const createNotificationLoggerService = ({
+  logger,
+}: NotificationLoggerServiceConfig): NotificationLoggerService => {
+  const formatLog = ({
+    level,
+    eventType,
+    spanId,
+    message,
+    payload,
+    error,
+  }: RawLog): Log => {
+    return {
+      measurement: MEASUREMENT,
+      timestamp: Date.now() * 1_000_000,
+      tags: {
+        level: level,
+        currentService: process.env.CURRENT_SERVICE || UNKNOWN_SERVICE,
+        callerService: process.env.CALLER_SERVICE || UNKNOWN_SERVICE,
+        trigger:
+          process.env.TRIGGER_TYPE === TriggerType.Cron
+            ? TriggerType.Cron
+            : TriggerType.Manual,
+        environment:
+          process.env.NODE_ENV === "development"
+            ? EnvironmentType.Development
+            : EnvironmentType.Production,
+        eventType: eventType,
+        host: os.hostname(),
+        spanId: spanId,
+      },
+      fields: {
+        id: v4(),
+        message: message,
+        durationMs: 0,
+        payload: payload && JSON.stringify(payload),
+        error: error && JSON.stringify(serializeError(error)),
+      },
+    };
+  };
+
+  const writeLog = async (rawLog: RawLog): Promise<void> => {
+    try {
+      const log = formatLog(rawLog);
+      await logger.writeLog(log);
+    } catch (error) {
+      console.error("Не удалось записать лог в систему:", {
+        originalLog: rawLog,
+        loggingError: error,
+      });
+    }
+  };
+
+  return {
+    writeLog,
+  };
+};
