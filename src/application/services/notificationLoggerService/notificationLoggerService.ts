@@ -22,6 +22,18 @@ export const createNotificationLoggerService = ({
     payload,
     error,
   }: RawLog): Log => {
+    const safeStringify = (data: unknown): string | undefined => {
+      try {
+        return typeof data === "string" ? data : JSON.stringify(data);
+      } catch {
+        return undefined;
+      }
+    };
+
+    const processedError = error
+      ? safeStringify(serializeError(error))
+      : undefined;
+
     return {
       measurement: MEASUREMENT,
       timestamp: Date.now() * 1_000_000,
@@ -45,8 +57,8 @@ export const createNotificationLoggerService = ({
         id: v4(),
         message: message,
         durationMs: 0,
-        payload: payload && JSON.stringify(payload),
-        error: error && JSON.stringify(serializeError(error)),
+        payload: safeStringify(payload),
+        error: processedError,
       },
     };
   };

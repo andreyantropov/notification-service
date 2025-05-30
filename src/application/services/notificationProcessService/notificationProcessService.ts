@@ -40,7 +40,6 @@ export const createNotificationProcessService = ({
             eventType: EventType.SendNotificationSuccess,
             spanId: "processNotifications",
             payload: notification,
-            error: null,
           });
         } catch (error) {
           await notificationLogger.writeLog({
@@ -60,7 +59,6 @@ export const createNotificationProcessService = ({
         message: "Не удалось считать или удалить данные из БД",
         eventType: EventType.SendNotificationError,
         spanId: "processNotifications",
-        payload: null,
         error: error,
       });
     }

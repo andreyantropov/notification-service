@@ -90,7 +90,7 @@ describe("BitrixSender", () => {
     });
 
     await expect(sender.send(recipient, message)).rejects.toThrow(
-      "Не удалось отправить уведомление в Bitrix",
+      "Не удалось отправить уведомление через Bitrix",
     );
   });
 
@@ -104,7 +104,7 @@ describe("BitrixSender", () => {
     mockAxios.onPost(/im.notify.personal.add.json/).networkError();
 
     await expect(sender.send(recipient, message)).rejects.toThrow(
-      "Не удалось отправить уведомление в Bitrix",
+      "Не удалось отправить уведомление через Bitrix",
     );
   });
 });

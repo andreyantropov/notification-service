@@ -26,6 +26,10 @@ export const createFirebirdSource = (
     try {
       db = await attachAsync(config);
       return await new Promise<Notification[]>((resolve, reject) => {
+        if (!db) {
+          throw new Error("Не удалось установить соединение с БД");
+        }
+
         db.query(
           "SELECT ID, MESSAGE, CREATED_AT, EMPLOYEE_ID, EMPLOYEE_LAST_NAME, EMPLOYEE_FIRST_NAME, EMPLOYEE_SECOND_NAME, BITRIX_ID, EMAIL FROM NOTIFICATION_QUEUE_S",
           [],
@@ -54,6 +58,10 @@ export const createFirebirdSource = (
     try {
       db = await attachAsync(config);
       return await new Promise<number>((resolve, reject) => {
+        if (!db) {
+          throw new Error("Не удалось установить соединение с БД");
+        }
+
         db.query(
           "SELECT RESULT FROM NOTIFICATION_QUEUE_D(?)",
           [id],

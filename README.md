@@ -49,12 +49,16 @@ SMTP_LOGIN=isp # Имя пользователя
 SMTP_PASSWORD=masterkey # Пароль
 SMTP_EMAIL=isp-noreply@planarchel.ru # Данные об отправителе письма
 
-### Логирование (опционально)
+### Логирование (централизованное)
 
 INFLUXDB_URL=https://influxdb.example.com # URL InfluxDB
 INFLUXDB_TOKEN=your_influxdb_token # Токен доступа
 INFLUXDB_ORG=YourOrganization # Организация
 INFLUXDB_BUCKET=notifications # Bucket для хранения логов
+
+### Логирование (локальное)
+
+LOGS_DIR=logs # Папка для записи логов локально
 
 ### Метаданные сервиса
 

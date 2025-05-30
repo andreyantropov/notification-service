@@ -14,9 +14,11 @@ jest.mock("nodemailer", () => {
 
 import { createTransport } from "nodemailer";
 import { createSmtpSender } from "./smtpSender";
+import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig";
 
 describe("SMTP Client", () => {
   const originalEnv = process.env;
+  let config: SmtpSenderConfig;
 
   beforeEach(() => {
     process.env = {
@@ -26,6 +28,17 @@ describe("SMTP Client", () => {
       SMTP_LOGIN: "user@example.com",
       SMTP_PASSWORD: "password",
       SMTP_EMAIL: "no-reply@example.com",
+    };
+
+    config = {
+      host: process.env.SMTP_HOST!,
+      port: Number(process.env.SMTP_PORT!),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_LOGIN!,
+        pass: process.env.SMTP_PASSWORD!,
+      },
+      fromEmail: process.env.SMTP_EMAIL!,
     };
   });
 
@@ -38,17 +51,6 @@ describe("SMTP Client", () => {
   it("should send email with correct parameters", async () => {
     const userEmail = "test@example.com";
     const message = "Тест сервиса уведомлений ISPlanar";
-
-    const config = {
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_LOGIN,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      fromEmail: process.env.SMTP_EMAIL,
-    };
 
     const sender = createSmtpSender(config);
 
@@ -80,17 +82,6 @@ describe("SMTP Client", () => {
   it("should throw error if recipient is not email type", async () => {
     const message = "Тест сервиса уведомлений ISPlanar";
 
-    const config = {
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_LOGIN,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      fromEmail: process.env.SMTP_EMAIL,
-    };
-
     const sender = createSmtpSender(config);
 
     const recipient = { type: "bitrix" as const, value: 123 };
@@ -107,17 +98,6 @@ describe("SMTP Client", () => {
     const mockError = new Error("Failed to send email");
     const mockTransport = createTransport();
     (mockTransport.sendMail as jest.Mock).mockRejectedValueOnce(mockError);
-
-    const config = {
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_LOGIN,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      fromEmail: process.env.SMTP_EMAIL,
-    };
 
     const sender = createSmtpSender(config);
 

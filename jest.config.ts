@@ -7,7 +7,7 @@ const config: Config.InitialOptions = {
     "^.+\\.(js|jsx|ts|tsx)$": [
       "ts-jest",
       {
-        // Параметры конфигурации ts-jest могут быть указаны здесь
+        tsconfig: "tsconfig.test.json",
       },
     ],
   },
@@ -15,7 +15,7 @@ const config: Config.InitialOptions = {
   transformIgnorePatterns: ["/node_modules/(?!serialize-error)"],
   globals: {
     "ts-jest": {
-      useESM: true,
+      tsconfig: "tsconfig.test.json",
     },
   },
 };
