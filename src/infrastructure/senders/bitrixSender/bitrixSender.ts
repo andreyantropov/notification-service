@@ -36,10 +36,9 @@ export const createBitrixSender = ({
         );
       }
     } catch (error) {
-      throw new Error(
-        `Не удалось отправить уведомление в Bitrix: ${error.message}`,
-        { cause: error },
-      );
+      throw new Error(`Не удалось отправить уведомление через Bitrix`, {
+        cause: error,
+      });
     }
   };
 

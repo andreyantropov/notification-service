@@ -39,10 +39,9 @@ export const createSmtpSender = ({
         text: message,
       });
     } catch (error) {
-      throw new Error(
-        `Не удалось отправить email через SMTP: ${error.message}`,
-        { cause: error },
-      );
+      throw new Error(`Не удалось отправить email через SMTP`, {
+        cause: error,
+      });
     }
   };
 

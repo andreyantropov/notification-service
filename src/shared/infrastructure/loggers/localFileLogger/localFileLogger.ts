@@ -16,9 +16,14 @@ export const createLocalFileLogger = ({
     try {
       await fs.mkdir(logDir, { recursive: true });
     } catch (error) {
-      if (error.code !== "EEXIST") {
-        throw new Error("Не удалось создать директорию:", { cause: error });
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "EEXIST"
+      ) {
+        return;
       }
+      throw new Error("Не удалось создать директорию:", { cause: error });
     }
   };
 

@@ -29,7 +29,6 @@ describe("createNotificationLoggerService", () => {
       spanId: "span123",
       message: "Test message",
       payload: { test: "data" },
-      error: null,
     };
 
     process.env.CURRENT_SERVICE = "current-service";
@@ -60,7 +59,6 @@ describe("createNotificationLoggerService", () => {
         message: "Test message",
         durationMs: 0,
         payload: JSON.stringify({ test: "data" }),
-        error: null,
       },
     });
   });
@@ -72,7 +70,6 @@ describe("createNotificationLoggerService", () => {
       eventType: EventType.SendNotificationError,
       spanId: "span456",
       message: "Error message",
-      payload: null,
       error,
     };
 
@@ -102,7 +99,6 @@ describe("createNotificationLoggerService", () => {
         id: expect.any(String),
         message: "Error message",
         durationMs: 0,
-        payload: null,
         error: expect.stringContaining("Test error"),
       },
     });
@@ -119,8 +115,6 @@ describe("createNotificationLoggerService", () => {
       eventType: EventType.SendSmtpNotification,
       spanId: "span789",
       message: "Default env values",
-      payload: null,
-      error: null,
     };
 
     await service.writeLog(rawLog);
@@ -143,8 +137,6 @@ describe("createNotificationLoggerService", () => {
       eventType: EventType.SendBitrixNotification,
       spanId: "span999",
       message: "Fail to log",
-      payload: null,
-      error: null,
     };
 
     await service.writeLog(rawLog);
