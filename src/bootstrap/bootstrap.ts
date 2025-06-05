@@ -1,6 +1,6 @@
+import { EventType } from "../application/services/notificationLoggerService";
 import { createApp } from "../containers/appContainer";
 import { LogLevel } from "../shared/enums/LogLevel";
-import { EventType } from "./services/notificationLoggerService";
 
 export const bootstrap = async () => {
   const { notificationLogger, notificationProcessService } = createApp();

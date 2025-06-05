@@ -1,4 +1,4 @@
-import { bootstrap } from "./application/bootstrap";
+import { bootstrap } from "./bootstrap/bootstrap";
 
 (async () => {
   try {
