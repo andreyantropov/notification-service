@@ -1,15 +1,16 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Firebird, { Database, Options } from "node-firebird";
-import { createFirebirdSource } from "./firebirdSource";
-import { NotificationSource } from "../../../domain/interfaces/NotificationSource";
-import { RawNotification } from "./interfaces/RawNotification";
+import { createFirebirdSource } from "./firebirdSource.js";
+import type { NotificationSource } from "../../../domain/interfaces/NotificationSource.js";
+import type { RawNotification } from "./interfaces/RawNotification.js";
 
-jest.mock("node-firebird");
+vi.mock("node-firebird");
 
-const mockAttach = jest.fn();
-const mockQuery = jest.fn();
-const mockDetach = jest.fn();
+const mockAttach = vi.fn();
+const mockQuery = vi.fn();
+const mockDetach = vi.fn();
 
-(Firebird.attach as jest.Mock) = mockAttach;
+(Firebird.attach as typeof mockAttach) = mockAttach;
 
 describe("FirebirdSource", () => {
   let mockDb: Partial<Database>;
@@ -43,11 +44,11 @@ describe("FirebirdSource", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("getNotifications", () => {
-    it("should return mapped notifications", async () => {
+    it("returns mapped notifications", async () => {
       const rawData: RawNotification[] = [
         {
           id: 1,
@@ -70,9 +71,15 @@ describe("FirebirdSource", () => {
         },
       ];
 
-      mockQuery.mockImplementation((query, params, callback) => {
-        callback(null, rawData);
-      });
+      mockQuery.mockImplementation(
+        (
+          query: string,
+          params: unknown[],
+          callback: (err: Error | null, result?: RawNotification[]) => void,
+        ) => {
+          callback(null, rawData);
+        },
+      );
 
       const result = await notificationSource.getNotifications();
 
@@ -80,7 +87,7 @@ describe("FirebirdSource", () => {
       expect(mockQuery).toHaveBeenCalledWith(
         "SELECT ID, MESSAGE, CREATED_AT, EMPLOYEE_ID, EMPLOYEE_LAST_NAME, EMPLOYEE_FIRST_NAME, EMPLOYEE_SECOND_NAME, BITRIX_ID, EMAIL FROM NOTIFICATION_QUEUE_S",
         [],
-        expect.any(Function),
+        expect.anything(),
       );
       expect(mockDetach).toHaveBeenCalledTimes(1);
 
@@ -113,11 +120,17 @@ describe("FirebirdSource", () => {
       ]);
     });
 
-    it("should throw error when database query fails", async () => {
+    it("throws error when database query fails", async () => {
       const testError = new Error("Database error");
-      mockQuery.mockImplementation((query, params, callback) => {
-        callback(testError, null);
-      });
+      mockQuery.mockImplementation(
+        (
+          query: string,
+          params: unknown[],
+          callback: (err: Error | null, result?: unknown) => void,
+        ) => {
+          callback(testError);
+        },
+      );
 
       await expect(notificationSource.getNotifications()).rejects.toThrowError(
         new Error("Не удалось получить список уведомлений из БД", {
@@ -128,10 +141,10 @@ describe("FirebirdSource", () => {
       expect(mockDetach).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw error on connection failure", async () => {
+    it("throws error on connection failure", async () => {
       const testError = new Error("Connection failed");
       mockAttach.mockImplementationOnce((options, callback) => {
-        callback(testError, null);
+        callback(testError);
       });
 
       const brokenClient = createFirebirdSource(config);
@@ -150,10 +163,19 @@ describe("FirebirdSource", () => {
     const testId = 1;
     const expectedResult = 1;
 
-    it("should delete notification by ID", async () => {
-      mockQuery.mockImplementation((query, params, callback) => {
-        callback(null, [{ result: expectedResult }]);
-      });
+    it("deletes notification by ID", async () => {
+      mockQuery.mockImplementation(
+        (
+          query: string,
+          params: unknown[],
+          callback: (
+            err: Error | null,
+            result?: Array<{ result: number }>,
+          ) => void,
+        ) => {
+          callback(null, [{ result: expectedResult }]);
+        },
+      );
 
       await expect(
         notificationSource.deleteNotification(testId),
@@ -162,16 +184,25 @@ describe("FirebirdSource", () => {
       expect(mockQuery).toHaveBeenCalledWith(
         "SELECT RESULT FROM NOTIFICATION_QUEUE_D(?)",
         [testId],
-        expect.any(Function),
+        expect.anything(),
       );
       expect(mockDetach).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle empty result set", async () => {
+    it("handles empty result set", async () => {
       const emptyResult = 0;
-      mockQuery.mockImplementation((query, params, callback) => {
-        callback(null, [{ result: emptyResult }]);
-      });
+      mockQuery.mockImplementation(
+        (
+          query: string,
+          params: unknown[],
+          callback: (
+            err: Error | null,
+            result?: Array<{ result: number }>,
+          ) => void,
+        ) => {
+          callback(null, [{ result: emptyResult }]);
+        },
+      );
 
       const result = await notificationSource.deleteNotification(testId);
 
@@ -179,15 +210,21 @@ describe("FirebirdSource", () => {
       expect(mockQuery).toHaveBeenCalledWith(
         "SELECT RESULT FROM NOTIFICATION_QUEUE_D(?)",
         [testId],
-        expect.any(Function),
+        expect.anything(),
       );
     });
 
-    it("should throw error when query fails", async () => {
+    it("throws error when query fails", async () => {
       const testError = new Error("Database error");
-      mockQuery.mockImplementation((query, params, callback) => {
-        callback(testError, null);
-      });
+      mockQuery.mockImplementation(
+        (
+          query: string,
+          params: unknown[],
+          callback: (err: Error | null, result?: unknown) => void,
+        ) => {
+          callback(testError);
+        },
+      );
 
       await expect(
         notificationSource.deleteNotification(testId),
@@ -198,10 +235,10 @@ describe("FirebirdSource", () => {
       expect(mockDetach).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw error on connection failure", async () => {
+    it("throws error on connection failure", async () => {
       const testError = new Error("Connection failed");
       mockAttach.mockImplementationOnce((options, callback) => {
-        callback(testError, null);
+        callback(testError);
       });
 
       const brokenClient = createFirebirdSource(config);

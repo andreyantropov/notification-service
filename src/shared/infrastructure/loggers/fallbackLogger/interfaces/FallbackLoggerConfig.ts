@@ -1,5 +1,5 @@
-import { Log } from "../../../../../shared/interfaces/Log";
-import { Logger } from "../../../../interfaces/Logger";
+import { Log } from "../../../../../shared/interfaces/Log.js";
+import { Logger } from "../../../../interfaces/Logger.js";
 
 export interface FallbackLoggerClientConfig {
   loggers: Logger[];

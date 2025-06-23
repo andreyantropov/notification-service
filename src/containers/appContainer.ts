@@ -2,22 +2,22 @@ import "dotenv/config";
 import {
   createNotificationLoggerService,
   EventType,
-} from "../application/services/notificationLoggerService";
-import { createNotificationProcessService } from "../application/services/notificationProcessService";
-import { LogLevel } from "../shared/enums/LogLevel";
-import { createNotificationDeliveryService } from "../application/services/notificationDeliveryService";
+} from "../application/services/notificationLoggerService/index.js";
+import { createNotificationProcessService } from "../application/services/notificationProcessService/index.js";
+import { LogLevel } from "../shared/enums/LogLevel.js";
+import { createNotificationDeliveryService } from "../application/services/notificationDeliveryService/index.js";
 import {
   firebirdConfig,
   smtpConfig,
   bitrixConfig,
   influxDbLoggerConfig,
-} from "../configs";
-import { createDefaultSource } from "../infrastructure/fabrics/sourceFabric";
-import { createDefaultSender } from "../infrastructure/fabrics/senderFabric";
-import { createDefaultLogger } from "../infrastructure/fabrics/loggerFabric";
-import { resolveRecipients } from "../application/resolvers/recipient/resolveRecipients";
-import { Recipient } from "../domain/types/Recipient";
-import { Log } from "../shared/interfaces/Log";
+} from "../configs/index.js";
+import { createDefaultSource } from "../infrastructure/fabrics/sourceFabric.js";
+import { createDefaultSender } from "../infrastructure/fabrics/senderFabric.js";
+import { createDefaultLogger } from "../infrastructure/fabrics/loggerFabric.js";
+import { resolveRecipients } from "../application/resolvers/recipient/resolveRecipients.js";
+import { Recipient } from "../domain/types/Recipient.js";
+import { Log } from "../shared/interfaces/Log.js";
 
 export const createApp = () => {
   const fallbackLogger = createDefaultLogger(

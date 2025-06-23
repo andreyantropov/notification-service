@@ -1,1 +1,1 @@
-export * from "./smtpSender";
+export * from "./smtpSender.js";

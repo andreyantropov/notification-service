@@ -1,4 +1,4 @@
-import { Notification } from "./Notification";
+import { Notification } from "./Notification.js";
 
 export interface NotificationSource {
   getNotifications: () => Promise<Notification[]>;

@@ -1,1 +1,1 @@
-export * from "./influxDbLogger";
+export * from "./influxDbLogger.js";

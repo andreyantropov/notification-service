@@ -1,9 +1,9 @@
 import path from "path";
 import { promises as fs } from "fs";
-import { Log } from "../../../interfaces/Log";
-import { Logger } from "../../../interfaces/Logger";
-import { LogLevel } from "../../../enums/LogLevel";
-import { LocalFileLoggerConfig } from "./interfaces/LocalFileLoggerConfig";
+import { Log } from "../../../interfaces/Log.js";
+import { Logger } from "../../../interfaces/Logger.js";
+import { LogLevel } from "../../../enums/LogLevel.js";
+import { LocalFileLoggerConfig } from "./interfaces/LocalFileLoggerConfig.js";
 
 const LOGS_DIR_NAME = "logs";
 

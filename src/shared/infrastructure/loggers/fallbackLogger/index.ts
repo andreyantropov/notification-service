@@ -1,1 +1,1 @@
-export * from "./fallbackLogger";
+export * from "./fallbackLogger.js";

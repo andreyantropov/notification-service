@@ -1,8 +1,8 @@
-import { RawNotification } from "../interfaces/RawNotification";
+import { RawNotification } from "../interfaces/RawNotification.js";
 import {
   Contacts,
   Notification,
-} from "../../../../domain/interfaces/Notification";
+} from "../../../../domain/interfaces/Notification.js";
 
 export const mapRawNotificationToNotification = (
   raw: RawNotification,

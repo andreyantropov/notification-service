@@ -1,1 +1,1 @@
-export * from "./firebirdSource";
+export * from "./firebirdSource.js";

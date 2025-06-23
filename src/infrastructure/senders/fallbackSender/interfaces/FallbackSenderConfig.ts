@@ -1,5 +1,5 @@
-import { Recipient } from "../../../../domain/types/Recipient";
-import { NotificationSender } from "../../../../domain/interfaces/NotificationSender";
+import { Recipient } from "../../../../domain/types/Recipient.js";
+import { NotificationSender } from "../../../../domain/interfaces/NotificationSender.js";
 
 export interface FallbackSenderConfig {
   senders: NotificationSender[];

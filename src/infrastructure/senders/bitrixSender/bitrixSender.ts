@@ -1,7 +1,10 @@
 import axios from "axios";
-import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender";
-import { Recipient, isBitrixRecipient } from "../../../domain/types/Recipient";
+import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
+import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import {
+  Recipient,
+  isBitrixRecipient,
+} from "../../../domain/types/Recipient.js";
 
 export const createBitrixSender = ({
   url,

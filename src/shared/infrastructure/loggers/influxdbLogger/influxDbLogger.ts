@@ -1,8 +1,8 @@
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
-import { Log } from "../../../interfaces/Log";
-import { InfluxDbLoggerConfig } from "./interfaces/InfluxDbLoggerConfig";
-import { toSnakeCase } from "../../../utils/toSnakeCase/toSnakeCase";
-import { Logger } from "../../../interfaces/Logger";
+import { Log } from "../../../interfaces/Log.js";
+import { InfluxDbLoggerConfig } from "./interfaces/InfluxDbLoggerConfig.js";
+import { toSnakeCase } from "../../../utils/toSnakeCase/toSnakeCase.js";
+import { Logger } from "../../../interfaces/Logger.js";
 
 export const createInfluxDbLogger = ({
   url,

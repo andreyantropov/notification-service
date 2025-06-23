@@ -1,4 +1,4 @@
-import { NotificationSender } from "../../../../domain/interfaces/NotificationSender";
+import { NotificationSender } from "../../../../domain/interfaces/NotificationSender.js";
 
 export interface NotificationDeliveryServiceConfig {
   sender: NotificationSender;

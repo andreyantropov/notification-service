@@ -1,17 +1,16 @@
-import { Log } from "../../../interfaces/Log";
-import { Logger } from "../../../interfaces/Logger";
-import { createInfluxDbLogger } from "./influxDbLogger";
-import { LogLevel } from "../../../enums/LogLevel";
-import { TriggerType } from "../../../enums/TriggerType";
-import { EnvironmentType } from "../../../enums/EnvironmentType";
+import { Log } from "../../../interfaces/Log.js";
+import { Logger } from "../../../interfaces/Logger.js";
+import { createInfluxDbLogger } from "./influxDbLogger.js";
+import { LogLevel } from "../../../enums/LogLevel.js";
+import { TriggerType } from "../../../enums/TriggerType.js";
+import { EnvironmentType } from "../../../enums/EnvironmentType.js";
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 
-jest.mock("@influxdata/influxdb-client");
+vi.mock("@influxdata/influxdb-client");
 
-const { InfluxDB: InfluxDBMock, Point: PointMock } = jest.mocked({
-  InfluxDB,
-  Point,
-});
+const InfluxDBMock = vi.mocked(InfluxDB);
+const PointMock = vi.mocked(Point);
 
 describe("InfluxDB Client", () => {
   let influxDbLogger: Logger;
@@ -23,29 +22,38 @@ describe("InfluxDB Client", () => {
   };
 
   const mockPointInstance = {
-    measurement: jest.fn().mockReturnThis(),
-    timestamp: jest.fn().mockReturnThis(),
-    tag: jest.fn().mockReturnThis(),
-    floatField: jest.fn().mockReturnThis(),
-    stringField: jest.fn().mockReturnThis(),
+    measurement: vi.fn().mockReturnThis(),
+    timestamp: vi.fn().mockReturnThis(),
+    tag: vi.fn().mockReturnThis(),
+    floatField: vi.fn().mockReturnThis(),
+    stringField: vi.fn().mockReturnThis(),
   };
 
   const mockWriteApi = {
-    writePoint: jest.fn(),
-    close: jest.fn(),
+    writePoint: vi.fn(),
+    close: vi.fn(),
   };
 
   beforeEach(() => {
-    (PointMock as jest.Mock).mockImplementation(() => mockPointInstance);
-    (InfluxDBMock as jest.Mock).mockImplementation(() => ({
-      getWriteApi: jest.fn(() => mockWriteApi),
+    (
+      PointMock as unknown as {
+        mockImplementation: (fn: () => unknown) => void;
+      }
+    ).mockImplementation(() => mockPointInstance);
+
+    (
+      InfluxDBMock as unknown as {
+        mockImplementation: (fn: () => unknown) => void;
+      }
+    ).mockImplementation(() => ({
+      getWriteApi: vi.fn(() => mockWriteApi),
     }));
 
     influxDbLogger = createInfluxDbLogger(mockConfig);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const mockLog: Log = {

@@ -1,2 +1,2 @@
-export * from "./fallbackSender";
-export * from "./interfaces/FallbackSenderConfig";
+export * from "./fallbackSender.js";
+export * from "./interfaces/FallbackSenderConfig.js";

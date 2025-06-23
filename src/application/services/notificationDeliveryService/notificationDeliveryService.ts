@@ -1,6 +1,6 @@
-import { Recipient } from "../../../domain/types/Recipient";
-import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig";
-import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService";
+import { Recipient } from "../../../domain/types/Recipient.js";
+import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
+import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
 
 export const createNotificationDeliveryService = ({
   sender,

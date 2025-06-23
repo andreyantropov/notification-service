@@ -1,1 +1,1 @@
-export * from "./localFileLogger";
+export * from "./localFileLogger.js";

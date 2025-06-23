@@ -1,7 +1,8 @@
-import { createNotificationProcessService } from "./notificationProcessService";
-import { LogLevel } from "../../../shared/enums/LogLevel";
-import { EventType } from "../notificationLoggerService";
-import { Notification } from "../../../domain/interfaces/Notification";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createNotificationProcessService } from "./notificationProcessService.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { EventType } from "../notificationLoggerService/index.js";
+import { Notification } from "../../../domain/interfaces/Notification.js";
 
 const mockNotification: Notification = {
   id: 1,
@@ -34,22 +35,22 @@ const mockNotificationWithoutContacts: Notification = {
 
 describe("NotificationProcessService", () => {
   const mockNotificationSource = {
-    getNotifications: jest.fn(),
-    deleteNotification: jest.fn(),
+    getNotifications: vi.fn(),
+    deleteNotification: vi.fn(),
   };
 
   const mockNotificationDeliveryService = {
-    send: jest.fn(),
+    send: vi.fn(),
   };
 
   const mockNotificationLogger = {
-    writeLog: jest.fn(),
+    writeLog: vi.fn(),
   };
 
-  const mockResolveRecipients = jest.fn();
+  const mockResolveRecipients = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("processNotifications", () => {

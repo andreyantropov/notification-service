@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { InfluxDbLoggerConfig } from "../shared/infrastructure/loggers/influxdbLogger/interfaces/InfluxDbLoggerConfig";
+import { InfluxDbLoggerConfig } from "../shared/infrastructure/loggers/influxdbLogger/interfaces/InfluxDbLoggerConfig.js";
 
 const influxDbConfigSchema = z.object({
   url: z.string().url("Некорректный URL InfluxDB").min(1),

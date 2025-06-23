@@ -1,2 +1,2 @@
-export * from "./notificationProcessService";
-export * from "./interfaces/NotificationProcessService";
+export * from "./notificationProcessService.js";
+export * from "./interfaces/NotificationProcessService.js";
