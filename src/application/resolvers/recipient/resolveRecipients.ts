@@ -1,8 +1,8 @@
-import { Recipient } from "../../../domain/types/Recipient";
-import { ContactsResolver } from "./interfaces/ContactsResolver";
-import { defaultContactResolverMap } from "./maps/contactResolverMap";
-import { Notification } from "../../../domain/interfaces/Notification";
-import { ResolveRecipients } from "./types/ResolveRecipients";
+import { Recipient } from "../../../domain/types/Recipient.js";
+import { ContactsResolver } from "./interfaces/ContactsResolver.js";
+import { defaultContactResolverMap } from "./maps/contactResolverMap.js";
+import { Notification } from "../../../domain/interfaces/Notification.js";
+import { ResolveRecipients } from "./types/ResolveRecipients.js";
 
 type ContactResolverMap = Record<string, ContactsResolver>;
 

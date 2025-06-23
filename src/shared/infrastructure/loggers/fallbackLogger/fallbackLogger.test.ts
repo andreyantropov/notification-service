@@ -1,16 +1,17 @@
-import { createFallbackLogger } from ".";
-import { Logger } from "../../../interfaces/Logger";
-import { Log } from "../../../interfaces/Log";
-import { LogLevel } from "../../../enums/LogLevel";
-import { TriggerType } from "../../../enums/TriggerType";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createFallbackLogger } from "./index.js";
+import type { Logger } from "../../../interfaces/Logger.js";
+import type { Log } from "../../../interfaces/Log.js";
+import { LogLevel } from "../../../enums/LogLevel.js";
+import { TriggerType } from "../../../enums/TriggerType.js";
 
 type MockLogger = Logger & {
-  writeLog: jest.MockedFunction<Logger["writeLog"]>;
+  writeLog: ReturnType<typeof vi.fn>;
 };
 
 const createMockLogger = (overrides: Partial<Logger> = {}): MockLogger => {
   return {
-    writeLog: jest.fn(),
+    writeLog: vi.fn(),
     ...overrides,
   } as MockLogger;
 };
@@ -46,10 +47,10 @@ describe("createFallbackLogger", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
-  it("should call the first logger and not use others when successful", async () => {
+  it("calls the first logger and not use others when successful", async () => {
     loggerA.writeLog.mockResolvedValue(undefined);
 
     await fallbackLogger.writeLog(mockLog);
@@ -58,7 +59,7 @@ describe("createFallbackLogger", () => {
     expect(loggerB.writeLog).not.toHaveBeenCalled();
   });
 
-  it("should proceed to the next logger if the previous one fails", async () => {
+  it("proceeds to the next logger if the previous one fails", async () => {
     const primaryError = new Error("Primary logger failed");
 
     loggerA.writeLog.mockRejectedValueOnce(primaryError);
@@ -70,7 +71,7 @@ describe("createFallbackLogger", () => {
     expect(loggerB.writeLog).toHaveBeenCalledWith(mockLog);
   });
 
-  it("should try all loggers and throw an error if all fail", async () => {
+  it("tries all loggers and throws an error if all fail", async () => {
     const errorA = new Error("Logger A failed");
     const errorB = new Error("Logger B failed");
 
@@ -85,7 +86,7 @@ describe("createFallbackLogger", () => {
     expect(loggerB.writeLog).toHaveBeenCalledTimes(1);
   });
 
-  it("should correctly handle 3+ loggers", async () => {
+  it("correctly handles 3+ loggers", async () => {
     const loggerC = createMockLogger();
     const fallbackLoggerWithMany = createFallbackLogger({
       loggers: [loggerA, loggerB, loggerC],
@@ -105,7 +106,7 @@ describe("createFallbackLogger", () => {
     expect(loggerC.writeLog).toHaveBeenCalledWith(mockLog);
   });
 
-  it("should throw an error during creation if the logger list is empty", async () => {
+  it("throws an error during creation if the logger list is empty", () => {
     expect(() =>
       createFallbackLogger({
         loggers: [],
@@ -113,7 +114,7 @@ describe("createFallbackLogger", () => {
     ).toThrow("Не указано ни одного логгера");
   });
 
-  it("should pass the log to all loggers until the first success", async () => {
+  it("passes the log to all loggers until the first success", async () => {
     const loggerC = createMockLogger();
     const fallbackLoggerWithThree = createFallbackLogger({
       loggers: [loggerA, loggerB, loggerC],
@@ -133,7 +134,7 @@ describe("createFallbackLogger", () => {
     expect(loggerC.writeLog).toHaveBeenCalledTimes(1);
   });
 
-  it("should work with a single logger", async () => {
+  it("works with a single logger", async () => {
     const singleFallbackLogger = createFallbackLogger({
       loggers: [loggerA],
     });
@@ -145,7 +146,7 @@ describe("createFallbackLogger", () => {
     expect(loggerA.writeLog).toHaveBeenCalledWith(mockLog);
   });
 
-  it("should only process the loggers provided in the config", async () => {
+  it("only processes the loggers provided in the config", async () => {
     const fallbackLogger = createFallbackLogger({
       loggers: [loggerA, loggerB],
     });
@@ -158,7 +159,7 @@ describe("createFallbackLogger", () => {
     expect(loggerB.writeLog).toHaveBeenCalled();
   });
 
-  it("should process loggers in the order they were provided", async () => {
+  it("processes loggers in the order they were provided", async () => {
     const loggerC = createMockLogger();
     const orderedFallbackLogger = createFallbackLogger({
       loggers: [loggerA, loggerB, loggerC],

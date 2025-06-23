@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FirebirdSourceConfig } from "../infrastructure/sources/firebirdSource/interfaces/FirebirdSourceConfig";
+import { FirebirdSourceConfig } from "../infrastructure/sources/firebirdSource/interfaces/FirebirdSourceConfig.js";
 
 const supportedEncodings = ["UTF8", "WIN1251", "WIN1252"] as const;
 

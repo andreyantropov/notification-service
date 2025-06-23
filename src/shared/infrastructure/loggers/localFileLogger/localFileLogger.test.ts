@@ -1,21 +1,25 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { LogLevel } from "../../../enums/LogLevel";
-import { Log } from "../../../interfaces/Log";
-import { Logger } from "../../../interfaces/Logger";
-import { createLocalFileLogger } from "./localFileLogger";
-import { LocalFileLoggerConfig } from "./interfaces/LocalFileLoggerConfig";
-import { TriggerType } from "../../../enums/TriggerType";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { LogLevel } from "../../../enums/LogLevel.js";
+import type { Log } from "../../../interfaces/Log.js";
+import type { Logger } from "../../../interfaces/Logger.js";
+import { createLocalFileLogger } from "./localFileLogger.js";
+import type { LocalFileLoggerConfig } from "./interfaces/LocalFileLoggerConfig.js";
+import { TriggerType } from "../../../enums/TriggerType.js";
 
-jest.mock("fs", () => ({
+vi.mock("fs", () => ({
   promises: {
-    mkdir: jest.fn().mockResolvedValue(undefined),
-    writeFile: jest.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
-jest.mock("path", () => ({
-  join: jest.fn((...parts) => parts.join("/")),
+vi.mock("path", () => ({
+  join: vi.fn((...parts: string[]) => parts.join("/")),
+  default: {
+    join: vi.fn((...parts: string[]) => parts.join("/")),
+  },
 }));
 
 describe("LocalFileLogger", () => {
@@ -42,19 +46,19 @@ describe("LocalFileLogger", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(Date, "now").mockReturnValue(fixedTimestamp);
+    vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockReturnValue(fixedTimestamp);
     const mockDate = new Date(fixedTimestamp);
-    jest
-      .spyOn(global, "Date")
-      .mockImplementation(() => mockDate as unknown as Date);
+    vi.spyOn(global, "Date").mockImplementation(
+      () => mockDate as unknown as Date,
+    );
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
-  it("should create logs directory in specified location", async () => {
+  it("creates logs directory in specified location", async () => {
     logger = createLocalFileLogger(mockConfig);
     await logger.writeLog(mockLog);
 
@@ -63,7 +67,7 @@ describe("LocalFileLogger", () => {
     });
   });
 
-  it("should create logs directory in process.cwd() if logsDir not provided", async () => {
+  it("creates logs directory in process.cwd() if logsDir not provided", async () => {
     logger = createLocalFileLogger({});
     await logger.writeLog(mockLog);
 
@@ -73,7 +77,7 @@ describe("LocalFileLogger", () => {
     });
   });
 
-  it("should write log with correct format", async () => {
+  it("writes log with correct format", async () => {
     logger = createLocalFileLogger(mockConfig);
     await logger.writeLog(mockLog);
 
@@ -84,17 +88,17 @@ describe("LocalFileLogger", () => {
     );
   });
 
-  it("should generate correct filename format", async () => {
+  it("generates correct filename format", async () => {
     logger = createLocalFileLogger(mockConfig);
     await logger.writeLog(mockLog);
 
-    const [filePath] = (fs.writeFile as jest.Mock).mock.calls[0];
+    const [filePath] = vi.mocked(fs.writeFile).mock.calls[0];
     expect(filePath).toBe(`/custom/logs/logs/INFO-${fixedTimestamp}.log`);
   });
 
-  it("should handle directory creation errors gracefully", async () => {
+  it("handles directory creation errors gracefully", async () => {
     const mkdirError = new Error("Directory access denied");
-    (fs.mkdir as jest.Mock).mockRejectedValueOnce(mkdirError);
+    vi.mocked(fs.mkdir).mockRejectedValueOnce(mkdirError);
 
     logger = createLocalFileLogger(mockConfig);
 
@@ -103,9 +107,9 @@ describe("LocalFileLogger", () => {
     );
   });
 
-  it("should throw error on failed file write", async () => {
+  it("throws error on failed file write", async () => {
     const writeFileError = new Error("Write failed");
-    (fs.writeFile as jest.Mock).mockRejectedValue(writeFileError);
+    vi.mocked(fs.writeFile).mockRejectedValue(writeFileError);
 
     logger = createLocalFileLogger(mockConfig);
 

@@ -1,1 +1,1 @@
-export * from "./bitrixSender";
+export * from "./bitrixSender.js";

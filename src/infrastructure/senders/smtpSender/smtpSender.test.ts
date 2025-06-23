@@ -1,110 +1,95 @@
-jest.mock("dotenv/config");
-jest.mock("nodemailer", () => {
-  const mockSendMail = jest.fn().mockResolvedValue({
-    messageId: "mocked-message-id",
-    response: "Mocked success response",
-  });
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import nodemailer from "nodemailer";
+import { createSmtpSender } from "./smtpSender.js";
+import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
+import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Recipient } from "../../../domain/types/Recipient.js";
 
-  return {
-    createTransport: jest.fn(() => ({
-      sendMail: mockSendMail,
-    })),
+vi.mock("nodemailer");
+
+describe("createSmtpSender", () => {
+  const mockConfig: SmtpSenderConfig = {
+    host: "smtp.example.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "user@example.com",
+      pass: "password",
+    },
+    fromEmail: "no-reply@example.com",
   };
-});
 
-import { createTransport } from "nodemailer";
-import { createSmtpSender } from "./smtpSender";
-import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig";
-
-describe("SMTP Client", () => {
-  const originalEnv = process.env;
-  let config: SmtpSenderConfig;
+  let sender: NotificationSender;
+  let transporter: { sendMail: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    process.env = {
-      ...originalEnv,
-      SMTP_HOST: "smtp.example.com",
-      SMTP_PORT: "587",
-      SMTP_LOGIN: "user@example.com",
-      SMTP_PASSWORD: "password",
-      SMTP_EMAIL: "no-reply@example.com",
+    const mockTransporter = {
+      sendMail: vi.fn().mockResolvedValue({}),
     };
 
-    config = {
-      host: process.env.SMTP_HOST!,
-      port: Number(process.env.SMTP_PORT!),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_LOGIN!,
-        pass: process.env.SMTP_PASSWORD!,
-      },
-      fromEmail: process.env.SMTP_EMAIL!,
-    };
+    (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+      mockTransporter,
+    );
+
+    sender = createSmtpSender(mockConfig);
+    transporter = mockTransporter;
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-    jest.resetModules();
-    jest.restoreAllMocks();
+  it("should return a sender with isSupports and send methods", () => {
+    expect(sender).toHaveProperty("isSupports");
+    expect(sender).toHaveProperty("send");
+    expect(typeof sender.isSupports).toBe("function");
+    expect(typeof sender.send).toBe("function");
   });
 
-  it("should send email with correct parameters", async () => {
-    const userEmail = "test@example.com";
-    const message = "Тест сервиса уведомлений ISPlanar";
-
-    const sender = createSmtpSender(config);
-
-    const recipient = { type: "email" as const, value: userEmail };
-
-    const result = await sender.send(recipient, message);
-
-    expect(createTransport).toHaveBeenCalledWith({
-      host: config.host,
-      port: config.port,
-      secure: false,
-      auth: {
-        user: config.auth.user,
-        pass: config.auth.pass,
-      },
+  describe("isSupports", () => {
+    it("should return true for an email recipient", () => {
+      const recipient: Recipient = { type: "email", value: "test@example.com" };
+      expect(sender.isSupports(recipient)).toBe(true);
     });
 
-    const mockTransport = createTransport();
-    expect(mockTransport.sendMail).toHaveBeenCalledWith({
-      from: `"ISPlanar" <${config.fromEmail}>`,
-      to: userEmail,
-      subject: "ISPlanar",
-      text: message,
+    it("should return false for a non-email recipient", () => {
+      const recipient: Recipient = { type: "bitrix", value: 42 };
+      expect(sender.isSupports(recipient)).toBe(false);
+    });
+  });
+
+  describe("send", () => {
+    const message = "Test message";
+    const recipient: Recipient = { type: "email", value: "test@example.com" };
+
+    it("should call sendMail with correct options", async () => {
+      await sender.send(recipient, message);
+
+      expect(transporter.sendMail).toHaveBeenCalledWith({
+        from: `"ISPlanar" <${mockConfig.fromEmail}>`,
+        to: recipient.value,
+        subject: "ISPlanar",
+        text: message,
+      });
     });
 
-    expect(result).toBeUndefined();
-  });
+    it("should resolve if sendMail resolves", async () => {
+      await expect(sender.send(recipient, message)).resolves.not.toThrow();
+    });
 
-  it("should throw error if recipient is not email type", async () => {
-    const message = "Тест сервиса уведомлений ISPlanar";
+    it("should throw error if recipient is not email", async () => {
+      const invalidRecipient: Recipient = { type: "bitrix", value: 42 };
 
-    const sender = createSmtpSender(config);
+      await expect(sender.send(invalidRecipient, message)).rejects.toThrow(
+        `Неверный тип получателя: ожидается email, получено "bitrix"`,
+      );
+    });
 
-    const recipient = { type: "bitrix" as const, value: 123 };
+    it("should throw error if sendMail rejects", async () => {
+      const error = new Error("Send failed");
+      transporter.sendMail.mockRejectedValue(error);
 
-    await expect(sender.send(recipient, message)).rejects.toThrow(
-      "Неверный тип получателя",
-    );
-  });
+      await expect(sender.send(recipient, message)).rejects.toThrow(
+        "Не удалось отправить email через SMTP",
+      );
 
-  it("should handle errors if sendMail fails", async () => {
-    const userEmail = "test@example.com";
-    const message = "Тест сервиса уведомлений ISPlanar";
-
-    const mockError = new Error("Failed to send email");
-    const mockTransport = createTransport();
-    (mockTransport.sendMail as jest.Mock).mockRejectedValueOnce(mockError);
-
-    const sender = createSmtpSender(config);
-
-    const recipient = { type: "email" as const, value: userEmail };
-
-    await expect(sender.send(recipient, message)).rejects.toThrow(
-      "Не удалось отправить email через SMTP",
-    );
+      expect(transporter.sendMail).toHaveBeenCalled();
+    });
   });
 });

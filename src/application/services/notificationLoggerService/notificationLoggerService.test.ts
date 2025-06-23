@@ -1,11 +1,12 @@
-import { createNotificationLoggerService, EventType } from "./index";
-import { EnvironmentType } from "../../../shared/enums/EnvironmentType";
-import { TriggerType } from "../../../shared/enums/TriggerType";
-import { RawLog } from "./interfaces/RawLog";
-import { NotificationLoggerServiceConfig } from "./interfaces/NotificationLoggerServiceConfig";
-import { LogLevel } from "../../../shared/enums/LogLevel";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createNotificationLoggerService, EventType } from "./index.js";
+import { NotificationLoggerServiceConfig } from "./interfaces/NotificationLoggerServiceConfig.js";
+import { RawLog } from "./interfaces/RawLog.js";
+import { EnvironmentType } from "../../../shared/enums/EnvironmentType.js";
+import { TriggerType } from "../../../shared/enums/TriggerType.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
 
-const mockWriteLog = jest.fn();
+const mockWriteLog = vi.fn();
 
 const mockLogger = {
   writeLog: mockWriteLog,
@@ -128,7 +129,9 @@ describe("createNotificationLoggerService", () => {
   });
 
   it("should log an error if writing the log fails", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     mockWriteLog.mockRejectedValueOnce(new Error("Logging failed"));
 

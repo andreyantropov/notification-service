@@ -1,4 +1,4 @@
-import { ContactsResolver } from "./interfaces/ContactsResolver";
+import { ContactsResolver } from "./interfaces/ContactsResolver.js";
 
 export const bitrixContactResolver: ContactsResolver = (contacts) => {
   const contact = contacts?.bitrix;

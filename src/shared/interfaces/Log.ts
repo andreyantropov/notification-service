@@ -1,6 +1,6 @@
-import { EnvironmentType } from "../enums/EnvironmentType";
-import { LogLevel } from "../enums/LogLevel";
-import { TriggerType } from "../enums/TriggerType";
+import { EnvironmentType } from "../enums/EnvironmentType.js";
+import { LogLevel } from "../enums/LogLevel.js";
+import { TriggerType } from "../enums/TriggerType.js";
 
 export interface Log {
   measurement: string;

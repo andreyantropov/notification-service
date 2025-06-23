@@ -1,11 +1,11 @@
-import { EnvironmentType } from "../../../shared/enums/EnvironmentType";
-import { TriggerType } from "../../../shared/enums/TriggerType";
-import { Log } from "../../../shared/interfaces/Log";
+import { EnvironmentType } from "../../../shared/enums/EnvironmentType.js";
+import { TriggerType } from "../../../shared/enums/TriggerType.js";
+import { Log } from "../../../shared/interfaces/Log.js";
 import { v4 } from "uuid";
 import os from "os";
-import { NotificationLoggerService } from "./interfaces/NotificationLoggerService";
-import { NotificationLoggerServiceConfig } from "./interfaces/NotificationLoggerServiceConfig";
-import { RawLog } from "./interfaces/RawLog";
+import { NotificationLoggerService } from "./interfaces/NotificationLoggerService.js";
+import { NotificationLoggerServiceConfig } from "./interfaces/NotificationLoggerServiceConfig.js";
+import { RawLog } from "./interfaces/RawLog.js";
 import { serializeError } from "serialize-error";
 
 const MEASUREMENT = "isplanar_notification_logs";

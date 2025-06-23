@@ -1,6 +1,6 @@
-import { Recipient } from "../../../domain/types/Recipient";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender";
-import { FallbackSenderConfig } from "./interfaces/FallbackSenderConfig";
+import { Recipient } from "../../../domain/types/Recipient.js";
+import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { FallbackSenderConfig } from "./interfaces/FallbackSenderConfig.js";
 
 export const createFallbackSender = ({
   senders,

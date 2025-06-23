@@ -1,9 +1,9 @@
 import Firebird, { Options, SvcMgrOptions } from "node-firebird";
-import { Notification } from "../../../domain/interfaces/Notification";
-import { RawNotification } from "./interfaces/RawNotification";
-import { FirebirdSourceConfig } from "./interfaces/FirebirdSourceConfig";
-import { NotificationSource } from "../../../domain/interfaces/NotificationSource";
-import { mapRawNotificationToNotification } from "./mappers/notificationMapper";
+import { Notification } from "../../../domain/interfaces/Notification.js";
+import { RawNotification } from "./interfaces/RawNotification.js";
+import { FirebirdSourceConfig } from "./interfaces/FirebirdSourceConfig.js";
+import { NotificationSource } from "../../../domain/interfaces/NotificationSource.js";
+import { mapRawNotificationToNotification } from "./mappers/notificationMapper.js";
 
 export const createFirebirdSource = (
   config: FirebirdSourceConfig,

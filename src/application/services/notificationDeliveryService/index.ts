@@ -1,3 +1,3 @@
-export * from "./notificationDeliveryService";
-export * from "./interfaces/NotificationDeliveryServiceConfig";
-export * from "./interfaces/NotificationDeliveryService";
+export * from "./notificationDeliveryService.js";
+export * from "./interfaces/NotificationDeliveryServiceConfig.js";
+export * from "./interfaces/NotificationDeliveryService.js";

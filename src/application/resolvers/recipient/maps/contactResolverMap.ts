@@ -1,6 +1,6 @@
-import { bitrixContactResolver } from "../bitrixContactResolver";
-import { emailContactResolver } from "../emailContactResolver";
-import { ContactResolverMap } from "../types/ContactResolverMap";
+import { bitrixContactResolver } from "../bitrixContactResolver.js";
+import { emailContactResolver } from "../emailContactResolver.js";
+import { ContactResolverMap } from "../types/ContactResolverMap.js";
 
 export const defaultContactResolverMap: ContactResolverMap = {
   bitrix: bitrixContactResolver,

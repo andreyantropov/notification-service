@@ -1,7 +1,7 @@
-import { NotificationProcessService } from "./interfaces/NotificationProcessService";
-import { LogLevel } from "../../../shared/enums/LogLevel";
-import { EventType } from "../notificationLoggerService";
-import { NotificationProcessServiceConfig } from "./interfaces/NotificationProcessServiceConfig";
+import { NotificationProcessService } from "./interfaces/NotificationProcessService.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { EventType } from "../notificationLoggerService/index.js";
+import { NotificationProcessServiceConfig } from "./interfaces/NotificationProcessServiceConfig.js";
 
 export const createNotificationProcessService = ({
   notificationSource,

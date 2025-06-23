@@ -1,7 +1,10 @@
 import nodemailer from "nodemailer";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender";
-import { Recipient, isEmailRecipient } from "../../../domain/types/Recipient";
-import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig";
+import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import {
+  Recipient,
+  isEmailRecipient,
+} from "../../../domain/types/Recipient.js";
+import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
 
 export const createSmtpSender = ({
   host,
