@@ -19,6 +19,7 @@ export const createNotificationLoggerService = ({
     eventType,
     spanId,
     message,
+    duration,
     payload,
     error,
   }: RawLog): Log => {
@@ -56,7 +57,7 @@ export const createNotificationLoggerService = ({
       fields: {
         id: v4(),
         message: message,
-        durationMs: 0,
+        durationMs: duration || 0,
         payload: safeStringify(payload),
         error: processedError,
       },

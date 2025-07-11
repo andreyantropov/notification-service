@@ -1,0 +1,16 @@
+description: "Получатель уведомления в системе Bitrix24"
+type: object
+required:
+  - type
+  - value
+properties:
+  type:
+    description: "Тип получателя — bitrix"
+    example: "bitrix"
+    type: string
+    enum:
+      - bitrix
+  value:
+    description: "ID пользователя в Bitrix24"
+    example: 123456
+    type: integer

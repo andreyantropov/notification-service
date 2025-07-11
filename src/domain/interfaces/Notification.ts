@@ -1,19 +1,6 @@
-export interface Contacts {
-  bitrix?: number;
-  email?: string;
-}
-
-export interface Client {
-  id: number;
-  lastName: string;
-  firstName: string;
-  secondName: string;
-  contacts?: Contacts;
-}
+import { Recipient } from "../types/Recipient.js";
 
 export interface Notification {
-  id: number;
+  recipients: Recipient[];
   message: string;
-  createdAt: Date;
-  client: Client;
 }

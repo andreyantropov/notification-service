@@ -6,8 +6,16 @@ if [ ! -f ../.env ]; then
   exit 1
 fi
 
+export $(grep -v '^#' ../.env | xargs)
+
+if [ -z "$PORT" ]; then
+  echo "❌ Переменная PORT не установлена в .env"
+  exit 1
+fi
+
 echo "🚀 Запуск контейнера..."
 docker run -d \
-  --name isplanar-notification \
+  --name notification-service \
   --env-file ../.env \
-  isplanar-notification
+  -p "$PORT:$PORT" \
+  notification-service

@@ -1,1 +1,1 @@
-docker ps -a | grep isplanar-notification
+docker ps -a | grep notification-service

@@ -1,25 +1,20 @@
-import { EventType } from "../application/services/notificationLoggerService/index.js";
 import { createApp } from "../containers/appContainer.js";
+import { EventType } from "../application/services/notificationLoggerService/index.js";
 import { LogLevel } from "../shared/enums/LogLevel.js";
 
-export const bootstrap = async () => {
-  const { notificationLogger, notificationProcessService } = createApp();
+export const bootstrap = async (): Promise<void> => {
+  const { server, notificationLoggerService } = createApp();
 
   try {
-    await notificationProcessService.processNotifications();
+    server.start();
   } catch (error) {
-    try {
-      await notificationLogger.writeLog({
-        level: LogLevel.Critical,
-        message: "Критическая ошибка в работе приложения",
-        eventType: EventType.BootstrapError,
-        spanId: "bootstrap",
-        error: error,
-      });
-    } catch (logError) {
-      console.error("Не удалось записать лог:", logError);
-      console.error("Исходная ошибка:", error);
-    }
+    await notificationLoggerService.writeLog({
+      level: LogLevel.Critical,
+      message: "Критическая ошибка в работе приложения",
+      eventType: EventType.BootstrapError,
+      spanId: "bootstrap",
+      error: error,
+    });
 
     throw error;
   }

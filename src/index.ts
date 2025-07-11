@@ -2,7 +2,7 @@ import { bootstrap } from "./bootstrap/bootstrap.js";
 
 try {
   await bootstrap();
-  process.exit(0);
-} catch {
+} catch (error) {
+  console.error(`Критическая ошибка в работе приложения: ${error}`);
   process.exit(1);
 }

@@ -10,7 +10,7 @@ export const createFallbackLogger = ({
     throw new Error("Не указано ни одного логгера");
   }
 
-  const writeLog = async (log: Log) => {
+  const writeLog = async (log: Log): Promise<void> => {
     for (const logger of loggers) {
       try {
         await logger.writeLog(log);

@@ -5,6 +5,7 @@ import {
 } from "./index.js";
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
+import { Notification } from "../../../domain/interfaces/Notification.js";
 
 const mockSend = vi.fn();
 const mockIsSupports = vi.fn();
@@ -39,16 +40,24 @@ describe("createNotificationDeliveryService", () => {
     mockIsSupports.mockReturnValue(true);
     mockSend.mockResolvedValue(undefined);
 
-    await expect(
-      service.send([recipient], "Test message"),
-    ).resolves.not.toThrow();
+    const notification: Notification = {
+      recipients: [recipient],
+      message: "Test message",
+    };
+
+    await expect(service.send(notification)).resolves.not.toThrow();
 
     expect(mockIsSupports).toHaveBeenCalledWith(recipient);
     expect(mockSend).toHaveBeenCalledWith(recipient, "Test message");
   });
 
   it("should throw error if no recipient is provided", async () => {
-    await expect(service.send([], "Test message")).rejects.toThrow(
+    const notification: Notification = {
+      recipients: [],
+      message: "Test message",
+    };
+
+    await expect(service.send(notification)).rejects.toThrow(
       "Нет получателя для доставки уведомления",
     );
   });
@@ -67,7 +76,12 @@ describe("createNotificationDeliveryService", () => {
 
     mockIsSupports.mockReturnValue(false);
 
-    await expect(service.send(recipients, "Test message")).rejects.toThrow(
+    const notification: Notification = {
+      recipients,
+      message: "Test message",
+    };
+
+    await expect(service.send(notification)).rejects.toThrow(
       "Не удалось отправить уведомление ни одним из доступных способов",
     );
 
@@ -93,7 +107,12 @@ describe("createNotificationDeliveryService", () => {
       .mockImplementationOnce(() => Promise.reject(new Error("Send failed")))
       .mockImplementationOnce(() => Promise.resolve());
 
-    await service.send(recipients, "Test message");
+    const notification: Notification = {
+      recipients,
+      message: "Test message",
+    };
+
+    await service.send(notification);
 
     expect(mockSend).toHaveBeenCalledTimes(2);
   });
@@ -113,7 +132,12 @@ describe("createNotificationDeliveryService", () => {
     mockIsSupports.mockReturnValue(true);
     mockSend.mockResolvedValueOnce(undefined);
 
-    await service.send(recipients, "Test message");
+    const notification: Notification = {
+      recipients,
+      message: "Test message",
+    };
+
+    await service.send(notification);
 
     expect(mockSend).toHaveBeenCalledTimes(1);
   });
@@ -133,7 +157,12 @@ describe("createNotificationDeliveryService", () => {
     mockIsSupports.mockReturnValue(true);
     mockSend.mockRejectedValue(new Error("Send failed"));
 
-    await expect(service.send(recipients, "Test message")).rejects.toThrow(
+    const notification: Notification = {
+      recipients,
+      message: "Test message",
+    };
+
+    await expect(service.send(notification)).rejects.toThrow(
       "Не удалось отправить уведомление ни одним из доступных способов",
     );
 

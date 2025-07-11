@@ -1,7 +1,14 @@
 export enum EventType {
+  BootstrapSuccess = "bootstrap_success",
   BootstrapError = "bootstrap_error",
-  SendBitrixNotification = "send_bitrix_notification",
-  SendSmtpNotification = "send_smtp_notification",
-  SendNotificationSuccess = "send_notification_success",
-  SendNotificationError = "send_notification_error",
+
+  ServerSuccess = "server_success",
+  ServerError = "server_error",
+
+  NotificationSuccess = "notification_success",
+  NotificationWarning = "notification_warning",
+  NotificationError = "notification_error",
+
+  RequestSuccess = "request_success",
+  RequestError = "request_error",
 }
