@@ -8,7 +8,7 @@ import { createDefaultServer } from "../serverFabric.ts/serverFabric.js";
 import { createDefaultSwagger } from "../swaggerFabric/swaggerFabric.js";
 import { AppFabric } from "./interfaces/AppFabric.js";
 import { AppFabricConfig } from "./interfaces/AppFabricConfig.js";
-import { NotificationRequest } from "../../dtos/notificationDTO.js";
+import { NotificationRequest } from "../../dtos/NotificationDTO.js";
 
 export const createDefaultApp = (config: AppFabricConfig): AppFabric => {
   const { serverConfig, sendNotificationUseCase, notificationLoggerService } =
