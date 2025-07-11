@@ -1,5 +1,5 @@
-import { Recipient } from "../../../../domain/types/Recipient.js";
+import { Notification } from "../../../../domain/interfaces/Notification.js";
 
 export interface NotificationDeliveryService {
-  send: (recipients: Recipient[], message: string) => Promise<void>;
+  send: (notification: Notification) => Promise<void>;
 }

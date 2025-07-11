@@ -6,6 +6,7 @@ export interface RawLog {
   message: string;
   eventType: EventType;
   spanId: string;
+  duration?: number;
   payload?: unknown;
   error?: unknown;
 }

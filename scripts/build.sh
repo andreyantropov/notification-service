@@ -2,4 +2,4 @@
 set -e
 
 echo "🏗️ Сборка Docker-образа..."
-docker build -t isplanar-notification ..
+docker build -t notification-service ..

@@ -1,0 +1,17 @@
+description: "Получатель уведомления по электронной почте"
+type: object
+required:
+  - type
+  - value
+properties:
+  type:
+    description: "Тип получателя — email"
+    example: "email"
+    type: string
+    enum:
+      - email
+  value:
+    description: "Email-адрес получателя"
+    example: "user@example.com"
+    type: string
+    format: email

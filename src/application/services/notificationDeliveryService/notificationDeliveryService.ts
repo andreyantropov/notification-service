@@ -1,6 +1,7 @@
 import { Recipient } from "../../../domain/types/Recipient.js";
 import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
+import { Notification } from "../../../domain/interfaces/Notification.js";
 
 export const createNotificationDeliveryService = ({
   sender,
@@ -21,10 +22,7 @@ export const createNotificationDeliveryService = ({
     }
   };
 
-  const send = async (
-    recipients: Recipient[],
-    message: string,
-  ): Promise<void> => {
+  const send = async ({ recipients, message }: Notification): Promise<void> => {
     if (!recipients || recipients.length === 0) {
       throw new Error("Нет получателя для доставки уведомления");
     }

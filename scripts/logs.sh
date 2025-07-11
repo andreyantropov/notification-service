@@ -2,4 +2,4 @@
 set -e
 
 echo "📄 Логи контейнера:"
-docker logs -f isplanar-notification
+docker logs -f notification-service

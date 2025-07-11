@@ -26,7 +26,7 @@ describe("createNotificationLoggerService", () => {
   it("should format log with correct tags and fields", async () => {
     const rawLog: RawLog = {
       level: LogLevel.Info,
-      eventType: EventType.SendNotificationSuccess,
+      eventType: EventType.NotificationSuccess,
       spanId: "span123",
       message: "Test message",
       payload: { test: "data" },
@@ -51,7 +51,7 @@ describe("createNotificationLoggerService", () => {
         callerService: "caller-service",
         trigger: TriggerType.Cron,
         environment: EnvironmentType.Development,
-        eventType: "send_notification_success",
+        eventType: "notification_success",
         host: expect.any(String),
         spanId: "span123",
       },
@@ -68,7 +68,7 @@ describe("createNotificationLoggerService", () => {
     const error = new Error("Test error");
     const rawLog: RawLog = {
       level: LogLevel.Error,
-      eventType: EventType.SendNotificationError,
+      eventType: EventType.NotificationError,
       spanId: "span456",
       message: "Error message",
       error,
@@ -92,7 +92,7 @@ describe("createNotificationLoggerService", () => {
         callerService: "service-b",
         trigger: TriggerType.Manual,
         environment: EnvironmentType.Production,
-        eventType: "send_notification_error",
+        eventType: "notification_error",
         host: expect.any(String),
         spanId: "span456",
       },
@@ -113,7 +113,7 @@ describe("createNotificationLoggerService", () => {
 
     const rawLog: RawLog = {
       level: LogLevel.Warning,
-      eventType: EventType.SendSmtpNotification,
+      eventType: EventType.NotificationWarning,
       spanId: "span789",
       message: "Default env values",
     };
@@ -137,7 +137,7 @@ describe("createNotificationLoggerService", () => {
 
     const rawLog: RawLog = {
       level: LogLevel.Debug,
-      eventType: EventType.SendBitrixNotification,
+      eventType: EventType.NotificationWarning,
       spanId: "span999",
       message: "Fail to log",
     };
