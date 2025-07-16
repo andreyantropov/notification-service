@@ -5,6 +5,7 @@ import { FallbackSenderConfig } from "./interfaces/FallbackSenderConfig.js";
 export const createFallbackSender = ({
   senders,
   onError = () => {},
+  onHealthCheckError = () => {},
 }: FallbackSenderConfig): NotificationSender => {
   if (!senders || senders.length === 0) {
     throw new Error("Не передано ни одного сендера");
@@ -37,5 +38,25 @@ export const createFallbackSender = ({
     );
   };
 
-  return { isSupports, send };
+  const checkHealth = async (): Promise<void> => {
+    for (const sender of senders) {
+      if (sender.checkHealth) {
+        try {
+          await sender.checkHealth();
+          return;
+        } catch (error) {
+          onHealthCheckError(
+            sender.constructor.name,
+            new Error(`Канал ${sender.constructor.name} недоступен`, {
+              cause: error,
+            }),
+          );
+        }
+      }
+    }
+
+    throw new Error("Ни один из сендров не готов к работе");
+  };
+
+  return { isSupports, send, checkHealth };
 };

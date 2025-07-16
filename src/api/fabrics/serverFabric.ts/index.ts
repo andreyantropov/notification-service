@@ -1,3 +1,3 @@
 export * from "./interfaces/ServerFabricConfig.js";
-export * from "./interfaces/ServerFabric.js";
+export * from "./interfaces/Server.js";
 export * from "./serverFabric.js";

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import nodemailer from "nodemailer";
 import { createSmtpSender } from "./smtpSender.js";
 import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
@@ -90,6 +90,82 @@ describe("createSmtpSender", () => {
       );
 
       expect(transporter.sendMail).toHaveBeenCalled();
+    });
+  });
+
+  describe("checkHealth", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should have checkHealth method", () => {
+      expect(sender.checkHealth).toBeDefined();
+      expect(typeof sender.checkHealth).toBe("function");
+    });
+
+    it("should resolve if transporter.verify succeeds", async () => {
+      const mockVerify = vi
+        .fn()
+        .mockImplementation((callback) => callback(null));
+      const mockTransporter = {
+        sendMail: vi.fn(),
+        verify: mockVerify,
+      };
+      (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockTransporter,
+      );
+
+      const newSender = createSmtpSender(mockConfig);
+
+      await expect(newSender.checkHealth!()).resolves.not.toThrow();
+    });
+
+    it("should reject with 'SMTP сервер недоступен' if verify fails", async () => {
+      const mockError = new Error("Connection refused");
+      const mockVerify = vi
+        .fn()
+        .mockImplementation((callback) => callback(mockError));
+      const mockTransporter = {
+        sendMail: vi.fn(),
+        verify: mockVerify,
+      };
+      (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockTransporter,
+      );
+
+      const newSender = createSmtpSender(mockConfig);
+
+      await expect(newSender.checkHealth!()).rejects.toThrow(
+        "SMTP сервер недоступен",
+      );
+    });
+
+    it("should reject with 'SMTP сервер недоступен' on timeout", async () => {
+      const pendingPromise = new Promise(() => {});
+      const mockVerify = vi
+        .fn()
+        .mockImplementation((callback) => pendingPromise.then(callback));
+      const mockTransporter = {
+        sendMail: vi.fn(),
+        verify: mockVerify,
+      };
+      (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockTransporter,
+      );
+
+      const newSender = createSmtpSender(mockConfig);
+
+      const checkHealthPromise = newSender.checkHealth!();
+
+      vi.runOnlyPendingTimers();
+
+      await expect(checkHealthPromise).rejects.toThrow(
+        "SMTP сервер недоступен",
+      );
     });
   });
 });

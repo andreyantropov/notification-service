@@ -37,5 +37,14 @@ export const createNotificationDeliveryService = ({
     );
   };
 
-  return { send };
+  const checkHealth = sender.checkHealth
+    ? async (): Promise<void> => {
+        await sender.checkHealth?.();
+      }
+    : undefined;
+
+  return {
+    send,
+    ...(checkHealth ? { checkHealth } : {}),
+  };
 };

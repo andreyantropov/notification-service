@@ -1,4 +1,4 @@
-export interface AppFabric {
+export interface Server {
   start: () => void;
   stop: () => Promise<void>;
 }

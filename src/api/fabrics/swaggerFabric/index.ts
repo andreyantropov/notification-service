@@ -1,3 +1,3 @@
 export * from "./interfaces/SwaggerFabricConfig.js";
-export * from "./interfaces/SwaggerFabric.js";
+export * from "./interfaces/Swagger.js";
 export * from "./swaggerFabric.js";

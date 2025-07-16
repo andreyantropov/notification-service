@@ -5,6 +5,9 @@ import {
   isEmailRecipient,
 } from "../../../domain/types/Recipient.js";
 import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
+import pTimeout from "p-timeout";
+
+const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createSmtpSender = ({
   host,
@@ -48,8 +51,33 @@ export const createSmtpSender = ({
     }
   };
 
+  const checkHealth = async (): Promise<void> => {
+    try {
+      await pTimeout(
+        new Promise<void>((resolve, reject) => {
+          transporter.verify((error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          });
+        }),
+        {
+          milliseconds: DEFAULT_HEALTHCHECK_TIMEOUT,
+          message: "Превышено время ожидания подключения к SMTP",
+        },
+      );
+    } catch (error) {
+      throw new Error(`SMTP сервер недоступен`, {
+        cause: error,
+      });
+    }
+  };
+
   return {
     isSupports,
     send,
+    checkHealth,
   };
 };

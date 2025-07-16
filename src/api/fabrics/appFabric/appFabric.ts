@@ -2,15 +2,17 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import { createNotificationController } from "../../controllers/notificationController/notificationController.js";
 import { createValidateRequestSchemaMiddleware } from "../../middleware/validateRequestSchemaMiddleware/validateRequestSchemaMiddleware.js";
-import { createDefaultMiddlewares } from "../middlewareFabric/middlewareFabric.js";
-import { createDefaultRouter } from "../routerFabric/routerFabric.js";
+import { createDefaultMiddleware } from "../middlewareFabric/middlewareFabric.js";
 import { createDefaultServer } from "../serverFabric.ts/serverFabric.js";
 import { createDefaultSwagger } from "../swaggerFabric/swaggerFabric.js";
-import { AppFabric } from "./interfaces/AppFabric.js";
+import { App } from "./interfaces/App.js";
 import { AppFabricConfig } from "./interfaces/AppFabricConfig.js";
 import { NotificationRequest } from "../../dtos/NotificationDTO.js";
+import { createDefaultRouter } from "../routerFabric/index.js";
+import { HttpMethod } from "../../enum/HttpMethod.js";
+import { createHealthcheckController } from "../../controllers/healthcheckController/healthcheckController.js";
 
-export const createDefaultApp = (config: AppFabricConfig): AppFabric => {
+export const createDefaultApp = (config: AppFabricConfig): App => {
   const { serverConfig, sendNotificationUseCase, notificationLoggerService } =
     config;
   const {
@@ -19,7 +21,7 @@ export const createDefaultApp = (config: AppFabricConfig): AppFabric => {
     loggerMiddleware,
     notFoundMiddleware,
     internalServerErrorMiddleware,
-  } = createDefaultMiddlewares({
+  } = createDefaultMiddleware({
     rateLimitConfig: {
       time: serverConfig.rateLimitTime,
       tries: serverConfig.rateLimitTries,
@@ -30,16 +32,32 @@ export const createDefaultApp = (config: AppFabricConfig): AppFabric => {
   const notificationController = createNotificationController({
     sendNotificationUseCase,
   });
+  const healthcheckController = createHealthcheckController({
+    sendNotificationUseCase,
+  });
 
   const validateRequestSchemaMiddleware = createValidateRequestSchemaMiddleware(
     { schema: NotificationRequest },
   );
 
-  const routes = createDefaultRouter({
-    path: "/v1/notifications",
-    notificationController,
-    validateMiddleware: validateRequestSchemaMiddleware,
-  });
+  const router = createDefaultRouter([
+    {
+      method: HttpMethod.POST,
+      path: "/v1/notifications",
+      controller: notificationController.send,
+      validate: validateRequestSchemaMiddleware,
+    },
+    {
+      method: HttpMethod.GET,
+      path: "/health/live",
+      controller: healthcheckController.live,
+    },
+    {
+      method: HttpMethod.GET,
+      path: "/health/ready",
+      controller: healthcheckController.ready,
+    },
+  ]);
 
   const { swaggerSpec } = createDefaultSwagger({ baseUrl: serverConfig.url });
 
@@ -48,7 +66,7 @@ export const createDefaultApp = (config: AppFabricConfig): AppFabric => {
   app.use(jsonParser);
   app.use(loggerMiddleware);
   app.use(rateLimitMiddleware);
-  app.use("/api", routes.notificationRouter);
+  app.use("/api", router);
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.use(notFoundMiddleware);
   app.use(internalServerErrorMiddleware);

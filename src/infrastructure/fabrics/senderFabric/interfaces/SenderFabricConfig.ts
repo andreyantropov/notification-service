@@ -9,4 +9,5 @@ export interface SenderFabricConfig {
     payload: { recipient: Recipient; message: string },
     error: Error,
   ) => void;
+  onHealthCheckError?: (senderName: string, error: Error) => void;
 }

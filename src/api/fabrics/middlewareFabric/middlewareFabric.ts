@@ -4,12 +4,12 @@ import { createNotFoundMiddleware } from "../../middleware/notFoundMiddleware/no
 import { createRateLimiter } from "../../middleware/rateLimitMiddleware/rateLimitMiddleware.js";
 import { createRequestLoggerMiddleware } from "../../middleware/requestLoggerMiddleware/index.js";
 import { MiddlewareFabricConfig } from "./interfaces/MiddlewareFabricConfig.js";
-import { MiddlewareFabric } from "./interfaces/MiddlewareFabric.js";
+import { Middleware } from "./interfaces/Middleware.js";
 
-export const createDefaultMiddlewares = ({
+export const createDefaultMiddleware = ({
   rateLimitConfig,
   notificationLoggerService,
-}: MiddlewareFabricConfig): MiddlewareFabric => {
+}: MiddlewareFabricConfig): Middleware => {
   const jsonParser = express.json();
   const rateLimitMiddleware = createRateLimiter(rateLimitConfig);
   const loggerMiddleware = createRequestLoggerMiddleware({

@@ -43,6 +43,14 @@ export const createApp = () => {
         payload: payload,
         error: error,
       }),
+    onHealthCheckError: (senderName: string, error: Error) =>
+      notificationLoggerService.writeLog({
+        level: LogLevel.Warning,
+        message: `Канал ${senderName} недоступен`,
+        eventType: EventType.HealthCheckWarning,
+        spanId: "sendNotification",
+        error: error,
+      }),
   });
   const notificationDeliveryService = createNotificationDeliveryService({
     sender: fallbackSender,

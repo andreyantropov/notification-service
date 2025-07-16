@@ -97,4 +97,41 @@ describe("createBitrixSender", () => {
       );
     });
   });
+
+  describe("checkHealth", () => {
+    it("should have checkHealth method", () => {
+      expect(sender.checkHealth).toBeDefined();
+      expect(typeof sender.checkHealth).toBe("function");
+    });
+
+    it("should resolve if health check returns valid data", async () => {
+      const mockData = { result: true };
+      vi.mocked(axios.get).mockResolvedValue({ data: mockData });
+
+      await expect(sender.checkHealth!()).resolves.not.toThrow();
+    });
+
+    it("should reject with 'Bitrix недоступен' if any error occurs", async () => {
+      const mockError = new Error("Some network problem");
+      vi.mocked(axios.get).mockRejectedValue(mockError);
+
+      await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
+    });
+
+    it("should reject with 'Bitrix недоступен' on timeout", async () => {
+      const timeoutError = new Error(
+        "Превышено время ожидания ответа от Bitrix",
+      );
+      vi.mocked(axios.get).mockRejectedValue(timeoutError);
+
+      await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
+    });
+
+    it("should reject with 'Bitrix недоступен' on invalid response format", async () => {
+      const mockData = { wrongKey: "unexpected data" };
+      vi.mocked(axios.get).mockResolvedValue({ data: mockData });
+
+      await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
+    });
+  });
 });
