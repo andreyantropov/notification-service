@@ -8,11 +8,12 @@ export const createDefaultSender = ({
   bitrixConfig,
   smtpConfig,
   onError = () => {},
+  onHealthCheckError = () => {},
 }: SenderFabricConfig): NotificationSender => {
   const senders = [
     createBitrixSender(bitrixConfig),
     createSmtpSender(smtpConfig),
   ];
 
-  return createFallbackSender({ senders, onError });
+  return createFallbackSender({ senders, onError, onHealthCheckError });
 };

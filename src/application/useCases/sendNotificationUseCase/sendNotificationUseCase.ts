@@ -37,5 +37,31 @@ export const createSendNotificationUseCase = ({
     }
   };
 
-  return { send };
+  const checkHealth = notificationDeliveryService.checkHealth
+    ? async (): Promise<void> => {
+        try {
+          await notificationDeliveryService.checkHealth?.();
+          notificationLoggerService.writeLog({
+            level: LogLevel.Info,
+            message: `Проверка HealthCheck выполнена успешно`,
+            eventType: EventType.HealthCheckSuccess,
+            spanId: `createSendNotificationUseCase`,
+          });
+        } catch (error) {
+          notificationLoggerService.writeLog({
+            level: LogLevel.Error,
+            message: `Проверка HealthCheck вернула ошибка`,
+            eventType: EventType.HealthCheckError,
+            spanId: `createSendNotificationUseCase`,
+            error: error,
+          });
+          throw error;
+        }
+      }
+    : undefined;
+
+  return {
+    send,
+    ...(checkHealth ? { checkHealth } : {}),
+  };
 };

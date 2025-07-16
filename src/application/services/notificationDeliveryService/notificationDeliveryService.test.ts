@@ -31,141 +31,197 @@ describe("createNotificationDeliveryService", () => {
     mockIsSupports.mockClear();
   });
 
-  it("should call sender.send when recipient is supported", async () => {
-    const recipient: Recipient = {
-      type: "email",
-      value: "test@example.com",
-    };
-
-    mockIsSupports.mockReturnValue(true);
-    mockSend.mockResolvedValue(undefined);
-
-    const notification: Notification = {
-      recipients: [recipient],
-      message: "Test message",
-    };
-
-    await expect(service.send(notification)).resolves.not.toThrow();
-
-    expect(mockIsSupports).toHaveBeenCalledWith(recipient);
-    expect(mockSend).toHaveBeenCalledWith(recipient, "Test message");
-  });
-
-  it("should throw error if no recipient is provided", async () => {
-    const notification: Notification = {
-      recipients: [],
-      message: "Test message",
-    };
-
-    await expect(service.send(notification)).rejects.toThrow(
-      "Нет получателя для доставки уведомления",
-    );
-  });
-
-  it("should throw error if none of the recipients are supported", async () => {
-    const recipients: Recipient[] = [
-      {
+  describe("send", () => {
+    it("should call sender.send when recipient is supported", async () => {
+      const recipient: Recipient = {
         type: "email",
-        value: "test1@example.com",
-      },
-      {
-        type: "bitrix",
-        value: 123,
-      },
-    ];
+        value: "test@example.com",
+      };
 
-    mockIsSupports.mockReturnValue(false);
+      mockIsSupports.mockReturnValue(true);
+      mockSend.mockResolvedValue(undefined);
 
-    const notification: Notification = {
-      recipients,
-      message: "Test message",
-    };
+      const notification: Notification = {
+        recipients: [recipient],
+        message: "Test message",
+      };
 
-    await expect(service.send(notification)).rejects.toThrow(
-      "Не удалось отправить уведомление ни одним из доступных способов",
-    );
+      await expect(service.send(notification)).resolves.not.toThrow();
 
-    expect(mockIsSupports).toHaveBeenCalledTimes(recipients.length);
+      expect(mockIsSupports).toHaveBeenCalledWith(recipient);
+      expect(mockSend).toHaveBeenCalledWith(recipient, "Test message");
+    });
+
+    it("should throw error if no recipient is provided", async () => {
+      const notification: Notification = {
+        recipients: [],
+        message: "Test message",
+      };
+
+      await expect(service.send(notification)).rejects.toThrow(
+        "Нет получателя для доставки уведомления",
+      );
+    });
+
+    it("should throw error if none of the recipients are supported", async () => {
+      const recipients: Recipient[] = [
+        {
+          type: "email",
+          value: "test1@example.com",
+        },
+        {
+          type: "bitrix",
+          value: 123,
+        },
+      ];
+
+      mockIsSupports.mockReturnValue(false);
+
+      const notification: Notification = {
+        recipients,
+        message: "Test message",
+      };
+
+      await expect(service.send(notification)).rejects.toThrow(
+        "Не удалось отправить уведомление ни одним из доступных способов",
+      );
+
+      expect(mockIsSupports).toHaveBeenCalledTimes(recipients.length);
+    });
+
+    it("should return on first successful delivery", async () => {
+      const recipients: Recipient[] = [
+        {
+          type: "email",
+          value: "test1@example.com",
+        },
+        {
+          type: "bitrix",
+          value: 123,
+        },
+      ];
+
+      mockIsSupports
+        .mockImplementationOnce(() => true)
+        .mockImplementationOnce(() => true);
+      mockSend
+        .mockImplementationOnce(() => Promise.reject(new Error("Send failed")))
+        .mockImplementationOnce(() => Promise.resolve());
+
+      const notification: Notification = {
+        recipients,
+        message: "Test message",
+      };
+
+      await service.send(notification);
+
+      expect(mockSend).toHaveBeenCalledTimes(2);
+    });
+
+    it("should not try next recipient after success", async () => {
+      const recipients: Recipient[] = [
+        {
+          type: "email",
+          value: "test1@example.com",
+        },
+        {
+          type: "bitrix",
+          value: 123,
+        },
+      ];
+
+      mockIsSupports.mockReturnValue(true);
+      mockSend.mockResolvedValueOnce(undefined);
+
+      const notification: Notification = {
+        recipients,
+        message: "Test message",
+      };
+
+      await service.send(notification);
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+    });
+
+    it("should throw error if all deliveries fail", async () => {
+      const recipients: Recipient[] = [
+        {
+          type: "email",
+          value: "test1@example.com",
+        },
+        {
+          type: "bitrix",
+          value: 123,
+        },
+      ];
+
+      mockIsSupports.mockReturnValue(true);
+      mockSend.mockRejectedValue(new Error("Send failed"));
+
+      const notification: Notification = {
+        recipients,
+        message: "Test message",
+      };
+
+      await expect(service.send(notification)).rejects.toThrow(
+        "Не удалось отправить уведомление ни одним из доступных способов",
+      );
+
+      expect(mockSend).toHaveBeenCalledTimes(recipients.length);
+    });
   });
 
-  it("should return on first successful delivery", async () => {
-    const recipients: Recipient[] = [
-      {
-        type: "email",
-        value: "test1@example.com",
-      },
-      {
-        type: "bitrix",
-        value: 123,
-      },
-    ];
+  describe("checkHealth", () => {
+    it("should not have checkHealth if sender has no checkHealth", async () => {
+      const mockSender = {
+        send: vi.fn(),
+        isSupports: vi.fn(),
+      };
 
-    mockIsSupports
-      .mockImplementationOnce(() => true)
-      .mockImplementationOnce(() => true);
-    mockSend
-      .mockImplementationOnce(() => Promise.reject(new Error("Send failed")))
-      .mockImplementationOnce(() => Promise.resolve());
+      const config: NotificationDeliveryServiceConfig = {
+        sender: mockSender,
+      };
 
-    const notification: Notification = {
-      recipients,
-      message: "Test message",
-    };
+      const service = createNotificationDeliveryService(config);
 
-    await service.send(notification);
+      expect(service.checkHealth).toBeUndefined();
+    });
 
-    expect(mockSend).toHaveBeenCalledTimes(2);
-  });
+    it("should call sender.checkHealth if available", async () => {
+      const mockCheckHealth = vi.fn().mockResolvedValue(undefined);
+      const mockSender = {
+        send: vi.fn(),
+        isSupports: vi.fn(),
+        checkHealth: mockCheckHealth,
+      };
 
-  it("should not try next recipient after success", async () => {
-    const recipients: Recipient[] = [
-      {
-        type: "email",
-        value: "test1@example.com",
-      },
-      {
-        type: "bitrix",
-        value: 123,
-      },
-    ];
+      const config: NotificationDeliveryServiceConfig = {
+        sender: mockSender,
+      };
 
-    mockIsSupports.mockReturnValue(true);
-    mockSend.mockResolvedValueOnce(undefined);
+      const service = createNotificationDeliveryService(config);
 
-    const notification: Notification = {
-      recipients,
-      message: "Test message",
-    };
+      await expect(service.checkHealth?.()).resolves.not.toThrow();
+      expect(mockCheckHealth).toHaveBeenCalled();
+    });
 
-    await service.send(notification);
+    it("should propagate checkHealth error if sender throws", async () => {
+      const mockError = new Error("Health check failed");
+      const mockSender = {
+        send: vi.fn(),
+        isSupports: vi.fn(),
+        checkHealth: vi.fn().mockRejectedValue(mockError),
+      };
 
-    expect(mockSend).toHaveBeenCalledTimes(1);
-  });
+      const config: NotificationDeliveryServiceConfig = {
+        sender: mockSender,
+      };
 
-  it("should throw error if all deliveries fail", async () => {
-    const recipients: Recipient[] = [
-      {
-        type: "email",
-        value: "test1@example.com",
-      },
-      {
-        type: "bitrix",
-        value: 123,
-      },
-    ];
+      const service = createNotificationDeliveryService(config);
 
-    mockIsSupports.mockReturnValue(true);
-    mockSend.mockRejectedValue(new Error("Send failed"));
-
-    const notification: Notification = {
-      recipients,
-      message: "Test message",
-    };
-
-    await expect(service.send(notification)).rejects.toThrow(
-      "Не удалось отправить уведомление ни одним из доступных способов",
-    );
-
-    expect(mockSend).toHaveBeenCalledTimes(recipients.length);
+      await expect(service.checkHealth?.()).rejects.toThrow(
+        "Health check failed",
+      );
+    });
   });
 });

@@ -5,6 +5,9 @@ import {
   Recipient,
   isBitrixRecipient,
 } from "../../../domain/types/Recipient.js";
+import pTimeout from "p-timeout";
+
+const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createBitrixSender = ({
   url,
@@ -45,8 +48,30 @@ export const createBitrixSender = ({
     }
   };
 
+  const checkHealth = async (): Promise<void> => {
+    try {
+      const responsePromise = axios.get(`${url}/rest.misc.getshortpathdata`, {
+        params: { path: "" },
+      });
+
+      const response = await pTimeout(responsePromise, {
+        milliseconds: DEFAULT_HEALTHCHECK_TIMEOUT,
+        message: "Превышено время ожидания ответа от Bitrix",
+      });
+
+      const data = response.data;
+
+      if (!data || !data.result) {
+        throw new Error("Ответ не соответствует ожидаемому формату");
+      }
+    } catch (error) {
+      throw new Error(`Bitrix недоступен`, { cause: error });
+    }
+  };
+
   return {
     isSupports,
     send,
+    checkHealth,
   };
 };

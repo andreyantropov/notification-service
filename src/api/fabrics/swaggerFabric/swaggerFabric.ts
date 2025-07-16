@@ -1,10 +1,10 @@
 import { getSwaggerSpec } from "../../docs/swagger.spec.js";
-import { SwaggerFabric } from "./interfaces/SwaggerFabric.js";
+import { Swagger } from "./interfaces/Swagger.js";
 import { SwaggerFabricConfig } from "./interfaces/SwaggerFabricConfig.js";
 
 export const createDefaultSwagger = ({
   baseUrl,
-}: SwaggerFabricConfig): SwaggerFabric => {
+}: SwaggerFabricConfig): Swagger => {
   const swaggerSpec = getSwaggerSpec({ baseUrl });
   return {
     swaggerSpec,

@@ -1,13 +1,13 @@
 import { EventType } from "../../../application/services/notificationLoggerService/index.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { ServerFabric } from "./interfaces/ServerFabric.js";
+import { Server } from "./interfaces/Server.js";
 import { ServerFabricConfig } from "./interfaces/ServerFabricConfig.js";
 
 export const createDefaultServer = ({
   app,
   port,
   notificationLoggerService,
-}: ServerFabricConfig): ServerFabric => {
+}: ServerFabricConfig): Server => {
   let server: ReturnType<typeof app.listen> | null = null;
 
   const start = () => {

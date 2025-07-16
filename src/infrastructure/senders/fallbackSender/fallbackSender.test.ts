@@ -180,4 +180,84 @@ describe("createFallbackSender", () => {
       expect(emailSender2.send).not.toHaveBeenCalled();
     });
   });
+
+  describe("checkHealth", () => {
+    it("should return void if any sender's health check succeeds", async () => {
+      const healthySender = {
+        isSupports: vi.fn(),
+        send: vi.fn(),
+        checkHealth: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const fallbackSender = createFallbackSender({
+        senders: [healthySender],
+      });
+
+      await expect(fallbackSender.checkHealth!()).resolves.not.toThrow();
+      await expect(fallbackSender.checkHealth!()).resolves.toBeUndefined();
+    });
+
+    it("should try next sender if current checkHealth fails", async () => {
+      const failingCheckHealth = {
+        isSupports: vi.fn(),
+        send: vi.fn(),
+        checkHealth: vi.fn().mockRejectedValue(new Error("Unhealthy")),
+      };
+
+      const healthyCheckHealth = {
+        isSupports: vi.fn(),
+        send: vi.fn(),
+        checkHealth: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const fallbackSender = createFallbackSender({
+        senders: [failingCheckHealth, healthyCheckHealth],
+      });
+
+      await expect(fallbackSender.checkHealth!()).resolves.toBeUndefined();
+
+      expect(failingCheckHealth.checkHealth).toHaveBeenCalled();
+      expect(healthyCheckHealth.checkHealth).toHaveBeenCalled();
+    });
+
+    it("should reject if no senders have checkHealth method", async () => {
+      const senderWithoutCheckHealth = {
+        isSupports: vi.fn(),
+        send: vi.fn(),
+      };
+
+      const fallbackSender = createFallbackSender({
+        senders: [senderWithoutCheckHealth, senderWithoutCheckHealth],
+      });
+
+      await expect(fallbackSender.checkHealth!()).rejects.toThrow(
+        "Ни один из сендров не готов к работе",
+      );
+    });
+
+    it("should reject if all checkHealth methods fail", async () => {
+      const failingCheckHealth1 = {
+        isSupports: vi.fn(),
+        send: vi.fn(),
+        checkHealth: vi.fn().mockRejectedValue(new Error("Error 1")),
+      };
+
+      const failingCheckHealth2 = {
+        isSupports: vi.fn(),
+        send: vi.fn(),
+        checkHealth: vi.fn().mockRejectedValue(new Error("Error 2")),
+      };
+
+      const fallbackSender = createFallbackSender({
+        senders: [failingCheckHealth1, failingCheckHealth2],
+      });
+
+      await expect(fallbackSender.checkHealth!()).rejects.toThrow(
+        "Ни один из сендров не готов к работе",
+      );
+
+      expect(failingCheckHealth1.checkHealth).toHaveBeenCalled();
+      expect(failingCheckHealth2.checkHealth).toHaveBeenCalled();
+    });
+  });
 });
