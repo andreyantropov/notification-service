@@ -1,9 +1,11 @@
-import { createApp } from "../containers/appContainer.js";
 import { EventType } from "../application/services/notificationLoggerService/index.js";
+import { createDefaultNotificationLoggerService } from "../composition/index.js";
+import { createDefaultServer } from "../composition/server/server.js";
 import { LogLevel } from "../shared/enums/LogLevel.js";
 
 export const bootstrap = async (): Promise<void> => {
-  const { server, notificationLoggerService } = createApp();
+  const notificationLoggerService = createDefaultNotificationLoggerService();
+  const server = createDefaultServer();
 
   try {
     server.start();
