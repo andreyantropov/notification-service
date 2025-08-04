@@ -179,6 +179,7 @@
    - Все этапы логируются в InfluxDB
    - При падении InfluxDB используется fallback-логгер (localFileLogger)
 4. **Завершение**:
+   - Безопасное выключение (graceful shutdown) при получении сигналов: `SIGTERM`, `SIGINT`, `SIGQUIT`.
    - Выход через `process.exit(1)` при критической ошибке
 
 ## Компоненты

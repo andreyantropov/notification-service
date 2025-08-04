@@ -35,6 +35,28 @@ export const createRequestLoggerMiddleware = ({
       });
     });
 
+    res.on("close", () => {
+      if (!res.headersSent) {
+        const duration = Date.now() - start;
+
+        notificationLoggerService.writeLog({
+          level: LogLevel.Warning,
+          message: `${req.method} ${req.url}`,
+          eventType: EventType.RequestWarning,
+          spanId: `${req.method} ${req.url}`,
+          payload: {
+            method: req.method,
+            url: req.url,
+            statusCode: res.statusCode,
+            durationMs: duration,
+            ip: req.ip,
+            userAgent: req.get("User-Agent") || null,
+            body: req.body,
+          },
+        });
+      }
+    });
+
     next();
   };
 };

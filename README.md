@@ -64,6 +64,12 @@ RATE_LIMIT_PERIOD=60000
 RATE_LIMIT_TRIES=100
 ```
 
+### ⚙️ Graceful Shutdown
+
+```env
+GRACEFUL_SHUTDOWN_TIMEOUT=30000
+```
+
 ### 📡 Bitrix24
 
 ```env

@@ -10,6 +10,7 @@ export enum EventType {
   NotificationError = "notification_error",
 
   RequestSuccess = "request_success",
+  RequestWarning = "request_warning",
   RequestError = "request_error",
 
   HealthCheckSuccess = "health_check_success",
