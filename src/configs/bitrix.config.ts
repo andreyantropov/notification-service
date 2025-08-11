@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BitrixSenderConfig } from "../infrastructure/senders/bitrixSender/interfaces/BitrixSenderConfig.js";
+import { BitrixSenderConfig } from "../infrastructure/senders/createBitrixSender/interfaces/BitrixSenderConfig.js";
 
 const bitrixConfigSchema = z.object({
   url: z.string().url("Некорректный URL Bitrix").includes("rest/", {

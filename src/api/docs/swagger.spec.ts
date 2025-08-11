@@ -41,7 +41,7 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
         },
       },
     },
-    apis: ["./src/api/controllers/**/*.ts"],
+    apis: ["./src/infrastructure/http/express/controllers/**/*.ts"],
   };
 
   return swaggerJsDoc(swaggerOptions);

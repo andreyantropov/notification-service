@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SmtpSenderConfig } from "../infrastructure/senders/smtpSender/interfaces/SmtpSenderConfig.js";
+import { SmtpSenderConfig } from "../infrastructure/senders/createSmtpSender/interfaces/SmtpSenderConfig.js";
 
 const smtpConfigSchema = z.object({
   host: z.string().min(1, "SMTP_HOST обязателен").default("localhost"),

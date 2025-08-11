@@ -9,42 +9,32 @@
 
 ```src/
 ├── api/ # API
-│ └── controllers/ # Контроллеры
 │ └── docs/ # Документация Swagger
-│ └── dtos/ # ZOD-схемы
-│ └── middleware/ # Moddleware
-│ └── routes/ # Маршруты
 ├── application/ # Прикладной уровень: бизнес-логика
 │ └── services/
 │   ├── notificationDeliveryService/ # Сервис уведомлений
 │   └── notificationLoggerService/ # Логгер
 │ └── useCases/ # UseCase'ы
+├── composition/ # Composition Root
+│   ├── bootstrap/ # Запуск приложения
+│   ├── core/ # Singleton'ы ядра приложения (сервисы, use cases)
+│   ├── server/ # Singleton'ы HTTP-сервера и его зависимостей
+├── configs/ # Конфиги инфраструктурных сущностей
 ├── domain/ # Доменная модель
 │ └── interfaces/ # Абстракции (порты)
-│  ├── Notification.ts
-│  ├── NotificationSender.ts
 │ └── types/ # Пользовательские типы
-│  └── Recipient.ts
 ├── infrastructure/ # Инфраструктурные клиенты
+│ └── http/ # Зависимости от фреймворков
+│   └── express/
 │ └── senders/ # Каналы рассылки уведомлений
 │   ├── bitrixSender/
 │   └── smtpSender/
-│ └── fabrics/ # Фабрики
 ├── shared/ # Общие абстракции и утилиты
+│ └── enums/
 │ └── infrastructure/
 │  └── loggers # Логгеры
-│  └── fabrics
 │ └── interfaces/
-│  ├── Log.ts
-│  └── Logger.ts
 │ └── utils/
-│  ├── retry.ts
-│  └── toSnakeCase.ts
-├── configs/ # Конфиги инфраструктурных сущностей
-├── composition/ # Composition Root
-│   ├── core/ # Фабрики ядра приложения (сервисы, use cases)
-│   ├── server/ # Фабрики HTTP-сервера и его зависимостей
-├── bootstrap/ # Запуск приложения
 └── index.ts # Точка входа приложения/Composition Root
 ```
 

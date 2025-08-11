@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LocalFileLoggerConfig } from "../shared/infrastructure/loggers/localFileLogger/interfaces/LocalFileLoggerConfig.js";
+import { LocalFileLoggerConfig } from "../shared/infrastructure/loggers/createLocalFileLogger/interfaces/LocalFileLoggerConfig.js";
 
 const localFileConfigSchema = z.object({
   logsDir: z.string().optional().default("logs"),
