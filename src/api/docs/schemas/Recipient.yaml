@@ -1,9 +1,0 @@
-description: "Дискриминированный union: может быть либо email, либо Bitrix24 пользователь"
-oneOf:
-  - $ref: "#/components/schemas/EmailRecipient"
-  - $ref: "#/components/schemas/BitrixRecipient"
-discriminator:
-  propertyName: type
-  mapping:
-    email: "#/components/schemas/EmailRecipient"
-    bitrix: "#/components/schemas/BitrixRecipient"

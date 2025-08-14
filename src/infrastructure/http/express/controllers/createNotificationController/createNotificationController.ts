@@ -5,27 +5,6 @@ import { NotificationController } from "./interfaces/NotificationController.js";
 export const createNotificationController = ({
   sendNotificationUseCase,
 }: NotificationControllerConfig): NotificationController => {
-  /**
-   * @openapi
-   * /v1/notifications:
-   *   post:
-   *     summary: Отправка уведомления
-   *     tags:
-   *       - Notifications
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/NotificationRequest'
-   *     responses:
-   *       201:
-   *         description: Уведомление успешно отправлено
-   *       400:
-   *         description: Некорректное тело запроса
-   *       500:
-   *         description: Внутренняя ошибка сервера
-   */
   const send = async (req: Request, res: Response): Promise<void> => {
     try {
       await sendNotificationUseCase.send(req.validatedBody);
