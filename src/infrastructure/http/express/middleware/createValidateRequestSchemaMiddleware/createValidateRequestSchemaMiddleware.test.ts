@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response, NextFunction } from "express";
 import { createValidateRequestSchemaMiddleware } from "./createValidateRequestSchemaMiddleware.js";
-import { NotificationRequest } from "../../dtos/NotificationDTO.js";
+import { NotificationRequest } from "../../../../../api/schemas/NotificationRequest.js";
 import z from "zod";
 
 describe("createValidateRequestSchemaMiddleware", () => {

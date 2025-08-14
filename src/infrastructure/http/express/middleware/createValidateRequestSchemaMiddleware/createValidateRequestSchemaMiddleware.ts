@@ -1,8 +1,8 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import z from "zod";
 
-export const createValidateRequestSchemaMiddleware = <T extends z.ZodTypeAny>(
-  schema: T,
+export const createValidateRequestSchemaMiddleware = (
+  schema: z.ZodTypeAny,
 ): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {

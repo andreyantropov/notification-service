@@ -9,7 +9,8 @@
 
 ```src/
 ├── api/ # API
-│ └── docs/ # Документация Swagger
+│ ├── openapi/ # Документация Swagger
+│ └── schemas/ # ZOD-схемы валидации
 ├── application/ # Прикладной уровень: бизнес-логика
 │ └── services/
 │   ├── notificationDeliveryService/ # Сервис уведомлений
