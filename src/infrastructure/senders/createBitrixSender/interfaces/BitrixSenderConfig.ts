@@ -1,3 +1,5 @@
 export interface BitrixSenderConfig {
-  url: string;
+  baseUrl: string;
+  userId: string;
+  authToken: string;
 }

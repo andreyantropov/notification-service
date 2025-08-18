@@ -8,20 +8,29 @@ import { Recipient } from "../../../domain/types/Recipient.js";
 vi.mock("axios");
 
 describe("createBitrixSender", () => {
-  const mockUrl = "https://example.bitrix24.com/rest/123";
+  const mockBaseUrl = "https://example.bitrix24.com";
+  const mockUserId = "123";
+  const mockAuthToken = "abcxyz123";
+
   let sender: NotificationSender;
   let config: BitrixSenderConfig;
 
   beforeEach(() => {
-    config = { url: mockUrl };
+    config = {
+      baseUrl: mockBaseUrl,
+      userId: mockUserId,
+      authToken: mockAuthToken,
+    };
     sender = createBitrixSender(config);
   });
 
-  it("should return a sender with isSupports and send methods", () => {
+  it("should return a sender with isSupports, send, and checkHealth methods", () => {
     expect(sender).toHaveProperty("isSupports");
     expect(sender).toHaveProperty("send");
+    expect(sender).toHaveProperty("checkHealth");
     expect(typeof sender.isSupports).toBe("function");
     expect(typeof sender.send).toBe("function");
+    expect(typeof sender.checkHealth).toBe("function");
   });
 
   describe("isSupports", () => {
@@ -39,6 +48,7 @@ describe("createBitrixSender", () => {
   describe("send", () => {
     const message = "Test message";
     const recipient: Recipient = { type: "bitrix", value: 42 };
+    const restUrl = `${mockBaseUrl}/rest/${mockUserId}/${mockAuthToken}`;
 
     it("should send a notification via axios with correct params", async () => {
       const axiosPostMock = vi.mocked(axios.post).mockResolvedValue({
@@ -48,7 +58,7 @@ describe("createBitrixSender", () => {
       await sender.send(recipient, message);
 
       expect(axiosPostMock).toHaveBeenCalledWith(
-        `${mockUrl}/im.notify.personal.add.json`,
+        `${restUrl}/im.notify.personal.add.json`,
         null,
         {
           params: {
@@ -99,26 +109,22 @@ describe("createBitrixSender", () => {
   });
 
   describe("checkHealth", () => {
-    it("should have checkHealth method", () => {
-      expect(sender.checkHealth).toBeDefined();
-      expect(typeof sender.checkHealth).toBe("function");
-    });
-
-    it("should resolve if health check returns valid data", async () => {
-      const mockData = { result: true };
-      vi.mocked(axios.get).mockResolvedValue({ data: mockData });
+    it("should resolve if axios.get returns 200", async () => {
+      vi.mocked(axios.get).mockResolvedValue({
+        data: "<html>Авторизация</html>",
+      });
 
       await expect(sender.checkHealth!()).resolves.not.toThrow();
     });
 
-    it("should reject with 'Bitrix недоступен' if any error occurs", async () => {
-      const mockError = new Error("Some network problem");
-      vi.mocked(axios.get).mockRejectedValue(mockError);
+    it("should reject if axios.get fails", async () => {
+      const error = new Error("Network unreachable");
+      vi.mocked(axios.get).mockRejectedValue(error);
 
       await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
     });
 
-    it("should reject with 'Bitrix недоступен' on timeout", async () => {
+    it("should reject if request times out", async () => {
       const timeoutError = new Error(
         "Превышено время ожидания ответа от Bitrix",
       );
@@ -127,9 +133,22 @@ describe("createBitrixSender", () => {
       await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
     });
 
-    it("should reject with 'Bitrix недоступен' on invalid response format", async () => {
-      const mockData = { wrongKey: "unexpected data" };
-      vi.mocked(axios.get).mockResolvedValue({ data: mockData });
+    it("should reject on 500 error", async () => {
+      vi.mocked(axios.get).mockRejectedValue(
+        Object.assign(new Error("Request failed"), {
+          response: { status: 500 },
+        }),
+      );
+
+      await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
+    });
+
+    it("should reject on 404", async () => {
+      vi.mocked(axios.get).mockRejectedValue(
+        Object.assign(new Error("Not Found"), {
+          response: { status: 404 },
+        }),
+      );
 
       await expect(sender.checkHealth!()).rejects.toThrow("Bitrix недоступен");
     });

@@ -73,6 +73,7 @@ GRACEFUL_SHUTDOWN_TIMEOUT=30000
 ### 📡 Bitrix24
 
 ```env
+BITRIX_BASE_URL=https://bitrix24.planarchel.ru
 BITRIX_API_URL=https://your-domain.bitrix24.ru/rest/
 BITRIX_API_TOKEN=your_token_here
 ```
