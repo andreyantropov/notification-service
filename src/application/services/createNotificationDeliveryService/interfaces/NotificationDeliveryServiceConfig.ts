@@ -1,9 +1,8 @@
 import { Recipient } from "../../../../domain/types/Recipient.js";
 
-export interface FallbackSenderConfig {
+export interface NotificationDeliveryServiceConfig {
   onError?: (
     payload: { recipient: Recipient; message: string },
     error: Error,
   ) => void;
-  onHealthCheckError?: (senderName: string, error: Error) => void;
 }

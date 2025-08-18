@@ -10,7 +10,9 @@ import pTimeout from "p-timeout";
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createBitrixSender = ({
-  url,
+  baseUrl,
+  userId,
+  authToken,
 }: BitrixSenderConfig): NotificationSender => {
   const isSupports = (recipient: Recipient): boolean => {
     return recipient.type === "bitrix";
@@ -24,8 +26,10 @@ export const createBitrixSender = ({
     }
 
     try {
+      const restUrl = `${baseUrl}/rest/${userId}/${authToken}`.trim();
+
       const responce = await axios.post(
-        `${url}/im.notify.personal.add.json`,
+        `${restUrl}/im.notify.personal.add.json`,
         null,
         {
           params: {
@@ -50,20 +54,15 @@ export const createBitrixSender = ({
 
   const checkHealth = async (): Promise<void> => {
     try {
-      const responsePromise = axios.get(`${url}/rest.misc.getshortpathdata`, {
-        params: { path: "" },
-      });
-
-      const response = await pTimeout(responsePromise, {
-        milliseconds: DEFAULT_HEALTHCHECK_TIMEOUT,
-        message: "Превышено время ожидания ответа от Bitrix",
-      });
-
-      const data = response.data;
-
-      if (!data || !data.result) {
-        throw new Error("Ответ не соответствует ожидаемому формату");
-      }
+      await pTimeout(
+        axios.get(baseUrl, {
+          validateStatus: (status) => status >= 200 && status < 400,
+        }),
+        {
+          milliseconds: DEFAULT_HEALTHCHECK_TIMEOUT,
+          message: "Превышено время ожидания ответа от Bitrix",
+        },
+      );
     } catch (error) {
       throw new Error(`Bitrix недоступен`, { cause: error });
     }

@@ -1,50 +1,45 @@
-import { Recipient } from "../../../domain/types/Recipient.js";
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
 import { Notification } from "../../../domain/interfaces/Notification.js";
 import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
+import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
+import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
 
 export const createNotificationDeliveryService = (
-  sender: NotificationSender,
+  senders: NotificationSender[],
+  strategy: DeliveryStrategy = sendToFirstAvailableStrategy,
+  config?: NotificationDeliveryServiceConfig,
 ): NotificationDeliveryService => {
-  const sendToRecipient = async (
-    recipient: Recipient,
-    message: string,
-  ): Promise<boolean> => {
-    if (!sender.isSupports(recipient)) {
-      return false;
+  if (!senders || senders.length === 0) {
+    throw new Error("В сервис не передано ни одного сендера");
+  }
+
+  const { onError = () => {} } = config || {};
+
+  const send = async (notification: Notification): Promise<void> => {
+    await strategy(senders, notification, onError);
+  };
+
+  const checkHealth = async (): Promise<void> => {
+    const healthChecks = senders
+      .filter((sender) => sender.checkHealth)
+      .map(async (sender) => {
+        await sender.checkHealth!();
+      });
+
+    if (healthChecks.length === 0) {
+      throw new Error("Нет доступных проверок работоспособности");
     }
 
     try {
-      await sender.send(recipient, message);
-      return true;
-    } catch {
-      return false;
+      await Promise.all(healthChecks);
+    } catch (error) {
+      throw new Error("Часть сендров не готова к работе", { cause: error });
     }
   };
-
-  const send = async ({ recipients, message }: Notification): Promise<void> => {
-    if (!recipients || recipients.length === 0) {
-      throw new Error("Нет получателя для доставки уведомления");
-    }
-
-    for (const recipient of recipients) {
-      const success = await sendToRecipient(recipient, message);
-      if (success) return;
-    }
-
-    throw new Error(
-      "Не удалось отправить уведомление ни одним из доступных способов",
-    );
-  };
-
-  const checkHealth = sender.checkHealth
-    ? async (): Promise<void> => {
-        await sender.checkHealth?.();
-      }
-    : undefined;
 
   return {
     send,
-    ...(checkHealth ? { checkHealth } : {}),
+    checkHealth,
   };
 };
