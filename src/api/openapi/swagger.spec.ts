@@ -68,10 +68,9 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
             },
           },
         },
-        NotificationRequest: {
+        Notification: {
           type: "object",
-          description:
-            "Запрос, содержащий список получателей и текст сообщения",
+          description: "Уведомление: содержит список получателей и сообщение",
           required: ["recipients", "message"],
           properties: {
             recipients: {
@@ -80,13 +79,28 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
               items: {
                 $ref: "#/components/schemas/Recipient",
               },
+              minItems: 1,
             },
             message: {
               type: "string",
               example: "Ваше уведомление прибыло!",
               description: "Сообщение уведомления",
+              minLength: 1,
             },
           },
+        },
+        NotificationRequest: {
+          description:
+            "Тело запроса: может быть одним уведомлением или массивом уведомлений (от 1 до 100)",
+          oneOf: [
+            { $ref: "#/components/schemas/Notification" },
+            {
+              type: "array",
+              items: { $ref: "#/components/schemas/Notification" },
+              minItems: 1,
+              maxItems: 100,
+            },
+          ],
         },
       },
     },
@@ -121,7 +135,7 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
       },
       "/v1/notifications": {
         post: {
-          summary: "Отправка уведомления",
+          summary: "Отправка уведомления (одного или пачкой)",
           tags: ["Notifications"],
           requestBody: {
             required: true,
@@ -130,18 +144,61 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                 schema: {
                   $ref: "#/components/schemas/NotificationRequest",
                 },
+                examples: {
+                  single: {
+                    summary: "Одно уведомление",
+                    value: {
+                      recipients: [
+                        {
+                          type: "email",
+                          value: "user@example.com",
+                        },
+                      ],
+                      message: "Привет! Это тестовое уведомление.",
+                    },
+                  },
+                  batch: {
+                    summary: "Пачка уведомлений",
+                    value: [
+                      {
+                        recipients: [
+                          {
+                            type: "email",
+                            value: "user1@example.com",
+                          },
+                        ],
+                        message: "Первое уведомление",
+                      },
+                      {
+                        recipients: [
+                          {
+                            type: "bitrix",
+                            value: 123456,
+                          },
+                        ],
+                        message: "Второе уведомление",
+                      },
+                    ],
+                  },
+                },
               },
             },
           },
           responses: {
             201: {
-              description: "Уведомление успешно отправлено",
+              description: "Все уведомления успешно отправлены",
+            },
+            207: {
+              description:
+                "Частичная отправка: не все уведомления были доставлены",
             },
             400: {
-              description: "Некорректное тело запроса",
+              description:
+                "Некорректное тело запроса (невалидная структура или пустой массив)",
             },
             500: {
-              description: "Внутренняя ошибка сервера",
+              description:
+                "Внутренняя ошибка сервера (например, ошибка подключения к БД)",
             },
           },
         },

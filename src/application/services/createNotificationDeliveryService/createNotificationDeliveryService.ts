@@ -4,6 +4,7 @@ import { NotificationSender } from "../../../domain/interfaces/NotificationSende
 import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
 import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
 import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
+import { SendResult } from "./types/SendResult.js";
 
 export const createNotificationDeliveryService = (
   senders: NotificationSender[],
@@ -16,8 +17,41 @@ export const createNotificationDeliveryService = (
 
   const { onError = () => {} } = config || {};
 
-  const send = async (notification: Notification): Promise<void> => {
-    await strategy(senders, notification, onError);
+  const send = async (
+    notification: Notification | Notification[],
+  ): Promise<SendResult[]> => {
+    const notifications = Array.isArray(notification)
+      ? notification
+      : [notification];
+
+    if (notifications.length === 0) {
+      throw new Error(
+        "Внутренняя ошибка: нельзя отправить пустой список уведомлений",
+      );
+    }
+
+    const results = await Promise.allSettled(
+      notifications.map((notification) =>
+        strategy(senders, notification, onError),
+      ),
+    );
+
+    return results.map((result, index): SendResult => {
+      const currentNotification = notifications[index];
+
+      if (result.status === "fulfilled") {
+        return {
+          success: true,
+          notification: currentNotification,
+        };
+      } else {
+        return {
+          success: false,
+          notification: currentNotification,
+          error: result.reason,
+        };
+      }
+    });
   };
 
   const checkHealth = async (): Promise<void> => {

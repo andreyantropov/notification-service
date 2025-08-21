@@ -54,7 +54,7 @@ describe("createNotificationDeliveryService", () => {
     expect(service).toHaveProperty("checkHealth");
   });
 
-  it("should pass senders and notification to the strategy", async () => {
+  it("should return success result when strategy succeeds", async () => {
     const sender = createMockSender(
       () => true,
       async () => {},
@@ -63,30 +63,144 @@ describe("createNotificationDeliveryService", () => {
       onError,
     });
 
-    await service.send(notification);
+    const result = await service.send(notification);
 
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      success: true,
+      notification,
+    });
     expect(mockStrategy).toHaveBeenCalledWith([sender], notification, onError);
   });
 
-  it("should use custom onError from config", async () => {
+  it("should return error result when strategy fails", async () => {
     const sender = createMockSender(
       () => true,
       async () => {},
     );
-    const customOnError = vi.fn();
     const service = createNotificationDeliveryService([sender], mockStrategy, {
-      onError: customOnError,
+      onError,
     });
 
-    mockStrategy.mockRejectedValueOnce(new Error("Strategy failed"));
+    const strategyError = new Error("Delivery failed");
+    mockStrategy.mockRejectedValueOnce(strategyError);
 
-    await expect(service.send(notification)).rejects.toThrow("Strategy failed");
-    expect(mockStrategy).toHaveBeenCalled();
-    expect(mockStrategy).toHaveBeenCalledWith(
-      [sender],
+    const result = await service.send(notification);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      success: false,
       notification,
-      customOnError,
+      error: strategyError,
+    });
+    expect(mockStrategy).toHaveBeenCalledWith([sender], notification, onError);
+  });
+
+  it("should handle array of notifications", async () => {
+    const sender = createMockSender(
+      () => true,
+      async () => {},
     );
+    const service = createNotificationDeliveryService([sender], mockStrategy);
+
+    const notification1 = { ...notification, message: "Msg 1" };
+    const notification2 = { ...notification, message: "Msg 2" };
+
+    const failError = new Error("Failed");
+    mockStrategy
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(failError);
+
+    const result = await service.send([notification1, notification2]);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      success: true,
+      notification: notification1,
+    });
+    expect(result[1]).toEqual({
+      success: false,
+      notification: notification2,
+      error: failError,
+    });
+
+    expect(mockStrategy).toHaveBeenNthCalledWith(
+      1,
+      [sender],
+      notification1,
+      expect.any(Function),
+    );
+    expect(mockStrategy).toHaveBeenNthCalledWith(
+      2,
+      [sender],
+      notification2,
+      expect.any(Function),
+    );
+  });
+
+  it("should handle single notification (object)", async () => {
+    const sender = createMockSender(
+      () => true,
+      async () => {},
+    );
+    const service = createNotificationDeliveryService([sender], mockStrategy);
+
+    mockStrategy.mockResolvedValue(undefined);
+
+    const result = await service.send(notification);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      success: true,
+      notification,
+    });
+  });
+
+  it("should throw when empty array is provided", async () => {
+    const sender = createMockSender(
+      () => true,
+      async () => {},
+    );
+    const service = createNotificationDeliveryService([sender]);
+
+    await expect(service.send([])).rejects.toThrow(
+      "Внутренняя ошибка: нельзя отправить пустой список уведомлений",
+    );
+  });
+
+  it("should return multiple results when sending multiple notifications", async () => {
+    const sender = createMockSender(
+      () => true,
+      async () => {},
+    );
+    const service = createNotificationDeliveryService([sender], mockStrategy);
+
+    const notif1 = { ...notification, message: "1" };
+    const notif2 = { ...notification, message: "2" };
+    const notif3 = { ...notification, message: "3" };
+
+    const failError = new Error("Fail");
+    mockStrategy
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(failError)
+      .mockResolvedValueOnce(undefined);
+
+    const result = await service.send([notif1, notif2, notif3]);
+
+    expect(result).toHaveLength(3);
+    expect(result[0]).toEqual({
+      success: true,
+      notification: notif1,
+    });
+    expect(result[1]).toEqual({
+      success: false,
+      notification: notif2,
+      error: failError,
+    });
+    expect(result[2]).toEqual({
+      success: true,
+      notification: notif3,
+    });
   });
 
   it("should call checkHealth on all senders that support it", async () => {
@@ -175,23 +289,5 @@ describe("createNotificationDeliveryService", () => {
 
     const error = await service.checkHealth!().catch((e) => e);
     expect(error.cause).toBe(originalError);
-  });
-
-  it("should throw original strategy error through send", async () => {
-    const sender = createMockSender(
-      () => true,
-      async () => {},
-    );
-    const service = createNotificationDeliveryService([sender], mockStrategy);
-
-    const strategyError = new Error("Delivery failed");
-    mockStrategy.mockRejectedValueOnce(strategyError);
-
-    await expect(service.send(notification)).rejects.toThrow("Delivery failed");
-    expect(mockStrategy).toHaveBeenCalledWith(
-      [sender],
-      notification,
-      expect.any(Function),
-    );
   });
 });
