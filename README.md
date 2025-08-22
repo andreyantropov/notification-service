@@ -159,54 +159,15 @@ npm run test
 
 ## Запуск через Docker
 
-### 1. Сборка образа
-
 ```bash
 ./build.sh
-```
-
-> Образ будет сохранён как `notification-service`.
-
-### 2. Запуск контейнера
-
-```bash
 ./run.sh
-```
-
-> Контейнер использует переменные из `.env`. Убедитесь, что файл существует.
-
-### 3. Остановка и очистка
-
-```bash
-./stop.sh
-```
-
-### 4. Просмотр логов
-
-```bash
-docker logs notification-service
-```
-
-или в реальном времени:
-
-```bash
-docker logs -f notification-service
-```
-
-### 5. Ручная сборка и запуск (альтернатива скриптам)
-
-```bash
-docker build -t notification-service .
-docker run -d \
-  --name notification-service \
-  --env-file .env \
-  notification-service
 ```
 
 ---
 
-## Архитектура и документация
+## Документация
 
-- [ARCHITECTURE.md](./docs/architecture/architecture.md) — описание архитектуры сервиса
 - [ADR/](./docs/adr/) — Architectural Decision Records (документация принятых решений)
+- [ARCHITECTURE.md](./docs/architecture/architecture.md) — описание архитектуры сервиса
 - [ENVIRONMENT/](./docs/environment.md) — Описание среды развертывания
