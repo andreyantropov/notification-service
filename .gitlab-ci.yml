@@ -1,0 +1,88 @@
+stages:
+  - automation
+
+automate_labels:
+  stage: automation
+  image: alpine:latest  # Используем образ alpine
+  before_script:
+    - apk add --no-cache curl jq  # Устанавливаем curl и jq
+  script:
+    - |
+      # Установим переменные
+      GITLAB_URL="https://code.planarchel.ru/"  # Замените на URL вашего GitLab
+      PROJECT_ID=$CI_PROJECT_ID                 # ID проекта берется из переменной CI
+
+      # Функция для добавления лэйбла к задаче
+      add_label_to_issue() {
+        local ISSUE_ID=$1
+        local LABEL=$2
+        echo "Adding label '$LABEL' to issue #$ISSUE_ID"
+        curl --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+          --data "add_labels=$LABEL" \
+          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID"
+      }
+
+      # Функция для проверки, есть ли у задачи статусная метка
+      has_status_label() {
+        local ISSUE_ID=$1
+        echo "Checking labels for issue #$ISSUE_ID"
+
+        # Получаем информацию о задаче
+        ISSUE_INFO=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+
+        # Извлекаем метки задачи
+        LABELS=$(echo "$ISSUE_INFO" | jq -r '.labels[]')
+
+        echo "LABELS: $LABELS"
+
+        # Проверяем, есть ли одна из меток
+        if echo "$LABELS" | grep -qE 'status::Development|status::In progress|status::Check'; then
+          echo "Issue #$ISSUE_ID already has a status label."
+          return 0  # Возвращаем успешный статус (метка есть)
+        else
+          echo "Issue #$ISSUE_ID does not have a status label."
+          return 1  # Возвращаем статус ошибки (метки нет)
+        fi
+      }
+
+      # Получаем список всех итераций проекта
+      echo "Fetching all iterations..."
+      ITERATIONS=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+        "$GITLAB_URL/api/v4/projects/$PROJECT_ID/iterations")
+
+      # Извлекаем ID итераций
+      ITERATION_IDS=$(echo "$ITERATIONS" | jq -r '.[].id')
+
+      echo "Found iterations: $ITERATION_IDS"
+
+      # Обрабатываем каждую итерацию
+      for ITERATION_ID in $ITERATION_IDS; do
+        echo "Processing iteration ID: $ITERATION_ID"
+
+        # Получаем задачи, входящие в итерацию
+        echo "Fetching issues for iteration ID: $ITERATION_ID..."
+        ISSUES_IN_ITERATION=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues?iteration_id=$ITERATION_ID&state=opened")
+
+        # Извлекаем ID задач
+        ISSUE_IDS=$(echo "$ISSUES_IN_ITERATION" | jq -r '.[].iid')
+
+        echo "Found issues in iteration: $ISSUE_IDS"
+
+        # Обрабатываем каждую задачу
+        for ISSUE_ID in $ISSUE_IDS; do
+          echo "Processing issue #$ISSUE_ID"
+
+          # Проверяем, есть ли у задачи статусная метка
+          if ! has_status_label $ISSUE_ID; then
+            # Добавляем метку "status::Development"
+            add_label_to_issue $ISSUE_ID "status::Development"
+          else
+            echo "Issue #$ISSUE_ID already has a status label. Skipping."
+          fi
+        done
+      done
+  only:
+    - branches
+    - merge_requests
