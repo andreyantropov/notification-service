@@ -177,3 +177,90 @@ cleanup_closed_issues:
       echo "Очистка статусных меток завершена"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
+
+# Автоматическое добавление status::Development задачам в активных итерациях
+process_iterations:
+  stage: automation
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      set -e  # Прерывать выполнение при ошибках
+
+      # Функция для обработки HTTP-ошибок
+      check_http_response() {
+        local response="$1"
+        if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+          echo "API Error: $(echo "$response" | jq -r '.error')"
+          return 1
+        fi
+        return 0
+      }
+
+      add_label_to_issue() {
+        local ISSUE_ID=$1
+        local LABEL=$2
+        echo "Adding label '$LABEL' to issue #$ISSUE_ID"
+        response=$(curl -sS --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+          --data "add_labels=$LABEL" \
+          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+        check_http_response "$response" || return 1
+      }
+
+      has_status_label() {
+        local ISSUE_ID=$1
+        echo "Checking labels for issue #$ISSUE_ID"
+
+        ISSUE_INFO=$(curl -sS --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+        check_http_response "$ISSUE_INFO" || return 1
+
+        LABELS=$(echo "$ISSUE_INFO" | jq -r '.labels[]?' 2>/dev/null | tr '\n' ' ')
+        echo "LABELS: $LABELS"
+
+        if echo "$LABELS" | grep -qE 'status::Development|status::In progress|status::Check'; then
+          echo "Issue #$ISSUE_ID already has a status label."
+          return 0
+        else
+          echo "Issue #$ISSUE_ID does not have a status label."
+          return 1
+        fi
+      }
+
+      # Получаем список всех итераций проекта
+      echo "Fetching all iterations..."
+      ITERATIONS=$(curl -sS --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+        "$GITLAB_URL/api/v4/projects/$PROJECT_ID/iterations?state=opened")
+      check_http_response "$ITERATIONS" || exit 1
+
+      ITERATION_IDS=$(echo "$ITERATIONS" | jq -r '.[].id')
+      echo "Found iterations: $ITERATION_IDS"
+
+      for ITERATION_ID in $ITERATION_IDS; do
+        echo "Processing iteration ID: $ITERATION_ID"
+
+        echo "Fetching issues for iteration ID: $ITERATION_ID..."
+        ISSUES_IN_ITERATION=$(curl -sS --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues?iteration_id=$ITERATION_ID&state=opened")
+        check_http_response "$ISSUES_IN_ITERATION" || continue
+
+        ISSUE_IDS=$(echo "$ISSUES_IN_ITERATION" | jq -r '.[].iid?')
+        echo "Found issues in iteration: $ISSUE_IDS"
+
+        for ISSUE_ID in $ISSUE_IDS; do
+          [ -z "$ISSUE_ID" ] && continue
+          echo "Processing issue #$ISSUE_ID"
+
+          if ! has_status_label $ISSUE_ID; then
+            add_label_to_issue $ISSUE_ID "status::Development" || continue
+            echo "✓ Added status::Development to issue #$ISSUE_ID"
+          else
+            echo "Issue #$ISSUE_ID already has a status label. Skipping."
+          fi
+        done
+      done
+
+      echo "Iteration processing completed successfully"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
