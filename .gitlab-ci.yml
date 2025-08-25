@@ -1,88 +1,179 @@
+image: node:18.19.0-bullseye
+
 stages:
   - automation
 
-automate_labels:
+variables:
+  GITLAB_URL: "https://code.planarchel.ru/"
+  PROJECT_ID: $CI_PROJECT_ID
+
+# При создании ветки для задачи - меняем на status::In progress
+branch_created_development:
   stage: automation
-  image: alpine:latest  # Используем образ alpine
+  image: alpine:latest
   before_script:
-    - apk add --no-cache curl jq  # Устанавливаем curl и jq
+    - apk add --no-cache curl jq git
   script:
     - |
-      # Установим переменные
-      GITLAB_URL="https://code.planarchel.ru/"  # Замените на URL вашего GitLab
-      PROJECT_ID=$CI_PROJECT_ID                 # ID проекта берется из переменной CI
-
-      # Функция для добавления лэйбла к задаче
-      add_label_to_issue() {
-        local ISSUE_ID=$1
-        local LABEL=$2
-        echo "Adding label '$LABEL' to issue #$ISSUE_ID"
-        curl --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
-          --data "add_labels=$LABEL" \
-          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID"
-      }
-
-      # Функция для проверки, есть ли у задачи статусная метка
-      has_status_label() {
-        local ISSUE_ID=$1
-        echo "Checking labels for issue #$ISSUE_ID"
-
-        # Получаем информацию о задаче
-        ISSUE_INFO=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+      # Получаем номер задачи из имени ветки (формат: 123-feature-description)
+      BRANCH_NAME="$CI_COMMIT_REF_NAME"
+      ISSUE_ID=$(echo "$BRANCH_NAME" | grep -oE '^[0-9]+')
+      
+      if [ -n "$ISSUE_ID" ]; then
+        echo "Обнаружена задача #$ISSUE_ID в ветке: $BRANCH_NAME"
+        
+        # Проверяем, что задача существует
+        ISSUE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
           "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
-
-        # Извлекаем метки задачи
-        LABELS=$(echo "$ISSUE_INFO" | jq -r '.labels[]')
-
-        echo "LABELS: $LABELS"
-
-        # Проверяем, есть ли одна из меток
-        if echo "$LABELS" | grep -qE 'status::Development|status::In progress|status::Check'; then
-          echo "Issue #$ISSUE_ID already has a status label."
-          return 0  # Возвращаем успешный статус (метка есть)
-        else
-          echo "Issue #$ISSUE_ID does not have a status label."
-          return 1  # Возвращаем статус ошибки (метки нет)
-        fi
-      }
-
-      # Получаем список всех итераций проекта
-      echo "Fetching all iterations..."
-      ITERATIONS=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
-        "$GITLAB_URL/api/v4/projects/$PROJECT_ID/iterations")
-
-      # Извлекаем ID итераций
-      ITERATION_IDS=$(echo "$ITERATIONS" | jq -r '.[].id')
-
-      echo "Found iterations: $ITERATION_IDS"
-
-      # Обрабатываем каждую итерацию
-      for ITERATION_ID in $ITERATION_IDS; do
-        echo "Processing iteration ID: $ITERATION_ID"
-
-        # Получаем задачи, входящие в итерацию
-        echo "Fetching issues for iteration ID: $ITERATION_ID..."
-        ISSUES_IN_ITERATION=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
-          "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues?iteration_id=$ITERATION_ID&state=opened")
-
-        # Извлекаем ID задач
-        ISSUE_IDS=$(echo "$ISSUES_IN_ITERATION" | jq -r '.[].iid')
-
-        echo "Found issues in iteration: $ISSUE_IDS"
-
-        # Обрабатываем каждую задачу
-        for ISSUE_ID in $ISSUE_IDS; do
-          echo "Processing issue #$ISSUE_ID"
-
-          # Проверяем, есть ли у задачи статусная метка
-          if ! has_status_label $ISSUE_ID; then
-            # Добавляем метку "status::Development"
-            add_label_to_issue $ISSUE_ID "status::Development"
+        
+        if [ "$ISSUE_RESPONSE" = "200" ]; then
+          # Получаем текущие метки задачи
+          ISSUE_INFO=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+            "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+          
+          CURRENT_LABELS=$(echo "$ISSUE_INFO" | jq -r '.labels[]' | tr '\n' ',' | sed 's/,$//')
+          ISSUE_STATE=$(echo "$ISSUE_INFO" | jq -r '.state')
+          
+          # Проверяем, что задача открыта и нет статусных меток
+          if [ "$ISSUE_STATE" = "opened" ] && ! echo "$CURRENT_LABELS" | grep -qE "status::Development|status::In progress|status::Check"; then
+            echo "Обновляем статус задачи #$ISSUE_ID на status::In progress"
+            
+            curl --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+              --data "add_labels=status::In progress" \
+              "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID"
           else
-            echo "Issue #$ISSUE_ID already has a status label. Skipping."
+            echo "Задача #$ISSUE_ID уже имеет статусную метку или закрыта: state=$ISSUE_STATE, labels=$CURRENT_LABELS"
           fi
-        done
+        else
+          echo "Задача #$ISSUE_ID не найдена или нет доступа"
+        fi
+      else
+        echo "Не удалось определить номер задачи из имени ветки: $BRANCH_NAME"
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "master" && $CI_COMMIT_BRANCH != "develop"
+
+# При коммите в MR ветку - меняем на status::Check
+mr_commit_check:
+  stage: automation
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      # Проверяем, что это MR ветка
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        echo "Обнаружен MR !$CI_MERGE_REQUEST_IID"
+        echo "Ветка: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+        
+        SOURCE_BRANCH="$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+        ISSUE_ID=$(echo "$SOURCE_BRANCH" | grep -oE '^[0-9]+')
+        
+        if [ -n "$ISSUE_ID" ]; then
+          echo "Обнаружена задача #$ISSUE_ID из ветки MR"
+          
+          # Проверяем текущий статус задачи
+          ISSUE_INFO=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+            "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+          
+          CURRENT_LABELS=$(echo "$ISSUE_INFO" | jq -r '.labels[]' | tr '\n' ',' | sed 's/,$//')
+          ISSUE_STATE=$(echo "$ISSUE_INFO" | jq -r '.state')
+          echo "Текущие метки задачи: $CURRENT_LABELS, состояние: $ISSUE_STATE"
+          
+          # Меняем на status::Check только если задача открыта и текущий статус In progress
+          if [ "$ISSUE_STATE" = "opened" ] && echo "$CURRENT_LABELS" | grep -q "status::In progress"; then
+            echo "Обновляем статус задачи #$ISSUE_ID на status::Check"
+            
+            RESPONSE=$(curl --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+              --data "remove_labels=status::In progress&add_labels=status::Check" \
+              -w "%{http_code}" \
+              "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+            
+            echo "Результат обновления: HTTP $RESPONSE"
+          elif echo "$CURRENT_LABELS" | grep -q "status::Check"; then
+            echo "Задача #$ISSUE_ID уже имеет status::Check"
+          else
+            echo "Задача #$ISSUE_ID не имеет status::In progress или закрыта, пропускаем"
+          fi
+        else
+          echo "Не удалось определить номер задачи из ветки MR: $SOURCE_BRANCH"
+        fi
+      else
+        echo "Это не MR ветка, пропускаем"
+      fi
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+
+# При мердже MR - закрываем задачу и убираем статусные метки
+mr_merged_close:
+  stage: automation
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        echo "Обработка мерджа MR !$CI_MERGE_REQUEST_IID"
+        
+        SOURCE_BRANCH="$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+        ISSUE_ID=$(echo "$SOURCE_BRANCH" | grep -oE '^[0-9]+')
+        
+        if [ -n "$ISSUE_ID" ]; then
+          echo "Закрываем задачу #$ISSUE_ID после мерджа и очищаем статусные метки"
+          
+          # Закрываем задачу и убираем статусные метки
+          RESPONSE=$(curl --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+            --data "state_event=close&remove_labels=status::Check,status::In progress,status::Development" \
+            -w "%{http_code}" \
+            "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+          
+          echo "Результат закрытия: HTTP $RESPONSE"
+        else
+          echo "Не удалось определить задачу для закрытия из ветки: $SOURCE_BRANCH"
+        fi
+      fi
+  rules:
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merge"
+
+# Очистка статусных меток у закрытых задач (запускается по расписанию)
+cleanup_closed_issues:
+  stage: automation
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      echo "Начинаем очистку статусных меток у закрытых задач..."
+      
+      # Получаем все закрытые задачи проекта
+      CLOSED_ISSUES=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+        "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues?state=closed&per_page=100")
+      
+      # Обрабатываем каждую закрытую задачу
+      echo "$CLOSED_ISSUES" | jq -c '.[]' | while read -r ISSUE; do
+        ISSUE_ID=$(echo "$ISSUE" | jq -r '.iid')
+        ISSUE_TITLE=$(echo "$ISSUE" | jq -r '.title')
+        CURRENT_LABELS=$(echo "$ISSUE" | jq -r '.labels[]' | tr '\n' ',' | sed 's/,$//')
+        
+        # Проверяем, есть ли статусные метки
+        if echo "$CURRENT_LABELS" | grep -qE "status::Development|status::In progress|status::Check"; then
+          echo "Найдена закрытая задача #$ISSUE_ID с статусными метками: $CURRENT_LABELS"
+          echo "Название: $ISSUE_TITLE"
+          
+          # Удаляем статусные метки
+          RESPONSE=$(curl --request PUT --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
+            --data "remove_labels=status::Development,status::In progress,status::Check" \
+            -w "%{http_code}" \
+            "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues/$ISSUE_ID")
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✓ Успешно очищены метки у задачи #$ISSUE_ID"
+          else
+            echo "✗ Ошибка при очистке меток у задачи #$ISSUE_ID: HTTP $RESPONSE"
+          fi
+        fi
       done
-  only:
-    - branches
-    - merge_requests
+      
+      echo "Очистка статусных меток завершена"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
