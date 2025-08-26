@@ -1,11 +1,13 @@
 import { Notification } from "../../../domain/interfaces/Notification.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
+import {
+  NotificationDeliveryService,
+  SendResult,
+} from "../../services/createNotificationDeliveryService/index.js";
 import {
   EventType,
   NotificationLoggerService,
 } from "../../services/createNotificationLoggerService/index.js";
-import { NotificationBatchResult } from "./interfaces/NotificationBatchResult.js";
 import { SendNotificationUseCase } from "./interfaces/SendNotificationUseCase.js";
 
 export const createSendNotificationUseCase = (
@@ -14,22 +16,10 @@ export const createSendNotificationUseCase = (
 ): SendNotificationUseCase => {
   const send = async (
     notification: Notification | Notification[],
-  ): Promise<NotificationBatchResult> => {
+  ): Promise<SendResult[]> => {
     const results = await notificationDeliveryService.send(notification);
 
-    const totalCount = results.length;
-    const successCount = results.filter((r) => r.success).length;
-    const errorCount = results.length - successCount;
-
-    if (errorCount === 0) {
-      notificationLoggerService.writeLog({
-        level: LogLevel.Info,
-        message: `Уведомление успешно отправлено`,
-        eventType: EventType.NotificationSuccess,
-        spanId: `createSendNotificationUseCase`,
-        payload: results,
-      });
-    } else if (successCount === 0) {
+    if (results.some((res) => !res.success)) {
       notificationLoggerService.writeLog({
         level: LogLevel.Error,
         message: `Не удалось отправить уведомление`,
@@ -39,20 +29,15 @@ export const createSendNotificationUseCase = (
       });
     } else {
       notificationLoggerService.writeLog({
-        level: LogLevel.Warning,
-        message: `Частичная ошибка: ${errorCount} из ${totalCount} уведомлений не отправлены`,
-        eventType: EventType.NotificationWarning,
+        level: LogLevel.Info,
+        message: `Уведомление успешно отправлено`,
+        eventType: EventType.NotificationSuccess,
         spanId: `createSendNotificationUseCase`,
         payload: results,
       });
     }
 
-    return {
-      totalCount,
-      successCount,
-      errorCount,
-      results,
-    };
+    return results;
   };
 
   const checkHealth = notificationDeliveryService.checkHealth

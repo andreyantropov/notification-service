@@ -57,18 +57,13 @@ describe("SendNotificationUseCase", () => {
         message: "Уведомление успешно отправлено",
         eventType: EventType.NotificationSuccess,
         spanId: "createSendNotificationUseCase",
-        payload: results,
+        payload: results, // ← весь массив
       });
 
-      expect(result).toEqual({
-        totalCount: 1,
-        successCount: 1,
-        errorCount: 0,
-        results,
-      });
+      expect(result).toBe(results);
     });
 
-    it("should log partial error and return batch result when some notifications fail", async () => {
+    it("should log error when at least one notification fails", async () => {
       const notif1 = { ...notification, message: "Success" };
       const notif2 = { ...notification, message: "Fail" };
 
@@ -92,22 +87,17 @@ describe("SendNotificationUseCase", () => {
         notif2,
       ]);
       expect(mockNotificationLoggerService.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Warning,
-        message: `Частичная ошибка: 1 из 2 уведомлений не отправлены`,
-        eventType: EventType.NotificationWarning,
+        level: LogLevel.Error,
+        message: "Не удалось отправить уведомление",
+        eventType: EventType.NotificationError,
         spanId: "createSendNotificationUseCase",
-        payload: results,
+        payload: results, // ← весь массив
       });
 
-      expect(result).toEqual({
-        totalCount: 2,
-        successCount: 1,
-        errorCount: 1,
-        results,
-      });
+      expect(result).toBe(results);
     });
 
-    it("should log full error and return batch result when all notifications fail", async () => {
+    it("should log error when all notifications fail", async () => {
       const notif1 = { ...notification, message: "Fail 1" };
       const notif2 = { ...notification, message: "Fail 2" };
 
@@ -136,12 +126,7 @@ describe("SendNotificationUseCase", () => {
         payload: results,
       });
 
-      expect(result).toEqual({
-        totalCount: 2,
-        successCount: 0,
-        errorCount: 2,
-        results,
-      });
+      expect(result).toBe(results);
     });
 
     it("should handle single notification (object)", async () => {
@@ -156,10 +141,14 @@ describe("SendNotificationUseCase", () => {
 
       const result = await send(notification);
 
-      expect(result.totalCount).toBe(1);
-      expect(result.successCount).toBe(1);
-      expect(result.errorCount).toBe(0);
-      expect(result.results).toBe(results);
+      expect(result).toBe(results);
+      expect(mockNotificationLoggerService.writeLog).toHaveBeenCalledWith({
+        level: LogLevel.Info,
+        message: "Уведомление успешно отправлено",
+        eventType: EventType.NotificationSuccess,
+        spanId: "createSendNotificationUseCase",
+        payload: results,
+      });
     });
 
     it("should handle array of notifications", async () => {
@@ -180,10 +169,14 @@ describe("SendNotificationUseCase", () => {
 
       const result = await send([notif1, notif2]);
 
-      expect(result.totalCount).toBe(2);
-      expect(result.successCount).toBe(1);
-      expect(result.errorCount).toBe(1);
-      expect(result.results).toEqual(results);
+      expect(result).toBe(results);
+      expect(mockNotificationLoggerService.writeLog).toHaveBeenCalledWith({
+        level: LogLevel.Error,
+        message: "Не удалось отправить уведомление",
+        eventType: EventType.NotificationError,
+        spanId: "createSendNotificationUseCase",
+        payload: results,
+      });
     });
 
     it("should correctly narrow recipient types using type guards", () => {
