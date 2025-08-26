@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Recipient } from "./Recipient.js";
 
-const SingleNotification = z.object({
+export const SingleNotification = z.object({
   recipients: z.array(Recipient),
   message: z.string().min(1),
 });
