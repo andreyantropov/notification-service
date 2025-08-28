@@ -1,13 +1,13 @@
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
 import { Notification } from "../../../domain/interfaces/Notification.js";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../domain/interfaces/Sender.js";
 import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
 import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
 import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
 import { SendResult } from "./types/SendResult.js";
 
 export const createNotificationDeliveryService = (
-  senders: NotificationSender[],
+  senders: Sender[],
   strategy: DeliveryStrategy = sendToFirstAvailableStrategy,
   config?: NotificationDeliveryServiceConfig,
 ): NotificationDeliveryService => {

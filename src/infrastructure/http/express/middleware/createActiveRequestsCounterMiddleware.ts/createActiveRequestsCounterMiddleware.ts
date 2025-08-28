@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response, RequestHandler } from "express";
-import { ActiveRequestsCounter } from "../../../../../shared/interfaces/ActiveRequestsCounter.js";
+import { Counter } from "../../../../../application/ports/Counter.js";
 
 export const createActiveRequestsCounterMiddleware = (
-  activeRequestsCounter: ActiveRequestsCounter,
+  activeRequestsCounter: Counter,
 ): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction): void => {
     activeRequestsCounter.increase();

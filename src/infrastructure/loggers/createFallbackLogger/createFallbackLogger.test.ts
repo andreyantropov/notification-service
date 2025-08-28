@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createFallbackLogger } from "./index.js";
-import type { Logger } from "../../../interfaces/Logger.js";
-import type { Log } from "../../../interfaces/Log.js";
-import { LogLevel } from "../../../enums/LogLevel.js";
-import { TriggerType } from "../../../enums/TriggerType.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { TriggerType } from "../../../shared/enums/TriggerType.js";
+import { Logger } from "../../../application/ports/Logger.js";
+import { Log } from "../../../application/ports/Log.js";
 
 type MockLogger = Logger & {
   writeLog: ReturnType<typeof vi.fn>;

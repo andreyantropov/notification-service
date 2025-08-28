@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createNotificationLoggerService, EventType } from "./index.js";
-import { RawLog } from "./interfaces/RawLog.js";
-import { EnvironmentType } from "../../../shared/enums/EnvironmentType.js";
-import { TriggerType } from "../../../shared/enums/TriggerType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { createLoggerAdapter } from "./index.js";
+import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
+import { EventType } from "../../../../shared/enums/EventType.js";
+import { LogLevel } from "../../../../shared/enums/LogLevel.js";
+import { TriggerType } from "../../../../shared/enums/TriggerType.js";
+import { RawLog } from "../../../../application/ports/RawLog.js";
 
 const mockWriteLog = vi.fn();
 
@@ -15,7 +16,7 @@ describe("createNotificationLoggerService", () => {
   let service: { writeLog: (log: RawLog) => Promise<void> };
 
   beforeEach(() => {
-    service = createNotificationLoggerService(mockLogger);
+    service = createLoggerAdapter(mockLogger);
     mockWriteLog.mockClear();
   });
 

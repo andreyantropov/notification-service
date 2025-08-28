@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextFunction, Request, Response } from "express";
-import { ActiveRequestsCounter } from "./interfaces/ActiveRequestsCounter";
 import { createActiveRequestsCounterMiddleware } from "./createActiveRequestsCounterMiddleware";
+import { Counter } from "../../../../../shared/interfaces/Counter";
 
 describe("createActiveRequestsCounterMiddleware", () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockNext: NextFunction;
-  let mockCounter: ActiveRequestsCounter;
+  let mockCounter: Counter;
 
   beforeEach(() => {
     mockRequest = {};

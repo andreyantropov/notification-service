@@ -1,20 +1,17 @@
-import { EventType } from "../../application/services/createNotificationLoggerService/index.js";
-import {
-  getNotificationLoggerServiceInstance,
-  getServerInstance,
-} from "../index.js";
+import { getLoggerAdapterInstance, getServerInstance } from "../index.js";
 import { LogLevel } from "../../shared/enums/LogLevel.js";
+import { EventType } from "../../shared/enums/EventType.js";
 
 export const bootstrap = async (): Promise<void> => {
-  let notificationLoggerService;
+  let loggerAdapter;
 
   try {
-    notificationLoggerService = getNotificationLoggerServiceInstance();
+    loggerAdapter = getLoggerAdapterInstance();
     const server = getServerInstance();
 
     server.start();
 
-    await notificationLoggerService.writeLog({
+    await loggerAdapter.writeLog({
       level: LogLevel.Info,
       message: "Приложение успешно запущено",
       eventType: EventType.BootstrapSuccess,
@@ -29,8 +26,8 @@ export const bootstrap = async (): Promise<void> => {
     const SHUTDOWN_SIGNALS = ["SIGTERM", "SIGINT", "SIGQUIT"] as const;
     SHUTDOWN_SIGNALS.forEach((signal) => process.on(signal, shutdown));
   } catch (error) {
-    if (notificationLoggerService) {
-      await notificationLoggerService.writeLog({
+    if (loggerAdapter) {
+      await loggerAdapter.writeLog({
         level: LogLevel.Critical,
         message: "Критическая ошибка в работе приложения",
         eventType: EventType.BootstrapError,
