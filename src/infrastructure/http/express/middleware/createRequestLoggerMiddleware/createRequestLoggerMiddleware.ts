@@ -1,12 +1,10 @@
 import { NextFunction, Request, Response, RequestHandler } from "express";
-import {
-  EventType,
-  NotificationLoggerService,
-} from "../../../../../application/services/createNotificationLoggerService/index.js";
 import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
+import { LoggerAdapter } from "../../../../../application/ports/LoggerAdapter.js";
+import { EventType } from "../../../../../shared/enums/EventType.js";
 
 export const createRequestLoggerMiddleware = (
-  notificationLoggerService: NotificationLoggerService,
+  loggerAdapter: LoggerAdapter,
 ): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const start = Date.now();
@@ -20,7 +18,7 @@ export const createRequestLoggerMiddleware = (
         ? EventType.RequestSuccess
         : EventType.RequestError;
 
-      notificationLoggerService.writeLog({
+      loggerAdapter.writeLog({
         level: logLevel,
         message: `${req.method} ${req.url}`,
         eventType: eventType,
@@ -41,7 +39,7 @@ export const createRequestLoggerMiddleware = (
       if (!res.headersSent) {
         const duration = Date.now() - start;
 
-        notificationLoggerService.writeLog({
+        loggerAdapter.writeLog({
           level: LogLevel.Warning,
           message: `${req.method} ${req.url}`,
           eventType: EventType.RequestWarning,

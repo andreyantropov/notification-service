@@ -1,13 +1,13 @@
-import { EventType } from "../../application/services/createNotificationLoggerService/index.js";
 import { serverConfig } from "../../configs/server.config.js";
 import { LogLevel } from "../../shared/enums/LogLevel.js";
-import { getNotificationLoggerServiceInstance } from "../core/services/getNotificationLoggerServiceInstance.js";
-import { getActiveRequestCounterInstance } from "./middleware/getActiveRequestCounterInstance.js";
+import { getLoggerAdapterInstance } from "../core/services/getLoggerAdapterInstance.js";
+import { getActiveRequestCounterInstance } from "./counters/getActiveRequestCounterInstance.js";
 import { getAppInstance } from "./getAppInstance.js";
 import {
   createServer,
   Server,
 } from "../../infrastructure/http/express/createServer/index.js";
+import { EventType } from "../../shared/enums/EventType.js";
 
 let instance: Server | null = null;
 
@@ -15,7 +15,7 @@ export const getServerInstance = () => {
   if (instance === null) {
     const { port, gracefulShutdownTimeout } = serverConfig;
 
-    const notificationLoggerService = getNotificationLoggerServiceInstance();
+    const loggerAdapter = getLoggerAdapterInstance();
     const activeRequestsCounter = getActiveRequestCounterInstance();
     const app = getAppInstance();
 
@@ -25,7 +25,7 @@ export const getServerInstance = () => {
         port,
         gracefulShutdownTimeout,
         onStartError: (error) => {
-          notificationLoggerService.writeLog({
+          loggerAdapter.writeLog({
             level: LogLevel.Error,
             message: `Не удалось запустить сервер`,
             eventType: EventType.ServerError,
@@ -34,7 +34,7 @@ export const getServerInstance = () => {
           });
         },
         onStopError: (error) => {
-          notificationLoggerService.writeLog({
+          loggerAdapter.writeLog({
             level: LogLevel.Error,
             message: `Не удалось корректно завершить работу сервера`,
             eventType: EventType.ServerError,

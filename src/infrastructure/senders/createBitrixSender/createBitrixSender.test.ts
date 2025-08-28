@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
 import { createBitrixSender } from "./createBitrixSender.js";
 import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../domain/interfaces/Sender.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
 
 vi.mock("axios");
@@ -12,7 +12,7 @@ describe("createBitrixSender", () => {
   const mockUserId = "123";
   const mockAuthToken = "abcxyz123";
 
-  let sender: NotificationSender;
+  let sender: Sender;
   let config: BitrixSenderConfig;
 
   beforeEach(() => {

@@ -1,5 +1,5 @@
-import { ActiveRequestsCounter } from "../../../../../shared/interfaces/ActiveRequestsCounter.js";
+import { Counter } from "../../../../../application/ports/Counter.js";
 
 export interface ServerDependencies {
-  activeRequestsCounter: ActiveRequestsCounter;
+  activeRequestsCounter: Counter;
 }

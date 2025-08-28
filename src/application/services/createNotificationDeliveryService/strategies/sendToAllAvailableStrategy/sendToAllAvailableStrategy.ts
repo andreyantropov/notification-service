@@ -1,4 +1,4 @@
-import { NotificationSender } from "../../../../../domain/interfaces/NotificationSender.js";
+import { NotificationSender } from "../../../../../domain/interfaces/Sender.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
 import { DeliveryStrategy } from "../../types/DeliveryStrategy.js";
 

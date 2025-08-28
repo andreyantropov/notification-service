@@ -1,6 +1,6 @@
 import axios from "axios";
 import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../domain/interfaces/Sender.js";
 import {
   Recipient,
   isBitrixRecipient,
@@ -13,7 +13,7 @@ export const createBitrixSender = ({
   baseUrl,
   userId,
   authToken,
-}: BitrixSenderConfig): NotificationSender => {
+}: BitrixSenderConfig): Sender => {
   const isSupports = (recipient: Recipient): boolean => {
     return recipient.type === "bitrix";
   };

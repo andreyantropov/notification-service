@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createNotificationDeliveryService } from "./createNotificationDeliveryService";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../domain/interfaces/Sender.js";
 import { Notification } from "../../../domain/interfaces/Notification.js";
 import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
 
@@ -16,7 +16,7 @@ const createMockSender = (
   sendImpl: () => Promise<void>,
   checkHealthImpl?: () => Promise<void>,
 ) => {
-  const sender: NotificationSender = {
+  const sender: Sender = {
     isSupports,
     send: vi.fn(sendImpl),
     checkHealth: checkHealthImpl ? vi.fn(checkHealthImpl) : undefined,

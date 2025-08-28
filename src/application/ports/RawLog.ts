@@ -1,5 +1,5 @@
-import { EventType } from "../enums/EventType.js";
-import { LogLevel } from "../../../../shared/enums/LogLevel.js";
+import { EventType } from "../../shared/enums/EventType.js";
+import { LogLevel } from "../../shared/enums/LogLevel.js";
 
 export interface RawLog {
   level: LogLevel;

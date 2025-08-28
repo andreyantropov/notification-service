@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createServer } from "./createServer.js";
 import { Express } from "express";
-import { ActiveRequestsCounter } from "../../../../shared/interfaces/ActiveRequestsCounter.js";
 import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
+import { Counter } from "../../../../shared/interfaces/Counter.js";
 
 describe("createServer", () => {
   let mockApp: Express;
@@ -11,7 +11,7 @@ describe("createServer", () => {
     close: (cb?: (err?: Error) => void) => void;
     listening: boolean;
   };
-  let mockActiveRequestsCounter: ActiveRequestsCounter;
+  let mockActiveRequestsCounter: Counter;
   let mockConfig: ServerConfig;
   let mockDependencies: ServerDependencies;
 
@@ -96,7 +96,7 @@ describe("createServer", () => {
 
     it("should wait for active requests to complete before closing", async () => {
       let counter = 1;
-      const counterWithPending: ActiveRequestsCounter = {
+      const counterWithPending: Counter = {
         get value() {
           return counter;
         },

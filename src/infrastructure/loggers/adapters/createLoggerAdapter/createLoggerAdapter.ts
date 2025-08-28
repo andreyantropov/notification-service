@@ -1,19 +1,17 @@
-import { EnvironmentType } from "../../../shared/enums/EnvironmentType.js";
-import { TriggerType } from "../../../shared/enums/TriggerType.js";
-import { Log } from "../../../shared/interfaces/Log.js";
 import { v4 } from "uuid";
 import os from "os";
-import { NotificationLoggerService } from "./interfaces/NotificationLoggerService.js";
-import { RawLog } from "./interfaces/RawLog.js";
+import { RawLog } from "../../../../application/ports/RawLog.js";
 import { serializeError } from "serialize-error";
-import { Logger } from "../../../shared/interfaces/Logger.js";
+import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
+import { TriggerType } from "../../../../shared/enums/TriggerType.js";
+import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
+import { Logger } from "../../../../application/ports/Logger.js";
+import { Log } from "../../../../application/ports/Log.js";
 
 const MEASUREMENT = "isplanar_notification_logs";
 const UNKNOWN_SERVICE = "unknown-service";
 
-export const createNotificationLoggerService = (
-  logger: Logger,
-): NotificationLoggerService => {
+export const createLoggerAdapter = (logger: Logger): LoggerAdapter => {
   const formatLog = ({
     level,
     eventType,

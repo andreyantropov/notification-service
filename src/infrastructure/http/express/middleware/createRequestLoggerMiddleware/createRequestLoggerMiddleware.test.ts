@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
 import { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware.js";
-import { EventType } from "../../../../../application/services/createNotificationLoggerService/index.js";
 import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
+import { EventType } from "../../../../../shared/enums/EventType.js";
 
 describe("RequestLoggerMiddleware", () => {
   const mockWriteLog = vi.fn();

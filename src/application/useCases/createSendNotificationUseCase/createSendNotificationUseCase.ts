@@ -1,18 +1,16 @@
 import { Notification } from "../../../domain/interfaces/Notification.js";
+import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
 import {
   NotificationDeliveryService,
   SendResult,
 } from "../../services/createNotificationDeliveryService/index.js";
-import {
-  EventType,
-  NotificationLoggerService,
-} from "../../services/createNotificationLoggerService/index.js";
 import { SendNotificationUseCase } from "./interfaces/SendNotificationUseCase.js";
 
 export const createSendNotificationUseCase = (
   notificationDeliveryService: NotificationDeliveryService,
-  notificationLoggerService: NotificationLoggerService,
+  notificationLoggerService: LoggerAdapter,
 ): SendNotificationUseCase => {
   const send = async (
     notification: Notification | Notification[],

@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../domain/interfaces/Sender.js";
 import {
   Recipient,
   isEmailRecipient,
@@ -15,7 +15,7 @@ export const createSmtpSender = ({
   secure,
   auth,
   fromEmail,
-}: SmtpSenderConfig): NotificationSender => {
+}: SmtpSenderConfig): Sender => {
   const transporter = nodemailer.createTransport({
     host: host,
     port: port,

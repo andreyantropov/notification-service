@@ -1,5 +1,5 @@
 import { RawLog } from "./RawLog.js";
 
-export interface NotificationLoggerService {
+export interface LoggerAdapter {
   writeLog: (rawLog: RawLog) => Promise<void>;
 }

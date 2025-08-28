@@ -6,9 +6,9 @@ import {
   Recipient,
 } from "../../../domain/types/Recipient.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { EventType } from "../../services/createNotificationLoggerService/index.js";
 import { Notification } from "../../../domain/interfaces/Notification.js";
 import { SendResult } from "../../services/createNotificationDeliveryService/index.js";
+import { EventType } from "../../../shared/enums/EventType.js";
 
 describe("SendNotificationUseCase", () => {
   const mockNotificationDeliveryService = {
@@ -57,7 +57,7 @@ describe("SendNotificationUseCase", () => {
         message: "Уведомление успешно отправлено",
         eventType: EventType.NotificationSuccess,
         spanId: "createSendNotificationUseCase",
-        payload: results, // ← весь массив
+        payload: results,
       });
 
       expect(result).toBe(results);

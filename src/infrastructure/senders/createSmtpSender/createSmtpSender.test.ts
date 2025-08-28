@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import nodemailer from "nodemailer";
 import { createSmtpSender } from "./createSmtpSender.js";
 import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
-import { NotificationSender } from "../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../domain/interfaces/Sender.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
 
 vi.mock("nodemailer");
@@ -19,7 +19,7 @@ describe("createSmtpSender", () => {
     fromEmail: "no-reply@example.com",
   };
 
-  let sender: NotificationSender;
+  let sender: Sender;
   let transporter: { sendMail: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {

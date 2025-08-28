@@ -31,30 +31,27 @@
 │ ├── openapi/ # Документация Swagger
 │ └── schemas/ # ZOD-схемы валидации
 ├── application/ # Прикладной уровень: бизнес-логика
+│ ├── ports/ # Порты
 │ └── services/
-│   ├── notificationDeliveryService/ # Сервис уведомлений
-│   └── notificationLoggerService/ # Логгер
+│   └── notificationDeliveryService/ # Сервис уведомлений
 │ └── useCases/ # UseCase'ы
 ├── composition/ # Composition Root
 │   ├── bootstrap/ # Запуск приложения
 │   ├── core/ # Singleton'ы ядра приложения (сервисы, use cases)
-│   ├── server/ # Singleton'ы HTTP-сервера и его зависимостей
+│   └── server/ # Singleton'ы HTTP-сервера и его зависимостей
 ├── configs/ # Конфиги инфраструктурных сущностей
 ├── domain/ # Доменная модель
-│ └── interfaces/ # Абстракции (порты)
+│ ├── interfaces/ # Абстракции
 │ └── types/ # Пользовательские типы
 ├── infrastructure/ # Инфраструктурные клиенты
+│ ├── counters/ # Счетчики
 │ └── http/ # Зависимости от фреймворков
 │   └── express/
+│ ├── loggers/ # Логгеры
 │ └── senders/ # Каналы рассылки уведомлений
 │   ├── bitrixSender/
 │   └── smtpSender/
 ├── shared/ # Общие абстракции и утилиты
-│ └── enums/
-│ └── infrastructure/
-│  └── loggers # Логгеры
-│ └── interfaces/
-│ └── utils/
 └── index.ts # Точка входа приложения/Composition Root
 ```
 
@@ -130,8 +127,8 @@ flowchart TB
 ```mermaid
 graph TD
     subgraph Domain
-        INotificationSender[(INotificationSender)]
-        ILoggerWriter[(ILoggerWriter)]
+        NotificationSender[(NotificationSender)]
+        Logger[(Logger)]
         Notification[Notification]
         Recipient[Recipient]
     end
@@ -149,20 +146,20 @@ graph TD
         FallbackLogger[fallbackLogger]
         Retry[retry]
     end
-    NotificationLoggerClient -->|uses| ILoggerWriter
-    NotificationService -->|uses| INotificationSender
+    NotificationLoggerClient -->|uses| Logger
+    NotificationService -->|uses| NotificationSender
     NotificationService -->|uses| NotificationLoggerClient
-    BitrixClient -.->|implements| INotificationSender
-    SmtpClient -.->|implements| INotificationSender
-    InfluxDbLogger -.->|implements| ILoggerWriter
-    LocalFileLogger -.->|implements| ILoggerWriter
-    FallbackLogger -->|wraps multiple loggers| ILoggerWriter
+    BitrixClient -.->|implements| NotificationSender
+    SmtpClient -.->|implements| NotificationSender
+    InfluxDbLogger -.->|implements| Logger
+    LocalFileLogger -.->|implements| Logger
+    FallbackLogger -->|wraps multiple loggers| Logger
     FallbackLogger --> InfluxDbLogger
     FallbackLogger --> LocalFileLogger
     NotificationService -->|DI через конструктор| BitrixClient
     NotificationService -->|DI через конструктор| SmtpClient
     NotificationService -->|DI через конструктор| NotificationLoggerClient
-    NotificationLoggerClient -->|DI через fallback| ILoggerWriter
+    NotificationLoggerClient -->|DI через fallback| Logger
 ```
 
 ## Описание процесса работы системы

@@ -1,12 +1,12 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { LogLevel } from "../../../enums/LogLevel.js";
-import type { Log } from "../../../interfaces/Log.js";
-import type { Logger } from "../../../interfaces/Logger.js";
 import { createLocalFileLogger } from "./createLocalFileLogger.js";
 import type { LocalFileLoggerConfig } from "./interfaces/LocalFileLoggerConfig.js";
-import { TriggerType } from "../../../enums/TriggerType.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { TriggerType } from "../../../shared/enums/TriggerType.js";
+import { Logger } from "../../../application/ports/Logger.js";
+import { Log } from "../../../application/ports/Log.js";
 
 vi.mock("fs", () => ({
   promises: {
