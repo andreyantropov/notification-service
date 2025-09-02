@@ -1,7 +1,6 @@
-import z from "zod";
-import { SingleNotification } from "../../../../../../api/schemas/NotificationRequest.js";
+import { Notification } from "../../../../../../domain/types/Notification.js";
 
 export type ParsedNotificationResult = {
-  valid: z.infer<typeof SingleNotification>[];
-  invalid: { item: unknown; error: z.ZodIssue[] }[];
+  valid: Notification[];
+  invalid: { item: unknown; error: unknown }[];
 };

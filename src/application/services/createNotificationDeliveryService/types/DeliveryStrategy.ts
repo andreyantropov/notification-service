@@ -1,9 +1,9 @@
-import { Notification } from "../../../../domain/interfaces/Notification.js";
-import { NotificationSender } from "../../../../domain/interfaces/Sender.js";
+import { Notification } from "../../../../domain/types/Notification.js";
+import { Sender } from "../../../../domain/ports/Sender.js";
 import { Recipient } from "../../../../domain/types/Recipient.js";
 
 export type DeliveryStrategy = (
-  senders: NotificationSender[],
+  senders: Sender[],
   notification: Notification,
   onError?: (
     payload: { recipient: Recipient; message: string },

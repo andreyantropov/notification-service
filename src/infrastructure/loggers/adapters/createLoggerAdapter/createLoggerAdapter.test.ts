@@ -4,7 +4,7 @@ import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
 import { EventType } from "../../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
-import { RawLog } from "../../../../application/ports/RawLog.js";
+import { RawLog } from "../../../../application/types/RawLog.js";
 
 const mockWriteLog = vi.fn();
 

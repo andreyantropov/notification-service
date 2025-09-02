@@ -1,5 +1,5 @@
-import { Log } from "../../../application/ports/Log.js";
-import { Logger } from "../../../application/ports/Logger.js";
+import { Logger } from "../../ports/Logger.js";
+import { Log } from "../../types/Log.js";
 import { FallbackLoggerClientConfig } from "./interfaces/FallbackLoggerConfig.js";
 
 export const createFallbackLogger = (

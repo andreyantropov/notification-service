@@ -1,7 +1,7 @@
 import { Express } from "express";
 import swaggerUi from "swagger-ui-express";
 import { serverConfig } from "../../../configs/index.js";
-import { getSwaggerSpec } from "../../../api/openapi/swagger.spec.js";
+import { getSwaggerSpec } from "../../../api/openapi/index.js";
 
 export const setupSwagger = (app: Express) => {
   const { url } = serverConfig;

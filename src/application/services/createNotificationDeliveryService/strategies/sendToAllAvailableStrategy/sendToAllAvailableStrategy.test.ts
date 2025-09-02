@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendToAllAvailableStrategy } from "./sendToAllAvailableStrategy";
-import { NotificationSender } from "../../../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../../../domain/ports/Sender.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
-import { Notification } from "../../../../../domain/interfaces/Notification.js";
+import { Notification } from "../../../../../domain/types/Notification.js";
 
 const createMockSender = (
   isSupports: (recipient: Recipient) => boolean,
   sendImpl: (recipient: Recipient, message: string) => Promise<void>,
 ) => {
-  const sender: NotificationSender = {
+  const sender: Sender = {
     isSupports,
     send: vi.fn(sendImpl),
   };
@@ -94,7 +94,7 @@ describe("sendToAllAvailableStrategy", () => {
   });
 
   it("should call onError for recipient with no senders available", async () => {
-    const emptySenders: NotificationSender[] = [];
+    const emptySenders: Sender[] = [];
     const notification: Notification = {
       recipients: [emailRecipient],
       message,

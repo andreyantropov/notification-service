@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendToFirstAvailableStrategy } from "./sendToFirstAvailableStrategy";
-import { NotificationSender } from "../../../../../domain/interfaces/NotificationSender.js";
+import { Sender } from "../../../../../domain/ports/Sender.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
-import { Notification } from "../../../../../domain/interfaces/Notification.js";
+import { Notification } from "../../../../../domain/types/Notification.js";
 
-class MockEmailSender implements NotificationSender {
+class MockEmailSender implements Sender {
   constructor(
     public isHealthy = true,
     public supports = true,
@@ -24,7 +24,7 @@ class MockEmailSender implements NotificationSender {
   }
 }
 
-class MockBitrixSender implements NotificationSender {
+class MockBitrixSender implements Sender {
   constructor(
     public isHealthy = true,
     public supports = true,
@@ -60,7 +60,7 @@ describe("sendToFirstAvailableStrategy", () => {
   });
 
   it("should throw an error if no recipients are provided", async () => {
-    const senders: NotificationSender[] = [new MockEmailSender()];
+    const senders: Sender[] = [new MockEmailSender()];
     const notification = { recipients: [], message };
 
     await expect(
@@ -71,7 +71,7 @@ describe("sendToFirstAvailableStrategy", () => {
 
   it("should send to the first recipient using a supported sender successfully", async () => {
     const emailSender = new MockEmailSender(true, true);
-    const senders: NotificationSender[] = [emailSender];
+    const senders: Sender[] = [emailSender];
     const notification: Notification = {
       recipients: [emailRecipient],
       message,
@@ -87,10 +87,7 @@ describe("sendToFirstAvailableStrategy", () => {
   it("should skip unsupported senders and use the next available one", async () => {
     const unsupportedEmailSender = new MockEmailSender(true, false);
     const bitrixSender = new MockBitrixSender(true, true);
-    const senders: NotificationSender[] = [
-      unsupportedEmailSender,
-      bitrixSender,
-    ];
+    const senders: Sender[] = [unsupportedEmailSender, bitrixSender];
     const notification: Notification = {
       recipients: [bitrixRecipient],
       message,
@@ -104,7 +101,7 @@ describe("sendToFirstAvailableStrategy", () => {
   });
 
   it("should call onError when no senders are available for a recipient", async () => {
-    const senders: NotificationSender[] = [];
+    const senders: Sender[] = [];
     const notification: Notification = {
       recipients: [emailRecipient],
       message,
@@ -128,10 +125,7 @@ describe("sendToFirstAvailableStrategy", () => {
   it("should try next recipient if first one fails all senders", async () => {
     const failingEmailSender = new MockEmailSender(false, true);
     const workingBitrixSender = new MockBitrixSender(true, true);
-    const senders: NotificationSender[] = [
-      failingEmailSender,
-      workingBitrixSender,
-    ];
+    const senders: Sender[] = [failingEmailSender, workingBitrixSender];
     const notification: Notification = {
       recipients: [emailRecipient, bitrixRecipient],
       message,
@@ -154,10 +148,7 @@ describe("sendToFirstAvailableStrategy", () => {
   it("should throw if no recipient can be delivered to", async () => {
     const failingEmailSender = new MockEmailSender(false, true);
     const failingBitrixSender = new MockBitrixSender(false, true);
-    const senders: NotificationSender[] = [
-      failingEmailSender,
-      failingBitrixSender,
-    ];
+    const senders: Sender[] = [failingEmailSender, failingBitrixSender];
     const notification: Notification = {
       recipients: [emailRecipient, bitrixRecipient],
       message,
@@ -197,7 +188,7 @@ describe("sendToFirstAvailableStrategy", () => {
 
   it("should stop after first successful delivery", async () => {
     const successfulSender = new MockEmailSender(true, true);
-    const senders: NotificationSender[] = [successfulSender];
+    const senders: Sender[] = [successfulSender];
     const notification: Notification = {
       recipients: [emailRecipient, bitrixRecipient],
       message,
@@ -213,7 +204,7 @@ describe("sendToFirstAvailableStrategy", () => {
   it("should handle mixed recipient types and find correct sender", async () => {
     const emailSender = new MockEmailSender(true, true);
     const bitrixSender = new MockBitrixSender(true, true);
-    const senders: NotificationSender[] = [bitrixSender, emailSender];
+    const senders: Sender[] = [bitrixSender, emailSender];
     const notification: Notification = {
       recipients: [bitrixRecipient, emailRecipient],
       message,
@@ -228,7 +219,7 @@ describe("sendToFirstAvailableStrategy", () => {
 
   it("should call onError with sender error and final delivery error when sender throws", async () => {
     const failingSender = new MockEmailSender(false, true);
-    const senders: NotificationSender[] = [failingSender];
+    const senders: Sender[] = [failingSender];
     const notification: Notification = {
       recipients: [emailRecipient],
       message,

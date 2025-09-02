@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createNotificationDeliveryService } from "./createNotificationDeliveryService";
-import { Sender } from "../../../domain/interfaces/Sender.js";
-import { Notification } from "../../../domain/interfaces/Notification.js";
+import { Sender } from "../../../domain/ports/Sender.js";
+import { Notification } from "../../../domain/types/Notification.js";
 import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
 
 const emailRecipient = { type: "email", value: "test@example.com" } as const;
@@ -156,16 +156,16 @@ describe("createNotificationDeliveryService", () => {
     });
   });
 
-  it("should throw when empty array is provided", async () => {
+  it("should return empty result array when empty input array is provided", async () => {
     const sender = createMockSender(
       () => true,
       async () => {},
     );
     const service = createNotificationDeliveryService([sender]);
 
-    await expect(service.send([])).rejects.toThrow(
-      "Внутренняя ошибка: нельзя отправить пустой список уведомлений",
-    );
+    const result = await service.send([]);
+
+    expect(result).toEqual([]);
   });
 
   it("should return multiple results when sending multiple notifications", async () => {

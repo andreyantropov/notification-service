@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import nodemailer from "nodemailer";
 import { createSmtpSender } from "./createSmtpSender.js";
 import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
-import { Sender } from "../../../domain/interfaces/Sender.js";
+import { Sender } from "../../../domain/ports/Sender.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
 
 vi.mock("nodemailer");

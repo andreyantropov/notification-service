@@ -1,13 +1,11 @@
 import { serverConfig } from "../../configs/server.config.js";
 import { LogLevel } from "../../shared/enums/LogLevel.js";
 import { getLoggerAdapterInstance } from "../core/services/getLoggerAdapterInstance.js";
-import { getActiveRequestCounterInstance } from "./counters/getActiveRequestCounterInstance.js";
 import { getAppInstance } from "./getAppInstance.js";
-import {
-  createServer,
-  Server,
-} from "../../infrastructure/http/express/createServer/index.js";
+import { createServer } from "../../infrastructure/http/express/createServer/index.js";
 import { EventType } from "../../shared/enums/EventType.js";
+import { getActiveRequestCounterInstance } from "../infrastracture/getActiveRequestCounterInstance.js";
+import { Server } from "../../infrastructure/ports/Server.js";
 
 let instance: Server | null = null;
 

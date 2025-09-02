@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { Sender } from "../../../domain/interfaces/Sender.js";
+import { Sender } from "../../../domain/ports/Sender.js";
 import {
   Recipient,
   isEmailRecipient,

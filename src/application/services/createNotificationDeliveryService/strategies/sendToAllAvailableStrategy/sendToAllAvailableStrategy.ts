@@ -1,11 +1,11 @@
-import { NotificationSender } from "../../../../../domain/interfaces/Sender.js";
+import { Sender } from "../../../../../domain/ports/Sender.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
 import { DeliveryStrategy } from "../../types/DeliveryStrategy.js";
 
 const sendToRecipient = async (
   recipient: Recipient,
   message: string,
-  senders: NotificationSender[],
+  senders: Sender[],
   onError: (
     payload: { recipient: Recipient; message: string },
     error: Error,

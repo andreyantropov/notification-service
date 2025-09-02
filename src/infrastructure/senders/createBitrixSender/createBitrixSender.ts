@@ -1,6 +1,6 @@
 import axios from "axios";
 import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
-import { Sender } from "../../../domain/interfaces/Sender.js";
+import { Sender } from "../../../domain/ports/Sender.js";
 import {
   Recipient,
   isBitrixRecipient,

@@ -3,7 +3,7 @@ import { createServer } from "./createServer.js";
 import { Express } from "express";
 import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
-import { Counter } from "../../../../shared/interfaces/Counter.js";
+import { Counter } from "../../../ports/Counter.js";
 
 describe("createServer", () => {
   let mockApp: Express;
