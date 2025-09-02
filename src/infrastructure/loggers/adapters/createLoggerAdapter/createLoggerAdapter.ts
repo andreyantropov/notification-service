@@ -1,12 +1,12 @@
 import { v4 } from "uuid";
 import os from "os";
-import { RawLog } from "../../../../application/ports/RawLog.js";
+import { RawLog } from "../../../../application/types/RawLog.js";
 import { serializeError } from "serialize-error";
 import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
 import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
-import { Logger } from "../../../../application/ports/Logger.js";
-import { Log } from "../../../../application/ports/Log.js";
+import { Logger } from "../../../ports/Logger.js";
+import { Log } from "../../../types/Log.js";
 
 const MEASUREMENT = "isplanar_notification_logs";
 const UNKNOWN_SERVICE = "unknown-service";

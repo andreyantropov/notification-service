@@ -70,6 +70,12 @@ RATE_LIMIT_TRIES=100
 GRACEFUL_SHUTDOWN_TIMEOUT=30000
 ```
 
+### ⚙️ Настройки процесса отправки уведомлений
+
+```env
+PROCESS_BATCHING_INTERVAL=60000
+```
+
 ### 📡 Bitrix24
 
 ```env
@@ -107,8 +113,8 @@ LOGS_DIR=logs
 
 ```env
 CURRENT_SERVICE=notification-service
-CALLER_SERVICE=crontab
-TRIGGER_TYPE=cron
+CALLER_SERVICE=api
+TRIGGER_TYPE=api
 ```
 
 ---

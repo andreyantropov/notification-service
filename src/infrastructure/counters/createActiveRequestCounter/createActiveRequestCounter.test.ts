@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createActiveRequestCounter } from "./createActiveRequestCounter.js";
-import { Counter } from "../../../application/ports/Counter.js";
+import { Counter } from "../../ports/Counter.js";
 
 describe("createActiveRequestCounter", () => {
   let counter: Counter;

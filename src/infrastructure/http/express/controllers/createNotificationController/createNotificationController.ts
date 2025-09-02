@@ -8,6 +8,7 @@ import {
 } from "../../../../../api/schemas/NotificationRequest.js";
 import { SendResponse } from "./interfaces/SendResponse.js";
 import { ParsedNotificationResult } from "./types/ParsedNotificationResult.js";
+import { Notification } from "../../../../../domain/types/Notification.js";
 import { SendResult } from "./types/SendResult.js";
 
 export const createNotificationController = ({
@@ -17,7 +18,7 @@ export const createNotificationController = ({
     body: unknown,
   ): ParsedNotificationResult => {
     const valid: z.infer<typeof SingleNotification>[] = [];
-    const invalid: { item: unknown; error: z.ZodIssue[] }[] = [];
+    const invalid: { item: unknown; error: unknown }[] = [];
 
     const result = NotificationRequest.safeParse(body);
 
@@ -65,46 +66,43 @@ export const createNotificationController = ({
   };
 
   const formatSendResponse = (
-    valid: z.infer<typeof SingleNotification>[],
-    invalid: { item: unknown; error: z.ZodIssue[] }[],
-    deliveryResults: SendResult[],
+    valid: Notification[],
+    invalid: { item: unknown; error: unknown }[],
   ): SendResponse => {
-    const successful = deliveryResults.filter((r) => r.success);
-    const failedInDelivery = deliveryResults.filter((r) => !r.success);
-
-    const successCount = successful.length;
-    const deliveryErrorCount = failedInDelivery.length;
-    const validationErrorCount = invalid.length;
+    const validCount = valid.length;
+    const invalidCount = invalid.length;
     const totalCount = valid.length + invalid.length;
 
-    const details = [
-      ...successful.map((r) => ({
-        status: "success" as const,
-        notification: r.notification,
-      })),
-      ...failedInDelivery.map((r) => ({
-        status: "error" as const,
-        notification: r.notification,
-        error: r.error ?? "Unknown delivery error",
-      })),
-      ...invalid.map((err) => ({
-        status: "error" as const,
-        notification: err.item,
-        message:
-          "Некорректная структура уведомления. Исправьте данные и повторите запрос.",
-        errors: err.error,
-      })),
+    let message = "";
+    if (invalidCount === 0) {
+      message = "Все уведомления приняты в обработку";
+    } else if (validCount === 0) {
+      message = "Ни одно уведомление не прошло валидацию";
+    } else {
+      message = `Уведомления приняты частично: ${validCount} принято, ${invalidCount} отклонено`;
+    }
+
+    const details: SendResult[] = [
+      ...valid.map(
+        (elem): SendResult => ({
+          success: true,
+          notification: elem,
+        }),
+      ),
+      ...invalid.map(
+        (elem): SendResult => ({
+          success: false,
+          notification: elem.item,
+          error: elem.error,
+        }),
+      ),
     ];
 
     return {
-      message:
-        successCount === 0
-          ? "Не удалось отправить ни одного уведомления"
-          : "Уведомления частично отправлены",
+      message,
       totalCount,
-      successCount,
-      validationErrorCount,
-      deliveryErrorCount,
+      validCount,
+      invalidCount,
       details,
     };
   };
@@ -122,30 +120,14 @@ export const createNotificationController = ({
         return;
       }
 
-      const result = await sendNotificationUseCase.send(valid);
+      await sendNotificationUseCase.send(valid);
 
-      const {
-        successCount,
-        deliveryErrorCount,
-        validationErrorCount,
-        totalCount,
-        details,
-      } = formatSendResponse(valid, invalid, result);
+      const sendResult = formatSendResponse(valid, invalid);
 
-      if (successCount === totalCount) {
-        res.status(201).send();
+      if (invalid.length === 0) {
+        res.status(202).send();
       } else {
-        res.status(207).json({
-          message:
-            successCount === 0
-              ? "Не удалось отправить ни одного уведомления"
-              : "Уведомления частично отправлены",
-          totalCount,
-          successCount,
-          validationErrorCount,
-          deliveryErrorCount,
-          details,
-        });
+        res.status(207).json(sendResult);
       }
     } catch {
       res.status(500).json({

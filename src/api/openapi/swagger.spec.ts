@@ -15,54 +15,59 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
     ],
     components: {
       schemas: {
+        Recipient: {
+          oneOf: [
+            {
+              type: "object",
+              required: ["type", "value"],
+              properties: {
+                type: {
+                  type: "string",
+                  enum: ["email"],
+                  example: "email",
+                },
+                value: {
+                  type: "string",
+                  format: "email",
+                  example: "user@example.com",
+                },
+              },
+              description: "Email-получатель",
+            },
+            {
+              type: "object",
+              required: ["type", "value"],
+              properties: {
+                type: {
+                  type: "string",
+                  enum: ["bitrix"],
+                  example: "bitrix",
+                },
+                value: {
+                  type: "integer",
+                  example: 123456,
+                },
+              },
+              description: "Получатель в Bitrix24 по ID",
+            },
+          ],
+          discriminator: {
+            propertyName: "type",
+          },
+        },
+
         Notification: {
           type: "object",
-          description: "Уведомление: содержит список получателей и сообщение",
+          description:
+            "Уведомление: содержит список контактов одного получателя, сообщение и опциональный флаг isUrgent",
           required: ["recipients", "message"],
           properties: {
             recipients: {
               type: "array",
-              description: "Список получателей",
+              description: "Список контактов одного получателя (минимум один)",
               minItems: 1,
               items: {
-                oneOf: [
-                  {
-                    type: "object",
-                    required: ["type", "value"],
-                    properties: {
-                      type: {
-                        type: "string",
-                        enum: ["email"],
-                        example: "email",
-                      },
-                      value: {
-                        type: "string",
-                        format: "email",
-                        example: "user@example.com",
-                      },
-                    },
-                    description: "Email-получатель",
-                  },
-                  {
-                    type: "object",
-                    required: ["type", "value"],
-                    properties: {
-                      type: {
-                        type: "string",
-                        enum: ["bitrix"],
-                        example: "bitrix",
-                      },
-                      value: {
-                        type: "integer",
-                        example: 123456,
-                      },
-                    },
-                    description: "Получатель в Bitrix24 по ID",
-                  },
-                ],
-                discriminator: {
-                  propertyName: "type",
-                },
+                $ref: "#/components/schemas/Recipient",
               },
             },
             message: {
@@ -70,6 +75,13 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
               minLength: 1,
               example: "Ваш заказ готов!",
               description: "Текст уведомления",
+            },
+            isUrgent: {
+              type: "boolean",
+              default: false,
+              example: true,
+              description:
+                "Если true — уведомление отправляется немедленно. Если false или отсутствует — попадает в буфер и отправляется пачкой.",
             },
           },
         },
@@ -92,134 +104,79 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
           ],
         },
 
+        SendResult: {
+          type: "object",
+          properties: {
+            success: {
+              type: "boolean",
+              example: true,
+              description:
+                "true — уведомление принято в обработку, false — не прошло валидацию",
+            },
+            notification: {
+              oneOf: [
+                { $ref: "#/components/schemas/Notification" },
+                {
+                  type: "object",
+                  description:
+                    "Сырой объект из запроса (если не прошёл валидацию)",
+                  additionalProperties: true,
+                },
+              ],
+            },
+            error: {
+              type: "object",
+              description: "Ошибки валидации (Zod) или другие причины отказа",
+              additionalProperties: true,
+              example: [
+                {
+                  code: "too_small",
+                  message: "List must contain at least 1 element(s)",
+                  path: ["recipients"],
+                },
+              ],
+            },
+          },
+          required: ["success", "notification"],
+        },
+
         SendResponse: {
           type: "object",
           description: "Ответ при частичной обработке (207 Multi-Status)",
           properties: {
             message: {
               type: "string",
-              example: "Уведомления частично отправлены",
-              description:
-                "Общее сообщение о результате: успех, частичная ошибка или полный провал",
+              example: "Уведомления приняты частично: 2 принято, 1 отклонено",
+              description: "Сообщение о результате обработки запроса",
             },
             totalCount: {
               type: "integer",
               example: 3,
               description: "Общее количество уведомлений в запросе",
             },
-            successCount: {
+            validCount: {
               type: "integer",
-              example: 1,
-              description: "Количество успешно отправленных уведомлений",
+              example: 2,
+              description: "Количество уведомлений, прошедших валидацию",
             },
-            validationErrorCount: {
+            invalidCount: {
               type: "integer",
               example: 1,
-              description:
-                "Количество уведомлений с ошибками валидации (ошибки клиента)",
-            },
-            deliveryErrorCount: {
-              type: "integer",
-              example: 1,
-              description:
-                "Количество уведомлений, которые не удалось отправить (ошибки сервера)",
+              description: "Количество уведомлений, не прошедших валидацию",
             },
             details: {
               type: "array",
-              description: "Детали по каждому уведомлению",
+              description: "Результат обработки каждого уведомления",
               items: {
-                oneOf: [
-                  {
-                    type: "object",
-                    properties: {
-                      status: {
-                        type: "string",
-                        enum: ["success"],
-                        example: "success",
-                      },
-                      notification: {
-                        $ref: "#/components/schemas/Notification",
-                      },
-                    },
-                    required: ["status", "notification"],
-                    description: "Уведомление успешно отправлено",
-                  },
-                  {
-                    type: "object",
-                    properties: {
-                      status: {
-                        type: "string",
-                        enum: ["error"],
-                        example: "error",
-                      },
-                      notification: {
-                        $ref: "#/components/schemas/Notification",
-                      },
-                      error: {
-                        type: "string",
-                        example: "Email service timeout",
-                        description: "Описание ошибки на стороне сервера",
-                      },
-                    },
-                    required: ["status", "notification"],
-                    description: "Ошибка при отправке уведомления",
-                  },
-                  {
-                    type: "object",
-                    properties: {
-                      status: {
-                        type: "string",
-                        enum: ["error"],
-                        example: "error",
-                      },
-                      notification: {
-                        type: "object",
-                        description: "Сырой объект из запроса",
-                        additionalProperties: true,
-                      },
-                      message: {
-                        type: "string",
-                        example:
-                          "Некорректная структура уведомления. Исправьте данные и повторите запрос.",
-                        description: "Рекомендация клиенту",
-                      },
-                      errors: {
-                        type: "array",
-                        description: "Ошибки валидации по стандарту Zod",
-                        items: {
-                          type: "object",
-                          properties: {
-                            code: {
-                              type: "string",
-                              example: "too_small",
-                            },
-                            message: {
-                              type: "string",
-                              example:
-                                "List must contain at least 1 element(s)",
-                            },
-                            path: {
-                              type: "array",
-                              items: { type: "string" },
-                              example: ["recipients"],
-                            },
-                          },
-                        },
-                      },
-                    },
-                    required: ["status", "notification", "message", "errors"],
-                    description: "Уведомление не прошло валидацию",
-                  },
-                ],
+                $ref: "#/components/schemas/SendResult",
               },
             },
           },
           required: [
             "message",
             "totalCount",
-            "successCount",
-            "validationErrorCount",
-            "deliveryErrorCount",
+            "validCount",
+            "invalidCount",
             "details",
           ],
         },
@@ -251,11 +208,13 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
         post: {
           summary: "Отправка уведомления",
           description:
-            "Принимает одно уведомление или массив (от 1 до 100). Возвращает:\n" +
-            "- 201: всё отправлено\n" +
-            "- 207: частично (ошибки валидации или доставки)\n" +
-            "- 400: ни одно не прошло валидацию\n" +
-            "- 500: внутренняя ошибка",
+            "Принимает одно уведомление или массив (от 1 до 100). Уведомления с `isUrgent: true` отправляются немедленно. Остальные — буферизуются и отправляются пачкой.\n\n" +
+            "**Важно:** API не возвращает статус доставки, только результат валидации.\n\n" +
+            "Возвращает:\n" +
+            "- `202`: все уведомления валидны и приняты в обработку\n" +
+            "- `207`: часть уведомлений не прошла валидацию\n" +
+            "- `400`: ни одно не прошло валидацию\n" +
+            "- `500`: внутренняя ошибка",
           tags: ["Notifications"],
           requestBody: {
             required: true,
@@ -266,7 +225,7 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                 },
                 examples: {
                   single: {
-                    summary: "Одно уведомление",
+                    summary: "Одно срочное уведомление",
                     value: {
                       recipients: [
                         {
@@ -274,11 +233,12 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                           value: "user@example.com",
                         },
                       ],
-                      message: "Привет! Это тестовое уведомление.",
+                      message: "Срочное: заказ отправлен!",
+                      isUrgent: true,
                     },
                   },
                   batch: {
-                    summary: "Пачка уведомлений",
+                    summary: "Пачка уведомлений (срочные и несрочные)",
                     value: [
                       {
                         recipients: [
@@ -287,7 +247,8 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                             value: "user1@example.com",
                           },
                         ],
-                        message: "Первое уведомление",
+                        message: "Ваш заказ готов",
+                        isUrgent: true,
                       },
                       {
                         recipients: [
@@ -296,7 +257,8 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                             value: 123456,
                           },
                         ],
-                        message: "Второе уведомление",
+                        message: "Напоминание о встрече",
+                        isUrgent: false,
                       },
                     ],
                   },
@@ -305,29 +267,30 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
             },
           },
           responses: {
-            201: {
-              description: "Все уведомления успешно отправлены",
+            202: {
+              description:
+                "Все уведомления приняты в обработку (включая буферизацию)",
             },
             207: {
               description:
-                "Частичная обработка: некоторые уведомления не были отправлены из-за ошибок валидации или доставки.",
+                "Частичная обработка: некоторые уведомления не прошли валидацию.",
               content: {
                 "application/json": {
                   schema: {
                     $ref: "#/components/schemas/SendResponse",
                   },
                   examples: {
-                    partialMixed: {
-                      summary: "Ошибка валидации + ошибка доставки",
+                    partialValidation: {
+                      summary: "Одно уведомление невалидно",
                       value: {
-                        message: "Уведомления частично отправлены",
+                        message:
+                          "Уведомления приняты частично: 2 принято, 1 отклонено",
                         totalCount: 3,
-                        successCount: 1,
-                        validationErrorCount: 1,
-                        deliveryErrorCount: 1,
+                        validCount: 2,
+                        invalidCount: 1,
                         details: [
                           {
-                            status: "success",
+                            success: true,
                             notification: {
                               recipients: [
                                 {
@@ -339,14 +302,12 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                             },
                           },
                           {
-                            status: "error",
+                            success: false,
                             notification: {
                               recipients: [],
                               message: "",
                             },
-                            message:
-                              "Некорректная структура уведомления. Исправьте данные и повторите запрос.",
-                            errors: [
+                            error: [
                               {
                                 code: "too_small",
                                 message:
@@ -354,19 +315,6 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                                 path: ["recipients"],
                               },
                             ],
-                          },
-                          {
-                            status: "error",
-                            notification: {
-                              recipients: [
-                                {
-                                  type: "email",
-                                  value: "slow@ok.com",
-                                },
-                              ],
-                              message: "Wait",
-                            },
-                            error: "Email service timeout",
                           },
                         ],
                       },
@@ -403,6 +351,7 @@ const getSwaggerSpec = (options: { baseUrl: string }) => {
                             },
                             error: {
                               type: "array",
+                              description: "Ошибки валидации (Zod)",
                               items: {
                                 type: "object",
                                 properties: {

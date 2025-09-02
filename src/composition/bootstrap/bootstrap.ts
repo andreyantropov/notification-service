@@ -1,14 +1,19 @@
-import { getLoggerAdapterInstance, getServerInstance } from "../index.js";
 import { LogLevel } from "../../shared/enums/LogLevel.js";
 import { EventType } from "../../shared/enums/EventType.js";
+import { getSendNotificationProcessInstance } from "../core/jobs/getSendNotificationProcessInstance.js";
+import { getLoggerAdapterInstance } from "../core/services/getLoggerAdapterInstance.js";
+import { getServerInstance } from "../server/getServerInstance.js";
 
 export const bootstrap = async (): Promise<void> => {
   let loggerAdapter;
 
   try {
     loggerAdapter = getLoggerAdapterInstance();
-    const server = getServerInstance();
 
+    const sendNotificationProcess = getSendNotificationProcessInstance();
+    sendNotificationProcess.start();
+
+    const server = getServerInstance();
     server.start();
 
     await loggerAdapter.writeLog({
@@ -19,6 +24,7 @@ export const bootstrap = async (): Promise<void> => {
     });
 
     const shutdown = async () => {
+      sendNotificationProcess.stop();
       await server.stop();
       process.exit(0);
     };

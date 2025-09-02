@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { createHealthcheckController } from "./createHealthcheckController.js";
 import { Request, Response } from "express";
-import { SendNotificationUseCase } from "../../../../../application/useCases/createSendNotificationUseCase/interfaces/SendNotificationUseCase.js";
+import { SendNotificationUseCase } from "../../../../../application/useCases/createSendNotificationUseCase/index.js";
 
 describe("HealthcheckController", () => {
   let mockReq: Partial<Request>;

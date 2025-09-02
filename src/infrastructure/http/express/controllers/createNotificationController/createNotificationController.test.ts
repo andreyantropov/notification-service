@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
 import { createNotificationController } from "./createNotificationController.js";
-import { SendResult } from "../../../../../application/services/createNotificationDeliveryService/index.js";
-import { Notification } from "../../../../../domain/interfaces/Notification.js";
+import { Notification } from "../../../../../domain/types/Notification.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
 
 const emailRecipient: Recipient = { type: "email", value: "user1@example.com" };
@@ -10,6 +9,7 @@ const emailRecipient: Recipient = { type: "email", value: "user1@example.com" };
 const validNotification: Notification = {
   recipients: [emailRecipient],
   message: "Привет!",
+  isUrgent: true,
 };
 
 const invalidNotification = {
@@ -18,9 +18,7 @@ const invalidNotification = {
 };
 
 const mockSendNotificationUseCase = {
-  send: vi.fn<
-    (input: Notification | Notification[]) => Promise<SendResult[]>
-  >(),
+  send: vi.fn<(input: Notification | Notification[]) => Promise<void>>(),
 };
 
 describe("NotificationController", () => {
@@ -42,53 +40,42 @@ describe("NotificationController", () => {
     };
   });
 
-  it("should return 201 when all notifications are valid and sent successfully", async () => {
+  it("should return 202 when all notifications are valid", async () => {
     req.body = validNotification;
-
-    const result: SendResult[] = [
-      { success: true, notification: validNotification },
-    ];
-
-    mockSendNotificationUseCase.send.mockResolvedValueOnce(result);
 
     await controller.send(req as Request, res as Response);
 
     expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
       validNotification,
     ]);
-    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.status).toHaveBeenCalledWith(202);
     expect(res.send).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should return 207 when some notifications fail validation", async () => {
     req.body = [validNotification, invalidNotification];
 
-    const deliveryResult: SendResult[] = [
-      { success: true, notification: validNotification },
-    ];
-
-    mockSendNotificationUseCase.send.mockResolvedValueOnce(deliveryResult);
-
     await controller.send(req as Request, res as Response);
 
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
+      validNotification,
+    ]);
     expect(res.status).toHaveBeenCalledWith(207);
     expect(res.json).toHaveBeenCalledWith({
-      message: "Уведомления частично отправлены",
+      message: "Уведомления приняты частично: 1 принято, 1 отклонено",
       totalCount: 2,
-      successCount: 1,
-      validationErrorCount: 1,
-      deliveryErrorCount: 0,
+      validCount: 1,
+      invalidCount: 1,
       details: [
         {
-          status: "success",
+          success: true,
           notification: validNotification,
         },
         {
-          status: "error",
+          success: false,
           notification: invalidNotification,
-          message:
-            "Некорректная структура уведомления. Исправьте данные и повторите запрос.",
-          errors: expect.any(Array),
+          error: expect.any(Array),
         },
       ],
     });
@@ -113,77 +100,56 @@ describe("NotificationController", () => {
     });
   });
 
-  it("should return 207 when some notifications fail during delivery", async () => {
-    req.body = [validNotification];
-
-    const error = new Error("Network timeout");
-    const result: SendResult[] = [
-      { success: false, notification: validNotification, error },
-    ];
-
-    mockSendNotificationUseCase.send.mockResolvedValueOnce(result);
-
-    await controller.send(req as Request, res as Response);
-
-    expect(res.status).toHaveBeenCalledWith(207);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Не удалось отправить ни одного уведомления",
-      totalCount: 1,
-      successCount: 0,
-      validationErrorCount: 0,
-      deliveryErrorCount: 1,
-      details: [
-        {
-          status: "error",
-          notification: validNotification,
-          error: error,
-        },
-      ],
-    });
-  });
-
-  it("should return 207 with mixed validation and delivery errors", async () => {
+  it("should return 207 with multiple invalid notifications", async () => {
     const notif1 = { ...validNotification, message: "Valid" };
-    const notif2 = { ...validNotification, message: "Fails in delivery" };
-    const notif3 = { recipients: [], message: "" };
+    const notif2 = { recipients: [], message: "" };
+    const notif3 = {
+      recipients: [{ type: "email", value: 123 }],
+      message: "Bad value",
+    };
 
     req.body = [notif1, notif2, notif3];
 
-    const deliveryResult: SendResult[] = [
-      { success: true, notification: notif1 },
-      {
-        success: false,
-        notification: notif2,
-        error: new Error("Failed to send"),
-      },
-    ];
+    await controller.send(req as Request, res as Response);
 
-    mockSendNotificationUseCase.send.mockResolvedValueOnce(deliveryResult);
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([notif1]);
+    expect(res.status).toHaveBeenCalledWith(207);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Уведомления приняты частично: 1 принято, 2 отклонено",
+      totalCount: 3,
+      validCount: 1,
+      invalidCount: 2,
+      details: expect.arrayContaining([
+        { success: true, notification: notif1 },
+        expect.objectContaining({ success: false, notification: notif2 }),
+        expect.objectContaining({ success: false, notification: notif3 }),
+      ]),
+    });
+  });
+
+  it("should handle single notification object", async () => {
+    req.body = validNotification;
 
     await controller.send(req as Request, res as Response);
 
-    expect(res.status).toHaveBeenCalledWith(207);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Уведомления частично отправлены",
-      totalCount: 3,
-      successCount: 1,
-      validationErrorCount: 1,
-      deliveryErrorCount: 1,
-      details: expect.arrayContaining([
-        { status: "success", notification: notif1 },
-        expect.objectContaining({
-          status: "error",
-          notification: notif2,
-          error: expect.any(Error),
-        }),
-        expect.objectContaining({
-          status: "error",
-          notification: notif3,
-          message: expect.stringContaining("Исправьте данные"),
-          errors: expect.any(Array),
-        }),
-      ]),
-    });
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
+      validNotification,
+    ]);
+    expect(res.status).toHaveBeenCalledWith(202);
+  });
+
+  it("should handle array of notifications", async () => {
+    const notif1 = { ...validNotification, message: "Msg 1" };
+    const notif2 = { ...validNotification, message: "Msg 2" };
+    req.body = [notif1, notif2];
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
+      notif1,
+      notif2,
+    ]);
+    expect(res.status).toHaveBeenCalledWith(202);
   });
 
   it("should return 500 when use case throws an unexpected error", async () => {
@@ -202,41 +168,12 @@ describe("NotificationController", () => {
     });
   });
 
-  it("should handle single notification object (not array)", async () => {
-    req.body = validNotification;
-
-    const result: SendResult[] = [
-      { success: true, notification: validNotification },
-    ];
-
-    mockSendNotificationUseCase.send.mockResolvedValueOnce(result);
+  it("should return 202 when all notifications are valid (array)", async () => {
+    req.body = [validNotification];
 
     await controller.send(req as Request, res as Response);
 
-    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
-      validNotification,
-    ]);
-    expect(res.status).toHaveBeenCalledWith(201);
-  });
-
-  it("should handle array of notifications", async () => {
-    const notif1 = { ...validNotification, message: "Msg 1" };
-    const notif2 = { ...validNotification, message: "Msg 2" };
-    req.body = [notif1, notif2];
-
-    const result: SendResult[] = [
-      { success: true, notification: notif1 },
-      { success: true, notification: notif2 },
-    ];
-
-    mockSendNotificationUseCase.send.mockResolvedValueOnce(result);
-
-    await controller.send(req as Request, res as Response);
-
-    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
-      notif1,
-      notif2,
-    ]);
-    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.send).toHaveBeenCalled();
   });
 });

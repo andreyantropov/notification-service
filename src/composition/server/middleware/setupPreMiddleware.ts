@@ -1,10 +1,12 @@
 import express, { Express } from "express";
 import { serverConfig } from "../../../configs/index.js";
-import { getActiveRequestCounterInstance } from "../counters/getActiveRequestCounterInstance.js";
+import {
+  createRateLimiter,
+  createActiveRequestsCounterMiddleware,
+  createRequestLoggerMiddleware,
+} from "../../../infrastructure/http/express/middleware/index.js";
 import { getLoggerAdapterInstance } from "../../core/services/getLoggerAdapterInstance.js";
-import { createActiveRequestsCounterMiddleware } from "../../../infrastructure/http/express/middleware/createActiveRequestsCounterMiddleware.ts/index.js";
-import { createRateLimiter } from "../../../infrastructure/http/express/middleware/createRateLimitMiddleware/createRateLimitMiddleware.js";
-import { createRequestLoggerMiddleware } from "../../../infrastructure/http/express/middleware/createRequestLoggerMiddleware/createRequestLoggerMiddleware.js";
+import { getActiveRequestCounterInstance } from "../../infrastracture/getActiveRequestCounterInstance.js";
 
 export const setupPreMiddleware = (app: Express) => {
   const { rateLimitTime, rateLimitTries } = serverConfig;

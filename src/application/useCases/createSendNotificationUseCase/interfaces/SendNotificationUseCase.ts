@@ -1,7 +1,6 @@
-import { Notification } from "../../../../domain/interfaces/Notification.js";
-import { SendResult } from "../../../services/createNotificationDeliveryService/index.js";
+import { Notification } from "../../domain/types/Notification.js";
 
 export interface SendNotificationUseCase {
-  send: (notification: Notification | Notification[]) => Promise<SendResult[]>;
+  send: (notification: Notification | Notification[]) => Promise<void>;
   checkHealth?: () => Promise<void>;
 }

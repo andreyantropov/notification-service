@@ -1,4 +1,4 @@
-import { Notification } from "../../../../domain/interfaces/Notification.js";
+import { Notification } from "../../../../domain/types/Notification.js";
 
 export type SendResult =
   | { success: true; notification: Notification }

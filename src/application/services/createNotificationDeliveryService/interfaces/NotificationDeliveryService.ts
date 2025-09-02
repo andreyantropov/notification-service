@@ -1,4 +1,4 @@
-import { Notification } from "../../../../domain/interfaces/Notification.js";
+import { Notification } from "../../../../domain/types/Notification.js";
 import { SendResult } from "../types/SendResult.js";
 
 export interface NotificationDeliveryService {

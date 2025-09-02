@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
 import { createBitrixSender } from "./createBitrixSender.js";
 import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
-import { Sender } from "../../../domain/interfaces/Sender.js";
+import { Sender } from "../../../domain/ports/Sender.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
 
 vi.mock("axios");

@@ -1,10 +1,9 @@
-import z from "zod";
-import { SingleNotification } from "../../../../../../api/schemas/NotificationRequest.js";
+import { Notification } from "../../../../../../domain/types/Notification.js";
 
 export type SendResult =
-  | { success: true; notification: z.infer<typeof SingleNotification> }
+  | { success: true; notification: Notification }
   | {
       success: false;
-      notification: z.infer<typeof SingleNotification>;
+      notification: unknown;
       error: unknown;
     };

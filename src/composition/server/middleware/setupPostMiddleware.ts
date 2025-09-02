@@ -1,6 +1,8 @@
 import { Express } from "express";
-import { createInternalServerErrorMiddleware } from "../../../infrastructure/http/express/middleware/createInternalServerErrorMiddleware/createInternalServerErrorMiddleware.js";
-import { createNotFoundMiddleware } from "../../../infrastructure/http/express/middleware/createNotFoundMiddleware/createNotFoundMiddleware.js";
+import {
+  createInternalServerErrorMiddleware,
+  createNotFoundMiddleware,
+} from "../../../infrastructure/http/express/middleware/index.js";
 
 export const setupPostMiddleware = (app: Express) => {
   const notFoundMiddleware = createNotFoundMiddleware();

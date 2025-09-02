@@ -1,10 +1,10 @@
-import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
-import { Notification } from "../../../domain/interfaces/Notification.js";
-import { Sender } from "../../../domain/interfaces/Sender.js";
+import { Notification } from "../../../domain/types/Notification.js";
+import { Sender } from "../../../domain/ports/Sender.js";
 import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
 import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
 import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
 import { SendResult } from "./types/SendResult.js";
+import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
 
 export const createNotificationDeliveryService = (
   senders: Sender[],
@@ -25,9 +25,7 @@ export const createNotificationDeliveryService = (
       : [notification];
 
     if (notifications.length === 0) {
-      throw new Error(
-        "Внутренняя ошибка: нельзя отправить пустой список уведомлений",
-      );
+      return [];
     }
 
     const results = await Promise.allSettled(
