@@ -2,10 +2,14 @@ import { z } from "zod";
 import { InfluxDbLoggerConfig } from "../infrastructure/loggers/createInfluxdbLogger/index.js";
 
 const influxDbConfigSchema = z.object({
-  url: z.string().url("Некорректный URL InfluxDB").min(1),
-  token: z.string().min(1, "Токен InfluxDB обязателен"),
-  org: z.string().min(1, "Организация InfluxDB обязательна"),
-  bucket: z.string().min(1, "Бакет InfluxDB обязателен"),
+  url: z
+    .string()
+    .url(
+      "Некорректный URL InfluxDB: должно быть валидным URL (например, http://localhost:8086)",
+    ),
+  token: z.string().min(1, "token не может быть пустым"),
+  org: z.string().min(1, "org не может быть пустым"),
+  bucket: z.string().min(1, "bucket не может быть пустым"),
 });
 
 export const influxDbLoggerConfig: InfluxDbLoggerConfig =

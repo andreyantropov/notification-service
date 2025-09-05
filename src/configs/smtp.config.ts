@@ -2,16 +2,14 @@ import { z } from "zod";
 import { SmtpSenderConfig } from "../infrastructure/senders/createSmtpSender/interfaces/SmtpSenderConfig.js";
 
 const smtpConfigSchema = z.object({
-  host: z.string().min(1, "SMTP_HOST обязателен").default("localhost"),
+  host: z.string().min(1, "host не может быть пустым"),
   port: z.coerce.number().int().positive().default(25),
   secure: z.boolean().default(false),
   auth: z.object({
-    user: z.string().min(1, "SMTP_LOGIN обязателен"),
-    pass: z.string().min(1, "SMTP_PASSWORD обязателен"),
+    user: z.string().min(1, "user не может быть пустым"),
+    pass: z.string().min(1, "pass не может быть пустым"),
   }),
-  fromEmail: z
-    .string()
-    .min(1, "Необходимо указать адрес отправителя SMTP_EMAIL"),
+  fromEmail: z.string().min(1, "fromEmail не может быть пустым"),
 });
 
 export const smtpConfig: SmtpSenderConfig = smtpConfigSchema.parse({

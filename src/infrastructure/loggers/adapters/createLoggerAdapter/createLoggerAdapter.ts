@@ -2,16 +2,16 @@ import { v4 } from "uuid";
 import os from "os";
 import { RawLog } from "../../../../application/types/RawLog.js";
 import { serializeError } from "serialize-error";
-import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
-import { TriggerType } from "../../../../shared/enums/TriggerType.js";
 import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
 import { Logger } from "../../../ports/Logger.js";
 import { Log } from "../../../types/Log.js";
+import { LoggerAdapterConfig } from "./interfaces/LoggerAdapterConfig.js";
+import { TriggerType } from "../../../../shared/enums/TriggerType.js";
 
-const MEASUREMENT = "isplanar_notification_logs";
-const UNKNOWN_SERVICE = "unknown-service";
-
-export const createLoggerAdapter = (logger: Logger): LoggerAdapter => {
+export const createLoggerAdapter = (
+  logger: Logger,
+  { measurement, currentService, environment }: LoggerAdapterConfig,
+): LoggerAdapter => {
   const formatLog = ({
     level,
     eventType,
@@ -34,20 +34,13 @@ export const createLoggerAdapter = (logger: Logger): LoggerAdapter => {
       : undefined;
 
     return {
-      measurement: MEASUREMENT,
+      measurement: measurement,
       timestamp: Date.now() * 1_000_000,
       tags: {
         level: level,
-        currentService: process.env.CURRENT_SERVICE || UNKNOWN_SERVICE,
-        callerService: process.env.CALLER_SERVICE || UNKNOWN_SERVICE,
-        trigger:
-          process.env.TRIGGER_TYPE === TriggerType.Cron
-            ? TriggerType.Cron
-            : TriggerType.Manual,
-        environment:
-          process.env.NODE_ENV === "development"
-            ? EnvironmentType.Development
-            : EnvironmentType.Production,
+        currentService,
+        trigger: TriggerType.Api,
+        environment,
         eventType: eventType,
         host: os.hostname(),
         spanId: spanId,

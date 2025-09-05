@@ -37,6 +37,7 @@
 - [`axios`](https://axios-http.com/) — для HTTP-запросов к внешним API (Bitrix24 и др.)
 - [`nodemailer`](https://nodemailer.com/) — для отправки email через SMTP
 - [`influx`](https://www.npmjs.com/package/influx) — для интеграции с InfluxDB (опционально)
+- [`awilix`](https://github.com/jeffijoe/awilix) — контейнер зависимостей (DI/IoC) для управления жизненным циклом сервисов
 
 ### 🛠️ Инструменты разработки:
 
@@ -103,18 +104,12 @@ INFLUXDB_ORG=YourOrganization
 INFLUXDB_BUCKET=notifications
 ```
 
-### 🗂️ Локальное логирование
+### 🗂️ Логирование
 
 ```env
 LOGS_DIR=logs
-```
-
-### 🏷️ Метаданные сервиса
-
-```env
+MEASUREMENT=notification_service_logs
 CURRENT_SERVICE=notification-service
-CALLER_SERVICE=api
-TRIGGER_TYPE=api
 ```
 
 ---

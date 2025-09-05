@@ -1,6 +1,6 @@
 import { Counter } from "../../ports/Counter.js";
 
-export const createActiveRequestCounter = (): Counter => {
+export const createActiveRequestsCounter = (): Counter => {
   let count = 0;
 
   const getValue = () => count;

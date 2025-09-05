@@ -1,0 +1,94 @@
+import express from "express";
+import swaggerUi from "swagger-ui-express";
+import { asFunction, AwilixContainer } from "awilix";
+import { Container } from "../../types/Container.js";
+import { getSwaggerSpec } from "../../../api/openapi/swagger.spec.js";
+import { serverConfig } from "../../../configs/server.config.js";
+import {
+  createNotificationController,
+  createHealthcheckController,
+} from "../../../infrastructure/http/express/controllers/index.js";
+import { createServer } from "../../../infrastructure/http/express/createServer/createServer.js";
+import {
+  createRateLimiter,
+  createRequestLoggerMiddleware,
+  createActiveRequestsCounterMiddleware,
+  createNotFoundMiddleware,
+  createInternalServerErrorMiddleware,
+} from "../../../infrastructure/http/express/middleware/index.js";
+import { EventType } from "../../../shared/enums/EventType.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
+
+export const registerHttp = (container: AwilixContainer<Container>) => {
+  container.register({
+    app: asFunction(
+      ({ loggerAdapter, activeRequestsCounter, sendNotificationUseCase }) => {
+        const app = express();
+
+        app.use(express.json());
+
+        const rateLimitMiddleware = createRateLimiter(
+          serverConfig.rateLimitTime,
+          serverConfig.rateLimitTries,
+        );
+        app.use(rateLimitMiddleware);
+
+        const requestLoggerMiddleware =
+          createRequestLoggerMiddleware(loggerAdapter);
+        app.use(requestLoggerMiddleware);
+
+        const activeRequestsCounterMiddleware =
+          createActiveRequestsCounterMiddleware(activeRequestsCounter);
+        app.use(activeRequestsCounterMiddleware);
+
+        const notificationController = createNotificationController({
+          sendNotificationUseCase,
+        });
+        const healthcheckController = createHealthcheckController({
+          sendNotificationUseCase,
+        });
+
+        app.post("/api/v1/notifications", notificationController.send);
+        app.get("/api/health/live", healthcheckController.live);
+        app.get("/api/health/ready", healthcheckController.ready);
+
+        const swaggerSpec = getSwaggerSpec({ baseUrl: serverConfig.url });
+        app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+        app.use(createNotFoundMiddleware());
+        app.use(createInternalServerErrorMiddleware());
+
+        return app;
+      },
+    ).singleton(),
+
+    server: asFunction(({ app, loggerAdapter, activeRequestsCounter }) =>
+      createServer(
+        app,
+        {
+          port: serverConfig.port,
+          gracefulShutdownTimeout: serverConfig.gracefulShutdownTimeout,
+          onStartError: (error) => {
+            loggerAdapter.writeLog({
+              level: LogLevel.Error,
+              message: `Не удалось запустить сервер`,
+              eventType: EventType.ServerError,
+              spanId: "getServerInstance",
+              error,
+            });
+          },
+          onStopError: (error) => {
+            loggerAdapter.writeLog({
+              level: LogLevel.Error,
+              message: `Не удалось корректно завершить работу сервера`,
+              eventType: EventType.ServerError,
+              spanId: "getServerInstance",
+              error,
+            });
+          },
+        },
+        { activeRequestsCounter },
+      ),
+    ).singleton(),
+  });
+};

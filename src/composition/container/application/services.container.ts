@@ -1,7 +1,6 @@
-import {
-  createNotificationDeliveryService,
-  NotificationDeliveryService,
-} from "../../../application/services/createNotificationDeliveryService/index.js";
+import { asFunction, AwilixContainer } from "awilix";
+import { Container } from "../../types/Container.js";
+import { createNotificationDeliveryService } from "../../../application/services/createNotificationDeliveryService/createNotificationDeliveryService.js";
 import { bitrixConfig } from "../../../configs/bitrix.config.js";
 import { smtpConfig } from "../../../configs/smtp.config.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
@@ -9,19 +8,14 @@ import { createBitrixSender } from "../../../infrastructure/senders/createBitrix
 import { createSmtpSender } from "../../../infrastructure/senders/createSmtpSender/createSmtpSender.js";
 import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { getLoggerAdapterInstance } from "./getLoggerAdapterInstance.js";
 
-let instance: NotificationDeliveryService | null = null;
-
-export const getNotificationDeliveryServiceInstance =
-  (): NotificationDeliveryService => {
-    if (instance === null) {
-      const loggerAdapter = getLoggerAdapterInstance();
-
+export const registerServices = (container: AwilixContainer<Container>) => {
+  container.register({
+    notificationDeliveryService: asFunction(({ loggerAdapter }) => {
       const bitrixSender = createBitrixSender(bitrixConfig);
       const smtpSender = createSmtpSender(smtpConfig);
 
-      instance = createNotificationDeliveryService(
+      return createNotificationDeliveryService(
         [bitrixSender, smtpSender],
         undefined,
         {
@@ -39,7 +33,6 @@ export const getNotificationDeliveryServiceInstance =
             }),
         },
       );
-    }
-
-    return instance;
-  };
+    }).singleton(),
+  });
+};

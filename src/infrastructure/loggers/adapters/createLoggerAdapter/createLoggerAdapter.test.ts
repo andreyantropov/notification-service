@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createLoggerAdapter } from "./index.js";
 import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
 import { EventType } from "../../../../shared/enums/EventType.js";
@@ -12,12 +12,25 @@ const mockLogger = {
   writeLog: mockWriteLog,
 };
 
-describe("createNotificationLoggerService", () => {
-  let service: { writeLog: (log: RawLog) => Promise<void> };
+describe("createLoggerAdapter", () => {
+  let service: ReturnType<typeof createLoggerAdapter>;
+  let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
-    service = createLoggerAdapter(mockLogger);
+    // Сохраняем оригинальные env переменные
+    originalEnv = { ...process.env };
+
+    service = createLoggerAdapter(mockLogger, {
+      measurement: "isplanar_notification_logs",
+      currentService: "isplanar_notification",
+      environment: EnvironmentType.Development, // передаем environment из конфига
+    });
     mockWriteLog.mockClear();
+  });
+
+  afterEach(() => {
+    // Восстанавливаем оригинальные env переменные
+    process.env = originalEnv;
   });
 
   it("should format log with correct tags and fields", async () => {
@@ -29,11 +42,6 @@ describe("createNotificationLoggerService", () => {
       payload: { test: "data" },
     };
 
-    process.env.CURRENT_SERVICE = "current-service";
-    process.env.CALLER_SERVICE = "caller-service";
-    process.env.TRIGGER_TYPE = TriggerType.Cron;
-    process.env.NODE_ENV = "development";
-
     await service.writeLog(rawLog);
 
     expect(mockWriteLog).toHaveBeenCalled();
@@ -44,10 +52,9 @@ describe("createNotificationLoggerService", () => {
       measurement: "isplanar_notification_logs",
       tags: {
         level: "INFO",
-        currentService: "current-service",
-        callerService: "caller-service",
-        trigger: TriggerType.Cron,
-        environment: EnvironmentType.Development,
+        currentService: "isplanar_notification", // из конфига, а не из env
+        trigger: TriggerType.Api, // жестко закодировано в адаптере
+        environment: EnvironmentType.Development, // из конфига
         eventType: "notification_success",
         host: expect.any(String),
         spanId: "span123",
@@ -71,12 +78,14 @@ describe("createNotificationLoggerService", () => {
       error,
     };
 
-    process.env.CURRENT_SERVICE = "service-a";
-    process.env.CALLER_SERVICE = "service-b";
-    process.env.TRIGGER_TYPE = TriggerType.Manual;
-    process.env.NODE_ENV = "production";
+    // Создаем сервис с другим environment
+    const productionService = createLoggerAdapter(mockLogger, {
+      measurement: "isplanar_notification_logs",
+      currentService: "isplanar_notification",
+      environment: EnvironmentType.Production,
+    });
 
-    await service.writeLog(rawLog);
+    await productionService.writeLog(rawLog);
 
     expect(mockWriteLog).toHaveBeenCalled();
 
@@ -85,10 +94,9 @@ describe("createNotificationLoggerService", () => {
     expect(logArg).toMatchObject({
       tags: {
         level: "ERROR",
-        currentService: "service-a",
-        callerService: "service-b",
-        trigger: TriggerType.Manual,
-        environment: EnvironmentType.Production,
+        currentService: "isplanar_notification",
+        trigger: TriggerType.Api, // всегда Api
+        environment: EnvironmentType.Production, // из конфига
         eventType: "notification_error",
         host: expect.any(String),
         spanId: "span456",
@@ -102,27 +110,25 @@ describe("createNotificationLoggerService", () => {
     });
   });
 
-  it("should use default values when env variables are not set", async () => {
-    delete process.env.CURRENT_SERVICE;
-    delete process.env.CALLER_SERVICE;
-    delete process.env.TRIGGER_TYPE;
-    delete process.env.NODE_ENV;
+  it("should use different environment based on config", async () => {
+    const stagingService = createLoggerAdapter(mockLogger, {
+      measurement: "test_logs",
+      currentService: "test_service",
+      environment: EnvironmentType.Staging,
+    });
 
     const rawLog: RawLog = {
       level: LogLevel.Warning,
       eventType: EventType.NotificationWarning,
       spanId: "span789",
-      message: "Default env values",
+      message: "Test environment",
     };
 
-    await service.writeLog(rawLog);
+    await stagingService.writeLog(rawLog);
 
     const logArg = mockWriteLog.mock.calls[0][0];
-
-    expect(logArg.tags.currentService).toBe("unknown-service");
-    expect(logArg.tags.callerService).toBe("unknown-service");
-    expect(logArg.tags.trigger).toBe(TriggerType.Manual);
-    expect(logArg.tags.environment).toBe(EnvironmentType.Production);
+    expect(logArg.tags.environment).toBe(EnvironmentType.Staging);
+    expect(logArg.tags.currentService).toBe("test_service");
   });
 
   it("should log an error if writing the log fails", async () => {
