@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createActiveRequestCounter } from "./createActiveRequestCounter.js";
+import { createActiveRequestsCounter } from "./createActiveRequestCounter.js";
 import { Counter } from "../../ports/Counter.js";
 
-describe("createActiveRequestCounter", () => {
+describe("createActiveRequestsCounter", () => {
   let counter: Counter;
 
   beforeEach(() => {
-    counter = createActiveRequestCounter();
+    counter = createActiveRequestsCounter();
   });
 
   it("should initialize with value 0", () => {
@@ -61,8 +61,8 @@ describe("createActiveRequestCounter", () => {
   });
 
   it("should maintain independent state between instances", () => {
-    const counter1 = createActiveRequestCounter();
-    const counter2 = createActiveRequestCounter();
+    const counter1 = createActiveRequestsCounter();
+    const counter2 = createActiveRequestsCounter();
 
     counter1.increase();
     counter1.increase();

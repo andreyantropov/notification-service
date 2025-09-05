@@ -1,19 +1,21 @@
-import { LogLevel } from "../../shared/enums/LogLevel.js";
+import { SendNotificationProcess } from "../../application/jobs/createSendNotificationProcess/index.js";
+import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
+import { Server } from "../../infrastructure/ports/Server.js";
 import { EventType } from "../../shared/enums/EventType.js";
-import { getSendNotificationProcessInstance } from "../core/jobs/getSendNotificationProcessInstance.js";
-import { getLoggerAdapterInstance } from "../core/services/getLoggerAdapterInstance.js";
-import { getServerInstance } from "../server/getServerInstance.js";
+import { LogLevel } from "../../shared/enums/LogLevel.js";
+import { container } from "../container/index.js";
 
 export const bootstrap = async (): Promise<void> => {
-  let loggerAdapter;
+  let loggerAdapter: LoggerAdapter | undefined;
 
   try {
-    loggerAdapter = getLoggerAdapterInstance();
+    loggerAdapter = container.resolve<LoggerAdapter>("loggerAdapter");
+    const sendNotificationProcess = container.resolve<SendNotificationProcess>(
+      "sendNotificationProcess",
+    );
+    const server = container.resolve<Server>("server");
 
-    const sendNotificationProcess = getSendNotificationProcessInstance();
     sendNotificationProcess.start();
-
-    const server = getServerInstance();
     server.start();
 
     await loggerAdapter.writeLog({
@@ -24,24 +26,41 @@ export const bootstrap = async (): Promise<void> => {
     });
 
     const shutdown = async () => {
-      sendNotificationProcess.stop();
-      await server.stop();
-      process.exit(0);
+      try {
+        sendNotificationProcess.stop();
+        await server.stop();
+
+        await loggerAdapter?.writeLog({
+          level: LogLevel.Info,
+          message: "Приложение корректно завершило работу",
+          eventType: EventType.BootstrapSuccess,
+          spanId: "bootstrap",
+        });
+      } catch (error) {
+        console.error("Ошибка при завершении работы:", error);
+      } finally {
+        process.exit(0);
+      }
     };
 
     const SHUTDOWN_SIGNALS = ["SIGTERM", "SIGINT", "SIGQUIT"] as const;
-    SHUTDOWN_SIGNALS.forEach((signal) => process.on(signal, shutdown));
+    SHUTDOWN_SIGNALS.forEach((signal) => {
+      process.on(signal, () => {
+        SHUTDOWN_SIGNALS.forEach((s) => process.removeAllListeners(s));
+        shutdown();
+      });
+    });
   } catch (error) {
     if (loggerAdapter) {
       await loggerAdapter.writeLog({
         level: LogLevel.Critical,
-        message: "Критическая ошибка в работе приложения",
+        message: "Критическая ошибка при запуске приложения",
         eventType: EventType.BootstrapError,
         spanId: "bootstrap",
-        error: error,
+        error: error instanceof Error ? error : new Error(String(error)),
       });
     } else {
-      console.error("Критическая ошибка в работе приложения", error);
+      console.error("Критическая ошибка при запуске приложения", error);
     }
 
     process.exit(1);
