@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { createInMemoryBuffer } from "./createInMemoryBuffer";
 import { Notification } from "../../../domain/types/Notification.js";
 

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { createNotificationController } from "./createNotificationController.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";

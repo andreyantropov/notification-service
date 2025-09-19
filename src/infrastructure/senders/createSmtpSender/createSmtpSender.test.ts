@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import nodemailer from "nodemailer";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
 import { createSmtpSender } from "./createSmtpSender.js";
 import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
 import { Sender } from "../../../domain/ports/Sender.js";
 import { Recipient } from "../../../domain/types/Recipient.js";
+import { noop } from "../../../shared/utils/noop/noop.js";
 
 vi.mock("nodemailer");
 
@@ -145,7 +147,7 @@ describe("createSmtpSender", () => {
     });
 
     it("should reject with 'SMTP сервер недоступен' on timeout", async () => {
-      const pendingPromise = new Promise(() => {});
+      const pendingPromise = new Promise(noop);
       const mockVerify = vi
         .fn()
         .mockImplementation((callback) => pendingPromise.then(callback));

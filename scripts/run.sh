@@ -2,7 +2,7 @@
 set -e
 
 if [ ! -f ../.env ]; then
-  echo "❌ Файл .env не найден. Используйте .env.dev как шаблон."
+  echo "❌ Файл .env не найден. Используйте .env.test как шаблон."
   exit 1
 fi
 

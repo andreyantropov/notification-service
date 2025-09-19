@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { createBitrixSender } from "./createBitrixSender.js";
 import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
 import { Sender } from "../../../domain/ports/Sender.js";

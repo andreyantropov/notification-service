@@ -1,22 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { createNotFoundMiddleware } from "./createNotFoundMiddleware.js";
 
 describe("NotFoundMiddleware", () => {
-  const middleware = createNotFoundMiddleware();
-
-  const req = {} as Request;
-  const res = {} as Response;
+  let req: Partial<Request>;
+  let res: Partial<Response>;
+  let next: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    req = {};
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+    next = vi.fn();
   });
 
-  it("should return status 404 and not found message", async () => {
-    res.status = vi.fn().mockReturnThis();
-    res.json = vi.fn();
+  it("should return status 404 and not found message", () => {
+    const middleware = createNotFoundMiddleware();
 
-    middleware(req, res, () => {});
+    middleware(req as Request, res as Response, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
@@ -25,10 +31,10 @@ describe("NotFoundMiddleware", () => {
     });
   });
 
-  it("should not call next() or throw errors", async () => {
-    const next = vi.fn();
+  it("should not call next()", () => {
+    const middleware = createNotFoundMiddleware();
 
-    middleware(req, res, () => {});
+    middleware(req as Request, res as Response, next);
 
     expect(next).not.toHaveBeenCalled();
   });

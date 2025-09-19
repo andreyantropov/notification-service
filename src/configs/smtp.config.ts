@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { SmtpSenderConfig } from "../infrastructure/senders/createSmtpSender/interfaces/SmtpSenderConfig.js";
 
 const smtpConfigSchema = z.object({

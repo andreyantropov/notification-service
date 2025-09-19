@@ -1,8 +1,5 @@
-import { Recipient } from "../../../../domain/types/Recipient.js";
+import { DeliveryStrategy } from "../types/DeliveryStrategy.js";
 
 export interface NotificationDeliveryServiceConfig {
-  onError?: (
-    payload: { recipient: Recipient; message: string },
-    error: Error,
-  ) => void;
+  strategy?: DeliveryStrategy;
 }

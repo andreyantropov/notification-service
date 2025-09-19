@@ -1,11 +1,14 @@
 import { NextFunction, Request, Response, RequestHandler } from "express";
-import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
-import { LoggerAdapter } from "../../../../../application/ports/LoggerAdapter.js";
+
+import { RequestLoggerMiddlewareDependencies } from "./interfaces/RequestLoggerMiddlewareDependencies.js";
 import { EventType } from "../../../../../shared/enums/EventType.js";
+import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
 
 export const createRequestLoggerMiddleware = (
-  loggerAdapter: LoggerAdapter,
+  dependencies: RequestLoggerMiddlewareDependencies,
 ): RequestHandler => {
+  const { loggerAdapter } = dependencies;
+
   return (req: Request, res: Response, next: NextFunction): void => {
     const start = Date.now();
 

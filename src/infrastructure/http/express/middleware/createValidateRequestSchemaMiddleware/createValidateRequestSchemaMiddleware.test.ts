@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response, NextFunction } from "express";
-import { createValidateRequestSchemaMiddleware } from "./createValidateRequestSchemaMiddleware.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import z from "zod";
 
+import { createValidateRequestSchemaMiddleware } from "./createValidateRequestSchemaMiddleware.js";
+
 describe("createValidateRequestSchemaMiddleware", () => {
-  const testSchema = z.object({
+  const mockSchema = z.object({
     recipients: z.array(
       z.discriminatedUnion("type", [
         z.object({
@@ -20,7 +21,9 @@ describe("createValidateRequestSchemaMiddleware", () => {
     message: z.string(),
   });
 
-  const validateSchema = createValidateRequestSchemaMiddleware(testSchema);
+  const validateSchema = createValidateRequestSchemaMiddleware({
+    schema: mockSchema,
+  });
 
   const req = {} as Request & { validatedBody?: unknown };
   const res = {} as Response;
@@ -93,7 +96,7 @@ describe("createValidateRequestSchemaMiddleware", () => {
 
   it("should re-throw non-Zod errors", () => {
     const originalError = new Error("Unexpected error");
-    const spy = vi.spyOn(testSchema, "parse").mockImplementation(() => {
+    const spy = vi.spyOn(mockSchema, "parse").mockImplementation(() => {
       throw originalError;
     });
 
@@ -125,7 +128,7 @@ describe("createValidateRequestSchemaMiddleware", () => {
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
 
-    type ParsedType = z.infer<typeof testSchema>;
+    type ParsedType = z.infer<typeof mockSchema>;
 
     expect(req.validatedBody).toEqual<ParsedType>({
       recipients: [

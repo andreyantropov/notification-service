@@ -1,11 +1,12 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+
+import { createSendNotificationProcess } from "./createSendNotificationProcess.js";
+import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
 import { Notification } from "../../../domain/types/Notification.js";
 import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { Buffer } from "../../ports/Buffer.js";
 import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
-import { createSendNotificationProcess } from "./createSendNotificationProcess.js";
-import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
 import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
 
 const mockNotification: Notification = {
@@ -14,7 +15,6 @@ const mockNotification: Notification = {
   isUrgent: false,
 };
 
-// Создаём моки с асинхронным интерфейсом
 const mockBuffer = {
   append: vi.fn(),
   takeAll: vi.fn(),
@@ -37,16 +37,16 @@ describe("createSendNotificationProcess", () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
 
-    setIntervalSpy = vi.spyOn(global, "setInterval") as unknown as ReturnType<
+    setIntervalSpy = vi.spyOn(global, "setInterval") as ReturnType<
       typeof vi.spyOn
     >;
     clearIntervalSpy = vi.spyOn(global, "clearInterval");
 
-    process = createSendNotificationProcess(
-      mockBuffer,
-      mockNotificationDeliveryService,
-      mockLoggerAdapter,
-    );
+    process = createSendNotificationProcess({
+      buffer: mockBuffer,
+      notificationDeliveryService: mockNotificationDeliveryService,
+      loggerAdapter: mockLoggerAdapter,
+    });
   });
 
   afterEach(() => {
@@ -64,9 +64,11 @@ describe("createSendNotificationProcess", () => {
   it("should use custom interval if provided", () => {
     const config: SendNotificationProcessConfig = { interval: 5000 };
     const customProcess = createSendNotificationProcess(
-      mockBuffer,
-      mockNotificationDeliveryService,
-      mockLoggerAdapter,
+      {
+        buffer: mockBuffer,
+        notificationDeliveryService: mockNotificationDeliveryService,
+        loggerAdapter: mockLoggerAdapter,
+      },
       config,
     );
 
@@ -155,7 +157,7 @@ describe("createSendNotificationProcess", () => {
     await vi.waitFor(() => {
       expect(mockLoggerAdapter.writeLog).toHaveBeenCalledWith({
         level: LogLevel.Error,
-        message: "Не удалось отправить уведомление",
+        message: "Не удалось отправить одно или несколько уведомлений",
         eventType: EventType.NotificationError,
         spanId: "createSendNotificationProcess",
         payload: result,
@@ -183,11 +185,11 @@ describe("createSendNotificationProcess", () => {
   });
 
   it("should not throw if buffer is empty", async () => {
-    mockBuffer.takeAll.mockResolvedValue([]); // ← Promise, а не значение
+    mockBuffer.takeAll.mockResolvedValue([]);
     process.start();
 
     vi.runOnlyPendingTimers();
-    await Promise.resolve(); // Даем event loop завершить асинхронные операции
+    await Promise.resolve();
 
     expect(mockNotificationDeliveryService.send).not.toHaveBeenCalled();
   });

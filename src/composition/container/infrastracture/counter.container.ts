@@ -1,6 +1,7 @@
 import { asFunction, AwilixContainer } from "awilix";
-import { Container } from "../../types/Container.js";
+
 import { createActiveRequestsCounter } from "../../../infrastructure/counters/createActiveRequestCounter/index.js";
+import { Container } from "../../types/Container.js";
 
 export const registerCounter = (container: AwilixContainer<Container>) => {
   container.register({

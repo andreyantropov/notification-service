@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { InfluxDbLoggerConfig } from "../infrastructure/loggers/createInfluxdbLogger/index.js";
 
 const influxDbConfigSchema = z.object({

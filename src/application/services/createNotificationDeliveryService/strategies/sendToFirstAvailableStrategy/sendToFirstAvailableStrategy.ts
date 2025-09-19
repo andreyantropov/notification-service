@@ -1,71 +1,68 @@
 import { Sender } from "../../../../../domain/ports/Sender.js";
-import { Recipient } from "../../../../../domain/types/Recipient.js";
+import { Notification } from "../../../../../domain/types/Notification.js";
+import { SendResult } from "../../interfaces/SendResult.js";
+import { Warning } from "../../interfaces/Warning.js";
 import { DeliveryStrategy } from "../../types/DeliveryStrategy.js";
-
-const sendToRecipient = async (
-  recipient: Recipient,
-  message: string,
-  senders: Sender[],
-  onError: (
-    payload: { recipient: Recipient; message: string },
-    error: Error,
-  ) => void,
-): Promise<boolean> => {
-  if (!senders || senders.length === 0) {
-    onError(
-      { recipient, message },
-      new Error(
-        `Для адресата ${recipient} не указано ни одного доступного канала`,
-      ),
-    );
-    return false;
-  }
-
-  for (const sender of senders) {
-    try {
-      await sender.send(recipient, message);
-      return true;
-    } catch (error) {
-      onError(
-        { recipient, message },
-        new Error(
-          `Ошибка отправки уведомления через канал ${sender.constructor.name}`,
-          { cause: error },
-        ),
-      );
-    }
-  }
-
-  onError(
-    { recipient, message },
-    new Error(`Не удалось доставить уведомление адресату ${recipient}`),
-  );
-  return false;
-};
+import { validateNotification } from "../utils/validateNotification/validateNotification.js";
 
 export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
-  senders,
-  { recipients, message },
-  onError = () => {},
-): Promise<void> => {
-  if (!recipients || recipients.length === 0) {
-    throw new Error("Нет получателя для доставки уведомления");
+  notification: Notification,
+  senders: Sender[],
+): Promise<SendResult> => {
+  const { recipients, message } = notification;
+
+  const warnings: Warning[] = [];
+
+  if (!validateNotification(notification)) {
+    return {
+      success: false,
+      notification,
+      error: new Error("Нет получателя или сообщение пустое"),
+    };
   }
+
   for (const recipient of recipients) {
     const supportedSenders = senders.filter((sender) =>
       sender.isSupports(recipient),
     );
-    const result = await sendToRecipient(
-      recipient,
-      message,
-      supportedSenders,
-      onError,
-    );
-    if (result) {
-      return;
+
+    if (!supportedSenders || supportedSenders.length === 0) {
+      warnings.push({
+        message: `Для адресата ${JSON.stringify(recipient)} не указано ни одного доступного канала`,
+        recipient,
+      });
+      continue;
+    }
+
+    for (const sender of supportedSenders) {
+      try {
+        await sender.send(recipient, message);
+        return {
+          success: true,
+          notification,
+          details: {
+            recipient,
+            sender: sender.constructor.name,
+          },
+          warnings,
+        };
+      } catch (error) {
+        warnings.push({
+          message: `Ошибка отправки через канал ${sender.constructor.name}`,
+          details: error,
+          recipient,
+          sender: sender.constructor.name,
+        });
+      }
     }
   }
-  throw new Error(
-    "Не удалось отправить уведомление ни одним из доступных способов",
-  );
+
+  return {
+    success: false,
+    notification,
+    error: new Error(
+      "Не удалось отправить уведомление ни одним из доступных способов",
+    ),
+    warnings,
+  };
 };

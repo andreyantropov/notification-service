@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { BitrixSenderConfig } from "../infrastructure/senders/createBitrixSender/interfaces/BitrixSenderConfig.js";
 
 const bitrixConfigSchema = z.object({

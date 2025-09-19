@@ -1,9 +1,13 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import z from "zod";
 
+import { ValidateRequestSchemaMiddlewareConfig } from "./interfaces/ValidateRequestSchemaMiddlewareConfig.js";
+
 export const createValidateRequestSchemaMiddleware = (
-  schema: z.ZodTypeAny,
+  config: ValidateRequestSchemaMiddlewareConfig,
 ): RequestHandler => {
+  const { schema } = config;
+
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       req.validatedBody = schema.parse(req.body);

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+
 import { createActiveRequestsCounter } from "./createActiveRequestCounter.js";
 import { Counter } from "../../ports/Counter.js";
 

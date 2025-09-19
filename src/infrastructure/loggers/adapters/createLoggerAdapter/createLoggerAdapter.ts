@@ -1,17 +1,22 @@
-import { v4 } from "uuid";
 import os from "os";
-import { RawLog } from "../../../../application/types/RawLog.js";
+
 import { serializeError } from "serialize-error";
-import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
-import { Logger } from "../../../ports/Logger.js";
-import { Log } from "../../../types/Log.js";
+import { v4 } from "uuid";
+
 import { LoggerAdapterConfig } from "./interfaces/LoggerAdapterConfig.js";
+import { LoggerAdapterDependencies } from "./interfaces/LoggerAdapterDependencies.js";
+import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
+import { RawLog } from "../../../../application/types/RawLog.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
+import { Log } from "../../../types/Log.js";
 
 export const createLoggerAdapter = (
-  logger: Logger,
-  { measurement, currentService, environment }: LoggerAdapterConfig,
+  dependencies: LoggerAdapterDependencies,
+  config: LoggerAdapterConfig,
 ): LoggerAdapter => {
+  const { logger } = dependencies;
+  const { measurement, currentService, environment } = config;
+
   const formatLog = ({
     level,
     eventType,

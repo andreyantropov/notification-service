@@ -3,6 +3,7 @@ export enum EventType {
   BootstrapError = "bootstrap_error",
 
   ServerSuccess = "server_success",
+  ServerWarning = "server_warning",
   ServerError = "server_error",
 
   NotificationSuccess = "notification_success",

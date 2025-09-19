@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { Recipient } from "./Recipient.js";
 
 export const SingleNotification = z.object({

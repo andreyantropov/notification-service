@@ -1,19 +1,18 @@
 import axios from "axios";
+import pTimeout from "p-timeout";
+
 import { BitrixSenderConfig } from "./interfaces/BitrixSenderConfig.js";
 import { Sender } from "../../../domain/ports/Sender.js";
 import {
   Recipient,
   isBitrixRecipient,
 } from "../../../domain/types/Recipient.js";
-import pTimeout from "p-timeout";
 
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
-export const createBitrixSender = ({
-  baseUrl,
-  userId,
-  authToken,
-}: BitrixSenderConfig): Sender => {
+export const createBitrixSender = (config: BitrixSenderConfig): Sender => {
+  const { baseUrl, userId, authToken } = config;
+
   const isSupports = (recipient: Recipient): boolean => {
     return recipient.type === "bitrix";
   };

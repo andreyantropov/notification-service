@@ -1,5 +1,5 @@
-const getSwaggerSpec = (options: { baseUrl: string }) => {
-  const { baseUrl } = options;
+const getSwaggerSpec = (config: { baseUrl: string }) => {
+  const { baseUrl } = config;
 
   return {
     openapi: "3.0.0",

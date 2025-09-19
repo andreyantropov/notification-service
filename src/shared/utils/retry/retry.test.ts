@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+
 import { retry } from "./retry.js";
 
 describe("retry", () => {
@@ -40,7 +41,7 @@ describe("retry", () => {
     const startTime = Date.now();
     await retry(mockFn, 3);
     const duration = Date.now() - startTime;
-    expect(duration).toBeGreaterThanOrEqual(3000); // 1s + 2s
+    expect(duration).toBeGreaterThanOrEqual(3000);
     expect(duration).toBeLessThan(4000);
   });
 

@@ -1,6 +1,7 @@
-import { createInfluxDbLogger } from "./createInfluxDbLogger.js";
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
+
+import { createInfluxDbLogger } from "./createInfluxDbLogger.js";
 import { EnvironmentType } from "../../../shared/enums/EnvironmentType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../shared/enums/TriggerType.js";

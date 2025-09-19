@@ -1,47 +1,32 @@
-import { Notification } from "../../../domain/types/Notification.js";
-import { Sender } from "../../../domain/ports/Sender.js";
-import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
-import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
-import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
-import { SendResult } from "./types/SendResult.js";
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
+import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
+import { NotificationDeliveryServiceDependencies } from "./interfaces/NotificationDeliveryServiceDependencies.js";
+import { SendResult } from "./interfaces/SendResult.js";
+import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
+import { Notification } from "../../../domain/types/Notification.js";
+import { DEFAULT_CONFIG } from "../../../shared/constants/defaults.js";
 
 export const createNotificationDeliveryService = (
-  senders: Sender[],
-  strategy: DeliveryStrategy = sendToFirstAvailableStrategy,
-  config?: NotificationDeliveryServiceConfig,
+  dependencies: NotificationDeliveryServiceDependencies,
+  configs: NotificationDeliveryServiceConfig = DEFAULT_CONFIG,
 ): NotificationDeliveryService => {
+  const { senders } = dependencies;
+  const { strategy = sendToFirstAvailableStrategy } = configs;
+
   if (!senders || senders.length === 0) {
     throw new Error("В сервис не передано ни одного сендера");
   }
 
-  const { onError = () => {} } = config || {};
-
-  const send = async (
-    notification: Notification | Notification[],
-  ): Promise<SendResult[]> => {
-    const notifications = Array.isArray(notification)
-      ? notification
-      : [notification];
-
-    if (notifications.length === 0) {
-      return [];
-    }
-
+  const send = async (notifications: Notification[]): Promise<SendResult[]> => {
     const results = await Promise.allSettled(
-      notifications.map((notification) =>
-        strategy(senders, notification, onError),
-      ),
+      notifications.map((notification) => strategy(notification, senders)),
     );
 
     return results.map((result, index): SendResult => {
       const currentNotification = notifications[index];
 
       if (result.status === "fulfilled") {
-        return {
-          success: true,
-          notification: currentNotification,
-        };
+        return result.value;
       } else {
         return {
           success: false,

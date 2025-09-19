@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { sendToFirstAvailableStrategy } from "./sendToFirstAvailableStrategy";
+import { describe, it, expect } from "vitest";
+
+import { sendToFirstAvailableStrategy } from "./sendToFirstAvailableStrategy.js";
 import { Sender } from "../../../../../domain/ports/Sender.js";
-import { Recipient } from "../../../../../domain/types/Recipient.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
+import { Recipient } from "../../../../../domain/types/Recipient.js";
 
 class MockEmailSender implements Sender {
   constructor(
@@ -53,20 +54,36 @@ describe("sendToFirstAvailableStrategy", () => {
   };
   const bitrixRecipient: Recipient = { type: "bitrix", value: 123 };
 
-  let onError: ReturnType<typeof vi.fn>;
-
-  beforeEach(() => {
-    onError = vi.fn();
-  });
-
-  it("should throw an error if no recipients are provided", async () => {
+  it("should return error if no recipients are provided", async () => {
     const senders: Sender[] = [new MockEmailSender()];
     const notification = { recipients: [], message };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).rejects.toThrow("Нет получателя для доставки уведомления");
-    expect(onError).not.toHaveBeenCalled();
+    const result = await sendToFirstAvailableStrategy(notification, senders);
+
+    expect(result.success).toBe(false);
+    expect(result.notification).toBe(notification);
+    expect(result.error).toBeInstanceOf(Error);
+    expect((result.error as Error).message).toBe(
+      "Нет получателя или сообщение пустое",
+    );
+  });
+
+  it("should return error if message is empty", async () => {
+    const senders: Sender[] = [new MockEmailSender(true, true)];
+    const notification: Notification = {
+      recipients: [{ type: "email", value: "test@example.com" }],
+      message: "",
+    };
+
+    const result = await sendToFirstAvailableStrategy(notification, senders);
+
+    expect(result.success).toBe(false);
+    expect(result.notification).toBe(notification);
+    expect(result.error).toBeInstanceOf(Error);
+    expect((result.error as Error).message).toBe(
+      "Нет получателя или сообщение пустое",
+    );
+    expect(result.warnings).toBeUndefined();
   });
 
   it("should send to the first recipient using a supported sender successfully", async () => {
@@ -77,11 +94,15 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).resolves.not.toThrow();
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toEqual([]);
+    expect(result.details).toEqual({
+      recipient: emailRecipient,
+      sender: "MockEmailSender",
+    });
   });
 
   it("should skip unsupported senders and use the next available one", async () => {
@@ -93,32 +114,36 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).resolves.not.toThrow();
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toEqual([]);
+    expect(result.details).toEqual({
+      recipient: bitrixRecipient,
+      sender: "MockBitrixSender",
+    });
   });
 
-  it("should call onError when no senders are available for a recipient", async () => {
+  it("should return warnings when no senders are available for a recipient", async () => {
     const senders: Sender[] = [];
     const notification: Notification = {
       recipients: [emailRecipient],
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).rejects.toThrow(
-      "Не удалось отправить уведомление ни одним из доступных способов",
-    );
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).toHaveBeenCalledWith(
-      { recipient: emailRecipient, message },
-      expect.any(Error),
-    );
-    expect(onError.mock.lastCall![1].message).toContain(
-      "не указано ни одного доступного канала",
+    expect(result.success).toBe(false);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings![0]).toEqual({
+      message: `Для адресата ${JSON.stringify(emailRecipient)} не указано ни одного доступного канала`,
+      recipient: emailRecipient,
+    });
+    expect(result.error).toBeInstanceOf(Error);
+    expect((result.error as Error).message).toBe(
+      "Не удалось отправить уведомление ни одним из доступных способов",
     );
   });
 
@@ -131,21 +156,24 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).resolves.not.toThrow();
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).toHaveBeenCalledWith(
-      { recipient: emailRecipient, message },
-      expect.objectContaining({
-        message: expect.stringContaining(
-          "Ошибка отправки уведомления через канал MockEmailSender",
-        ),
-      }),
-    );
+    expect(result.success).toBe(true);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings![0]).toEqual({
+      message: "Ошибка отправки через канал MockEmailSender",
+      details: expect.any(Error),
+      recipient: emailRecipient,
+      sender: "MockEmailSender",
+    });
+    expect(result.details).toEqual({
+      recipient: bitrixRecipient,
+      sender: "MockBitrixSender",
+    });
   });
 
-  it("should throw if no recipient can be delivered to", async () => {
+  it("should return failure if no recipient can be delivered to", async () => {
     const failingEmailSender = new MockEmailSender(false, true);
     const failingBitrixSender = new MockBitrixSender(false, true);
     const senders: Sender[] = [failingEmailSender, failingBitrixSender];
@@ -154,35 +182,26 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).rejects.toThrow(
-      "Не удалось отправить уведомление ни одним из доступных способов",
-    );
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).toHaveBeenCalledWith(
-      { recipient: emailRecipient, message },
-      expect.objectContaining({
-        message: expect.stringContaining(
-          "Ошибка отправки уведомления через канал MockEmailSender",
-        ),
-      }),
-    );
-    expect(onError).toHaveBeenCalledWith(
-      { recipient: bitrixRecipient, message },
-      expect.objectContaining({
-        message: expect.stringContaining(
-          "Ошибка отправки уведомления через канал MockBitrixSender",
-        ),
-      }),
-    );
-    expect(onError).toHaveBeenCalledWith(
-      { recipient: bitrixRecipient, message },
-      expect.objectContaining({
-        message: expect.stringContaining(
-          "Не удалось доставить уведомление адресату",
-        ),
-      }),
+    expect(result.success).toBe(false);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toHaveLength(2);
+    expect(result.warnings![0]).toEqual({
+      message: "Ошибка отправки через канал MockEmailSender",
+      details: expect.any(Error),
+      recipient: emailRecipient,
+      sender: "MockEmailSender",
+    });
+    expect(result.warnings![1]).toEqual({
+      message: "Ошибка отправки через канал MockBitrixSender",
+      details: expect.any(Error),
+      recipient: bitrixRecipient,
+      sender: "MockBitrixSender",
+    });
+    expect(result.error).toBeInstanceOf(Error);
+    expect((result.error as Error).message).toBe(
+      "Не удалось отправить уведомление ни одним из доступных способов",
     );
   });
 
@@ -194,11 +213,15 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).resolves.not.toThrow();
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toEqual([]);
+    expect(result.details).toEqual({
+      recipient: emailRecipient,
+      sender: "MockEmailSender",
+    });
   });
 
   it("should handle mixed recipient types and find correct sender", async () => {
@@ -210,14 +233,18 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).resolves.not.toThrow();
+    const result = await sendToFirstAvailableStrategy(notification, senders);
 
-    expect(onError).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toEqual([]);
+    expect(result.details).toEqual({
+      recipient: bitrixRecipient,
+      sender: "MockBitrixSender",
+    });
   });
 
-  it("should call onError with sender error and final delivery error when sender throws", async () => {
+  it("should include warnings when sender throws", async () => {
     const failingSender = new MockEmailSender(false, true);
     const senders: Sender[] = [failingSender];
     const notification: Notification = {
@@ -225,26 +252,20 @@ describe("sendToFirstAvailableStrategy", () => {
       message,
     };
 
-    await expect(
-      sendToFirstAvailableStrategy(senders, notification, onError),
-    ).rejects.toThrow(
+    const result = await sendToFirstAvailableStrategy(notification, senders);
+
+    expect(result.success).toBe(false);
+    expect(result.notification).toBe(notification);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings![0]).toEqual({
+      message: "Ошибка отправки через канал MockEmailSender",
+      details: expect.any(Error),
+      recipient: emailRecipient,
+      sender: "MockEmailSender",
+    });
+    expect(result.error).toBeInstanceOf(Error);
+    expect((result.error as Error).message).toBe(
       "Не удалось отправить уведомление ни одним из доступных способов",
-    );
-
-    expect(onError).toHaveBeenCalledTimes(2);
-
-    const [firstCall, secondCall] = onError.mock.calls;
-
-    expect(firstCall[0]).toEqual({ recipient: emailRecipient, message });
-    expect(firstCall[1]).toBeInstanceOf(Error);
-    expect(firstCall[1].message).toContain(
-      "Ошибка отправки уведомления через канал MockEmailSender",
-    );
-
-    expect(secondCall[0]).toEqual({ recipient: emailRecipient, message });
-    expect(secondCall[1]).toBeInstanceOf(Error);
-    expect(secondCall[1].message).toContain(
-      "Не удалось доставить уведомление адресату",
     );
   });
 });

@@ -1,26 +1,41 @@
+import { SendNotificationUseCase } from "./interfaces/SendNotificationUseCase.js";
+import { SendNotificationUseCaseDependencies } from "./interfaces/SendNotificationUseCaseDependencies.js";
 import { Notification } from "../../../domain/types/Notification.js";
+import { DEFAULT_LOGGER } from "../../../shared/constants/defaults.js";
 import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
-import { Buffer } from "../../ports/Buffer.js";
-import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
-import { SendNotificationUseCase } from "./interfaces/SendNotificationUseCase.js";
 
 export const createSendNotificationUseCase = (
-  buffer: Buffer<Notification>,
-  notificationDeliveryService: NotificationDeliveryService,
-  loggerAdapter: LoggerAdapter,
+  dependencies: SendNotificationUseCaseDependencies,
 ): SendNotificationUseCase => {
+  const {
+    buffer,
+    notificationDeliveryService,
+    loggerAdapter = DEFAULT_LOGGER,
+  } = dependencies;
+
   const sendUrgentNotifications = async (
     urgentNotifications: Notification[],
   ): Promise<void> => {
     const results = await notificationDeliveryService.send(urgentNotifications);
+    const isErrors = results.some((res) => !res.success);
+    const isWarnings = results.some(
+      (res) => res.warnings && res.warnings.length !== 0,
+    );
 
-    if (results.some((res) => !res.success)) {
+    if (isErrors) {
       loggerAdapter.writeLog({
         level: LogLevel.Error,
-        message: `Не удалось отправить уведомление`,
+        message: `Не удалось отправить одно или несколько уведомлений`,
         eventType: EventType.NotificationError,
+        spanId: `createSendNotificationUseCase`,
+        payload: results,
+      });
+    } else if (isWarnings) {
+      loggerAdapter.writeLog({
+        level: LogLevel.Warning,
+        message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
+        eventType: EventType.NotificationWarning,
         spanId: `createSendNotificationUseCase`,
         payload: results,
       });

@@ -19,7 +19,7 @@ export const bootstrap = async (): Promise<void> => {
     server.start();
 
     await loggerAdapter.writeLog({
-      level: LogLevel.Info,
+      level: LogLevel.Debug,
       message: "Приложение успешно запущено",
       eventType: EventType.BootstrapSuccess,
       spanId: "bootstrap",
@@ -31,7 +31,7 @@ export const bootstrap = async (): Promise<void> => {
         await server.stop();
 
         await loggerAdapter?.writeLog({
-          level: LogLevel.Info,
+          level: LogLevel.Debug,
           message: "Приложение корректно завершило работу",
           eventType: EventType.BootstrapSuccess,
           spanId: "bootstrap",

@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
 import { createLoggerAdapter } from "./index.js";
+import { RawLog } from "../../../../application/types/RawLog.js";
 import { EnvironmentType } from "../../../../shared/enums/EnvironmentType.js";
 import { EventType } from "../../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
-import { RawLog } from "../../../../application/types/RawLog.js";
+import { noop } from "../../../../shared/utils/noop/noop.js";
 
 const mockWriteLog = vi.fn();
 
@@ -17,19 +19,20 @@ describe("createLoggerAdapter", () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
-    // Сохраняем оригинальные env переменные
     originalEnv = { ...process.env };
 
-    service = createLoggerAdapter(mockLogger, {
-      measurement: "isplanar_notification_logs",
-      currentService: "isplanar_notification",
-      environment: EnvironmentType.Development, // передаем environment из конфига
-    });
+    service = createLoggerAdapter(
+      { logger: mockLogger },
+      {
+        measurement: "isplanar_notification_logs",
+        currentService: "isplanar_notification",
+        environment: EnvironmentType.Development,
+      },
+    );
     mockWriteLog.mockClear();
   });
 
   afterEach(() => {
-    // Восстанавливаем оригинальные env переменные
     process.env = originalEnv;
   });
 
@@ -52,9 +55,9 @@ describe("createLoggerAdapter", () => {
       measurement: "isplanar_notification_logs",
       tags: {
         level: "INFO",
-        currentService: "isplanar_notification", // из конфига, а не из env
-        trigger: TriggerType.Api, // жестко закодировано в адаптере
-        environment: EnvironmentType.Development, // из конфига
+        currentService: "isplanar_notification",
+        trigger: TriggerType.Api,
+        environment: EnvironmentType.Development,
         eventType: "notification_success",
         host: expect.any(String),
         spanId: "span123",
@@ -78,12 +81,14 @@ describe("createLoggerAdapter", () => {
       error,
     };
 
-    // Создаем сервис с другим environment
-    const productionService = createLoggerAdapter(mockLogger, {
-      measurement: "isplanar_notification_logs",
-      currentService: "isplanar_notification",
-      environment: EnvironmentType.Production,
-    });
+    const productionService = createLoggerAdapter(
+      { logger: mockLogger },
+      {
+        measurement: "isplanar_notification_logs",
+        currentService: "isplanar_notification",
+        environment: EnvironmentType.Production,
+      },
+    );
 
     await productionService.writeLog(rawLog);
 
@@ -95,8 +100,8 @@ describe("createLoggerAdapter", () => {
       tags: {
         level: "ERROR",
         currentService: "isplanar_notification",
-        trigger: TriggerType.Api, // всегда Api
-        environment: EnvironmentType.Production, // из конфига
+        trigger: TriggerType.Api,
+        environment: EnvironmentType.Production,
         eventType: "notification_error",
         host: expect.any(String),
         spanId: "span456",
@@ -111,11 +116,14 @@ describe("createLoggerAdapter", () => {
   });
 
   it("should use different environment based on config", async () => {
-    const stagingService = createLoggerAdapter(mockLogger, {
-      measurement: "test_logs",
-      currentService: "test_service",
-      environment: EnvironmentType.Staging,
-    });
+    const stagingService = createLoggerAdapter(
+      { logger: mockLogger },
+      {
+        measurement: "test_logs",
+        currentService: "test_service",
+        environment: EnvironmentType.Staging,
+      },
+    );
 
     const rawLog: RawLog = {
       level: LogLevel.Warning,
@@ -132,9 +140,7 @@ describe("createLoggerAdapter", () => {
   });
 
   it("should log an error if writing the log fails", async () => {
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(noop);
 
     mockWriteLog.mockRejectedValueOnce(new Error("Logging failed"));
 

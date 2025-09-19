@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { toSnakeCase, mapKeysToSnakeCase } from "./toSnakeCase.js";
 
 describe("toSnakeCase", () => {

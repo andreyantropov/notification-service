@@ -18,7 +18,7 @@ branch_created_development:
       # Получаем номер задачи из имени ветки (формат: 123-feature-description)
       BRANCH_NAME="$CI_COMMIT_REF_NAME"
       ISSUE_ID=$(echo "$BRANCH_NAME" | grep -oE '^[0-9]+')
-      
+
       if [ -n "$ISSUE_ID" ]; then
         echo "Обнаружена задача #$ISSUE_ID в ветке: $BRANCH_NAME"
         
@@ -144,11 +144,11 @@ cleanup_closed_issues:
   script:
     - |
       echo "Начинаем очистку статусных меток у закрытых задач..."
-      
+
       # Получаем все закрытые задачи проекта
       CLOSED_ISSUES=$(curl --header "PRIVATE-TOKEN: $ACCESS_TOKEN" \
         "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues?state=closed&per_page=100")
-      
+
       # Обрабатываем каждую закрытую задачу
       echo "$CLOSED_ISSUES" | jq -c '.[]' | while read -r ISSUE; do
         ISSUE_ID=$(echo "$ISSUE" | jq -r '.iid')
@@ -173,7 +173,7 @@ cleanup_closed_issues:
           fi
         fi
       done
-      
+
       echo "Очистка статусных меток завершена"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"

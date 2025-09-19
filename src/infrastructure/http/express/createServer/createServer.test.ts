@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createServer } from "./createServer.js";
 import { Express } from "express";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { createServer } from "./createServer.js";
 import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
 import { Counter } from "../../../ports/Counter.js";
@@ -40,13 +41,14 @@ describe("createServer", () => {
     };
 
     mockDependencies = {
+      app: mockApp,
       activeRequestsCounter: mockActiveRequestsCounter,
     };
   });
 
   describe("start", () => {
     it("should start the server on the specified port", () => {
-      const server = createServer(mockApp, mockConfig, mockDependencies);
+      const server = createServer(mockDependencies, mockConfig);
       server.start();
 
       expect(mockApp.listen).toHaveBeenCalledWith(
@@ -62,11 +64,10 @@ describe("createServer", () => {
         throw error;
       });
 
-      const server = createServer(
-        mockApp,
-        { ...mockConfig, onStartError },
-        mockDependencies,
-      );
+      const server = createServer(mockDependencies, {
+        ...mockConfig,
+        onStartError,
+      });
       server.start();
 
       expect(onStartError).toHaveBeenCalledWith(
@@ -80,14 +81,14 @@ describe("createServer", () => {
 
   describe("stop", () => {
     it("should do nothing if server is not running", async () => {
-      const server = createServer(mockApp, mockConfig, mockDependencies);
+      const server = createServer(mockDependencies, mockConfig);
       await server.stop();
 
       expect(mockServer.close).not.toHaveBeenCalled();
     });
 
     it("should close the server when no active requests", async () => {
-      const server = createServer(mockApp, mockConfig, mockDependencies);
+      const server = createServer(mockDependencies, mockConfig);
       server.start();
       await server.stop();
 
@@ -104,9 +105,13 @@ describe("createServer", () => {
         decrease: vi.fn(() => counter--),
       };
 
-      const server = createServer(mockApp, mockConfig, {
-        activeRequestsCounter: counterWithPending,
-      });
+      const server = createServer(
+        {
+          app: mockApp,
+          activeRequestsCounter: counterWithPending,
+        },
+        mockConfig,
+      );
       server.start();
 
       const stopPromise = server.stop();
@@ -129,9 +134,8 @@ describe("createServer", () => {
       };
 
       const server = createServer(
-        mockApp,
+        { app: mockApp, activeRequestsCounter: mockActiveRequestsCounter },
         { ...mockConfig, gracefulShutdownTimeout: 50, onStopError },
-        { activeRequestsCounter: mockActiveRequestsCounter },
       );
       server.start();
 
@@ -146,11 +150,10 @@ describe("createServer", () => {
       const onStopError = vi.fn();
       mockServer.close = vi.fn((cb) => cb?.(error));
 
-      const server = createServer(
-        mockApp,
-        { ...mockConfig, onStopError },
-        mockDependencies,
-      );
+      const server = createServer(mockDependencies, {
+        ...mockConfig,
+        onStopError,
+      });
       server.start();
 
       await expect(server.stop()).rejects.toThrow(error);

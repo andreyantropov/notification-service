@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
 import { createFallbackLogger } from "./index.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../shared/enums/TriggerType.js";
@@ -41,7 +42,7 @@ describe("createFallbackLogger", () => {
     loggerA = createMockLogger();
     loggerB = createMockLogger();
 
-    fallbackLogger = createFallbackLogger([loggerA, loggerB]);
+    fallbackLogger = createFallbackLogger({ loggers: [loggerA, loggerB] });
   });
 
   afterEach(() => {
@@ -86,11 +87,9 @@ describe("createFallbackLogger", () => {
 
   it("correctly handles 3+ loggers", async () => {
     const loggerC = createMockLogger();
-    const fallbackLoggerWithMany = createFallbackLogger([
-      loggerA,
-      loggerB,
-      loggerC,
-    ]);
+    const fallbackLoggerWithMany = createFallbackLogger({
+      loggers: [loggerA, loggerB, loggerC],
+    });
 
     const errorA = new Error("Logger A failed");
     const errorB = new Error("Logger B failed");
@@ -107,18 +106,16 @@ describe("createFallbackLogger", () => {
   });
 
   it("throws an error during creation if the logger list is empty", () => {
-    expect(() => createFallbackLogger([])).toThrow(
+    expect(() => createFallbackLogger({ loggers: [] })).toThrow(
       "Не указано ни одного логгера",
     );
   });
 
   it("passes the log to all loggers until the first success", async () => {
     const loggerC = createMockLogger();
-    const fallbackLoggerWithThree = createFallbackLogger([
-      loggerA,
-      loggerB,
-      loggerC,
-    ]);
+    const fallbackLoggerWithThree = createFallbackLogger({
+      loggers: [loggerA, loggerB, loggerC],
+    });
 
     const errorA = new Error("Logger A failed");
     const errorB = new Error("Logger B failed");
@@ -135,7 +132,7 @@ describe("createFallbackLogger", () => {
   });
 
   it("works with a single logger", async () => {
-    const singleFallbackLogger = createFallbackLogger([loggerA]);
+    const singleFallbackLogger = createFallbackLogger({ loggers: [loggerA] });
 
     loggerA.writeLog.mockResolvedValue(undefined);
 
@@ -145,7 +142,9 @@ describe("createFallbackLogger", () => {
   });
 
   it("only processes the loggers provided in the config", async () => {
-    const fallbackLogger = createFallbackLogger([loggerA, loggerB]);
+    const fallbackLogger = createFallbackLogger({
+      loggers: [loggerA, loggerB],
+    });
 
     loggerA.writeLog.mockRejectedValue(new Error("DB error"));
     loggerB.writeLog.mockResolvedValue(undefined);
@@ -157,11 +156,9 @@ describe("createFallbackLogger", () => {
 
   it("processes loggers in the order they were provided", async () => {
     const loggerC = createMockLogger();
-    const orderedFallbackLogger = createFallbackLogger([
-      loggerA,
-      loggerB,
-      loggerC,
-    ]);
+    const orderedFallbackLogger = createFallbackLogger({
+      loggers: [loggerA, loggerB, loggerC],
+    });
 
     const errorA = new Error("First logger failed");
     loggerA.writeLog.mockRejectedValueOnce(errorA);

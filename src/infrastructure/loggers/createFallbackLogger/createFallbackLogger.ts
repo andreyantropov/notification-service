@@ -1,12 +1,16 @@
+import { FallbackLoggerClientConfig } from "./interfaces/FallbackLoggerConfig.js";
+import { FallbackLoggerDependencies } from "./interfaces/FallbackLoggerDependencies.js";
+import { DEFAULT_CONFIG } from "../../../shared/constants/defaults.js";
+import { noop } from "../../../shared/utils/noop/noop.js";
 import { Logger } from "../../ports/Logger.js";
 import { Log } from "../../types/Log.js";
-import { FallbackLoggerClientConfig } from "./interfaces/FallbackLoggerConfig.js";
 
 export const createFallbackLogger = (
-  loggers: Logger[],
-  config?: FallbackLoggerClientConfig,
+  dependencies: FallbackLoggerDependencies,
+  config: FallbackLoggerClientConfig = DEFAULT_CONFIG,
 ): Logger => {
-  const { onError = () => {} } = config || {};
+  const { loggers } = dependencies;
+  const { onError = noop } = config;
 
   if (loggers.length === 0) {
     throw new Error("Не указано ни одного логгера");

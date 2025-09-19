@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { SendNotificationProcessConfig } from "../application/jobs/createSendNotificationProcess/index.js";
 
 const processConfigSchema = z.object({

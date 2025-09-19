@@ -1,21 +1,18 @@
 import nodemailer from "nodemailer";
+import pTimeout from "p-timeout";
+
+import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
 import { Sender } from "../../../domain/ports/Sender.js";
 import {
   Recipient,
   isEmailRecipient,
 } from "../../../domain/types/Recipient.js";
-import { SmtpSenderConfig } from "./interfaces/SmtpSenderConfig.js";
-import pTimeout from "p-timeout";
 
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
-export const createSmtpSender = ({
-  host,
-  port,
-  secure,
-  auth,
-  fromEmail,
-}: SmtpSenderConfig): Sender => {
+export const createSmtpSender = (config: SmtpSenderConfig): Sender => {
+  const { host, port, secure, auth, fromEmail } = config;
+
   const transporter = nodemailer.createTransport({
     host: host,
     port: port,

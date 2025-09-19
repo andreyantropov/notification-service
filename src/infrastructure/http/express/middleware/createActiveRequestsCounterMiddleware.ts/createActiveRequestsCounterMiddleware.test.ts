@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextFunction, Request, Response } from "express";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
 import { createActiveRequestsCounterMiddleware } from "./createActiveRequestsCounterMiddleware";
 import { Counter } from "../../../../ports/Counter";
 
@@ -27,7 +28,9 @@ describe("createActiveRequestsCounterMiddleware", () => {
   });
 
   it("should call increase on the counter when middleware is executed", () => {
-    const middleware = createActiveRequestsCounterMiddleware(mockCounter);
+    const middleware = createActiveRequestsCounterMiddleware({
+      activeRequestsCounter: mockCounter,
+    });
     middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockCounter.increase).toHaveBeenCalledTimes(1);
@@ -35,7 +38,9 @@ describe("createActiveRequestsCounterMiddleware", () => {
   });
 
   it("should register finish and close event handlers on the response", () => {
-    const middleware = createActiveRequestsCounterMiddleware(mockCounter);
+    const middleware = createActiveRequestsCounterMiddleware({
+      activeRequestsCounter: mockCounter,
+    });
     middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockResponse.on).toHaveBeenCalledTimes(2);
@@ -52,7 +57,9 @@ describe("createActiveRequestsCounterMiddleware", () => {
     });
     mockResponse.on = mockOn as unknown as Response["on"];
 
-    const middleware = createActiveRequestsCounterMiddleware(mockCounter);
+    const middleware = createActiveRequestsCounterMiddleware({
+      activeRequestsCounter: mockCounter,
+    });
     middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockCounter.decrease).toHaveBeenCalledTimes(1);
@@ -64,14 +71,18 @@ describe("createActiveRequestsCounterMiddleware", () => {
     });
     mockResponse.on = mockOn as unknown as Response["on"];
 
-    const middleware = createActiveRequestsCounterMiddleware(mockCounter);
+    const middleware = createActiveRequestsCounterMiddleware({
+      activeRequestsCounter: mockCounter,
+    });
     middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockCounter.decrease).toHaveBeenCalledTimes(1);
   });
 
   it("should call next function exactly once", () => {
-    const middleware = createActiveRequestsCounterMiddleware(mockCounter);
+    const middleware = createActiveRequestsCounterMiddleware({
+      activeRequestsCounter: mockCounter,
+    });
     middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledTimes(1);
@@ -84,7 +95,9 @@ describe("createActiveRequestsCounterMiddleware", () => {
     });
     mockResponse.on = mockOn as unknown as Response["on"];
 
-    const middleware = createActiveRequestsCounterMiddleware(mockCounter);
+    const middleware = createActiveRequestsCounterMiddleware({
+      activeRequestsCounter: mockCounter,
+    });
     middleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     callbacks.finish?.();

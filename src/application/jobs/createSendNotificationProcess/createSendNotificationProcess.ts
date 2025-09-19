@@ -1,21 +1,26 @@
-import { Notification } from "../../../domain/types/Notification.js";
-import { EventType } from "../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { Buffer } from "../../ports/Buffer.js";
-import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
-import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
 import { SendNotificationProcess } from "./interfaces/SendNotificationProcess.js";
 import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
+import { SendNotificationProcessDependencies } from "./interfaces/SendNotificationProcessDependencies.js";
+import {
+  DEFAULT_CONFIG,
+  DEFAULT_LOGGER,
+} from "../../../shared/constants/defaults.js";
+import { EventType } from "../../../shared/enums/EventType.js";
+import { LogLevel } from "../../../shared/enums/LogLevel.js";
 
 const DEFAULT_INTERVAL = 60_000;
 
 export const createSendNotificationProcess = (
-  buffer: Buffer<Notification>,
-  notificationDeliveryService: NotificationDeliveryService,
-  loggerAdapter: LoggerAdapter,
-  config?: SendNotificationProcessConfig,
+  dependencies: SendNotificationProcessDependencies,
+  config: SendNotificationProcessConfig = DEFAULT_CONFIG,
 ): SendNotificationProcess => {
-  const { interval = DEFAULT_INTERVAL } = config || {};
+  const {
+    buffer,
+    notificationDeliveryService,
+    loggerAdapter = DEFAULT_LOGGER,
+  } = dependencies;
+  const { interval = DEFAULT_INTERVAL } = config;
+
   let timer: ReturnType<typeof setInterval> | null = null;
   let isProcessing = false;
 
@@ -28,12 +33,24 @@ export const createSendNotificationProcess = (
       if (notifications.length === 0) return;
 
       const results = await notificationDeliveryService.send(notifications);
+      const isErrors = results.some((res) => !res.success);
+      const isWarnings = results.some(
+        (res) => res.warnings && res.warnings.length !== 0,
+      );
 
-      if (results.some((res) => !res.success)) {
+      if (isErrors) {
         loggerAdapter.writeLog({
           level: LogLevel.Error,
-          message: `Не удалось отправить уведомление`,
+          message: `Не удалось отправить одно или несколько уведомлений`,
           eventType: EventType.NotificationError,
+          spanId: `createSendNotificationProcess`,
+          payload: results,
+        });
+      } else if (isWarnings) {
+        loggerAdapter.writeLog({
+          level: LogLevel.Warning,
+          message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
+          eventType: EventType.NotificationWarning,
           spanId: `createSendNotificationProcess`,
           payload: results,
         });

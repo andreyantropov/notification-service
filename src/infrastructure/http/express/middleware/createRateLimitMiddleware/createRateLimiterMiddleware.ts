@@ -1,10 +1,13 @@
 import { NextFunction, Request, Response, RequestHandler } from "express";
 import rateLimit, { Options } from "express-rate-limit";
 
-export const createRateLimiter = (
-  time: number,
-  tries: number,
+import { RateLimiterMiddlewareConfig } from "./interfaces/RateLimiterMiddlewareConfig.js";
+
+export const createRateLimiterMiddleware = (
+  config: RateLimiterMiddlewareConfig,
 ): RequestHandler => {
+  const { time, tries } = config;
+
   return rateLimit({
     windowMs: time,
     max: tries,

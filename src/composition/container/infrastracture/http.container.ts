@@ -1,7 +1,7 @@
+import { asFunction, AwilixContainer } from "awilix";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
-import { asFunction, AwilixContainer } from "awilix";
-import { Container } from "../../types/Container.js";
+
 import { getSwaggerSpec } from "../../../api/openapi/swagger.spec.js";
 import { serverConfig } from "../../../configs/server.config.js";
 import {
@@ -10,7 +10,7 @@ import {
 } from "../../../infrastructure/http/express/controllers/index.js";
 import { createServer } from "../../../infrastructure/http/express/createServer/createServer.js";
 import {
-  createRateLimiter,
+  createRateLimiterMiddleware,
   createRequestLoggerMiddleware,
   createActiveRequestsCounterMiddleware,
   createNotFoundMiddleware,
@@ -18,6 +18,7 @@ import {
 } from "../../../infrastructure/http/express/middleware/index.js";
 import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { Container } from "../../types/Container.js";
 
 export const registerHttp = (container: AwilixContainer<Container>) => {
   container.register({
@@ -27,18 +28,19 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
 
         app.use(express.json());
 
-        const rateLimitMiddleware = createRateLimiter(
-          serverConfig.rateLimitTime,
-          serverConfig.rateLimitTries,
-        );
+        const rateLimitMiddleware = createRateLimiterMiddleware({
+          time: serverConfig.rateLimitTime,
+          tries: serverConfig.rateLimitTries,
+        });
         app.use(rateLimitMiddleware);
 
-        const requestLoggerMiddleware =
-          createRequestLoggerMiddleware(loggerAdapter);
+        const requestLoggerMiddleware = createRequestLoggerMiddleware({
+          loggerAdapter,
+        });
         app.use(requestLoggerMiddleware);
 
         const activeRequestsCounterMiddleware =
-          createActiveRequestsCounterMiddleware(activeRequestsCounter);
+          createActiveRequestsCounterMiddleware({ activeRequestsCounter });
         app.use(activeRequestsCounterMiddleware);
 
         const notificationController = createNotificationController({
@@ -64,7 +66,7 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
 
     server: asFunction(({ app, loggerAdapter, activeRequestsCounter }) =>
       createServer(
-        app,
+        { app, activeRequestsCounter },
         {
           port: serverConfig.port,
           gracefulShutdownTimeout: serverConfig.gracefulShutdownTimeout,
@@ -87,7 +89,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
             });
           },
         },
-        { activeRequestsCounter },
       ),
     ).singleton(),
   });

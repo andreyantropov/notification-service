@@ -1,15 +1,13 @@
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
+
 import { InfluxDbLoggerConfig } from "./interfaces/InfluxDbLoggerConfig.js";
 import { toSnakeCase } from "../../../shared/utils/toSnakeCase/toSnakeCase.js";
 import { Logger } from "../../ports/Logger.js";
 import { Log } from "../../types/Log.js";
 
-export const createInfluxDbLogger = ({
-  url,
-  token,
-  org,
-  bucket,
-}: InfluxDbLoggerConfig): Logger => {
+export const createInfluxDbLogger = (config: InfluxDbLoggerConfig): Logger => {
+  const { url, token, org, bucket } = config;
+
   const client = new InfluxDB({
     url: url,
     token: token,

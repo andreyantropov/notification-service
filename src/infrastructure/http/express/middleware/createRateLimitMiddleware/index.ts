@@ -1,1 +1,2 @@
-export * from "./createRateLimitMiddleware.js";
+export * from "./interfaces/RateLimiterMiddlewareConfig.js";
+export * from "./createRateLimiterMiddleware.js";

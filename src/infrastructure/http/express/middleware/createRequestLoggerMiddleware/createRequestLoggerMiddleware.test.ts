@@ -1,17 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Request, Response } from "express";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware.js";
-import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
 import { EventType } from "../../../../../shared/enums/EventType.js";
+import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
 
 describe("RequestLoggerMiddleware", () => {
   const mockWriteLog = vi.fn();
 
-  const notificationLoggerService = {
+  const mockLogger = {
     writeLog: mockWriteLog,
   };
 
-  const middleware = createRequestLoggerMiddleware(notificationLoggerService);
+  const middleware = createRequestLoggerMiddleware({
+    loggerAdapter: mockLogger,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

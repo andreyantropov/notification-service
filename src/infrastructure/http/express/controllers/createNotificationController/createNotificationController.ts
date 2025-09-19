@@ -1,19 +1,22 @@
 import { Request, Response } from "express";
-import { NotificationControllerConfig } from "./interfaces/NotificationControllerConfig.js";
-import { NotificationController } from "./interfaces/NotificationController.js";
 import z from "zod";
+
+import { NotificationController } from "./interfaces/NotificationController.js";
+import { NotificationControllerDependencies } from "./interfaces/NotificationControllerDependencies.js";
+import { SendResponse } from "./interfaces/SendResponse.js";
+import { ParsedNotificationResult } from "./types/ParsedNotificationResult.js";
+import { SendResult } from "./types/SendResult.js";
 import {
   SingleNotification,
   NotificationRequest,
 } from "../../../../../api/schemas/NotificationRequest.js";
-import { SendResponse } from "./interfaces/SendResponse.js";
-import { ParsedNotificationResult } from "./types/ParsedNotificationResult.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
-import { SendResult } from "./types/SendResult.js";
 
-export const createNotificationController = ({
-  sendNotificationUseCase,
-}: NotificationControllerConfig): NotificationController => {
+export const createNotificationController = (
+  dependencies: NotificationControllerDependencies,
+): NotificationController => {
+  const { sendNotificationUseCase } = dependencies;
+
   const parseNotificationRequest = (
     body: unknown,
   ): ParsedNotificationResult => {

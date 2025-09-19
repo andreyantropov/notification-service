@@ -1,5 +1,6 @@
-import path from "path";
 import { promises as fs } from "fs";
+import path from "path";
+
 import { LocalFileLoggerConfig } from "./interfaces/LocalFileLoggerConfig.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { Logger } from "../../ports/Logger.js";
@@ -7,9 +8,11 @@ import { Log } from "../../types/Log.js";
 
 const LOGS_DIR_NAME = "logs";
 
-export const createLocalFileLogger = ({
-  logsDir,
-}: LocalFileLoggerConfig): Logger => {
+export const createLocalFileLogger = (
+  config: LocalFileLoggerConfig,
+): Logger => {
+  const { logsDir } = config;
+
   const logDir = path.join(logsDir ?? process.cwd(), LOGS_DIR_NAME);
 
   const ensureLogDirectoryExists = async (): Promise<void> => {

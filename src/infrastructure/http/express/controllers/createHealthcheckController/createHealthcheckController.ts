@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
-import { HealthcheckController } from "./interfaces/HealthcheckController.js";
-import { NotificationControllerConfig } from "../createNotificationController/index.js";
 
-export const createHealthcheckController = ({
-  sendNotificationUseCase,
-}: NotificationControllerConfig): HealthcheckController => {
+import { HealthcheckController } from "./interfaces/HealthcheckController.js";
+import { HealthCheckDependencies } from "./interfaces/HealthCheckControllerDependencies.js";
+
+export const createHealthcheckController = (
+  dependencies: HealthCheckDependencies,
+): HealthcheckController => {
+  const { sendNotificationUseCase } = dependencies;
+
   const live = async (req: Request, res: Response): Promise<void> => {
     res.status(200).send();
   };
