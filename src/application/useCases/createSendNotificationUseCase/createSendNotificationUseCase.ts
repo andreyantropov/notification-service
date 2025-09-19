@@ -27,25 +27,22 @@ export const createSendNotificationUseCase = (
       loggerAdapter.writeLog({
         level: LogLevel.Error,
         message: `Не удалось отправить одно или несколько уведомлений`,
-        eventType: EventType.NotificationError,
-        spanId: `createSendNotificationUseCase`,
-        payload: results,
+        eventType: EventType.MessagePublish,
+        details: results,
       });
     } else if (isWarnings) {
       loggerAdapter.writeLog({
         level: LogLevel.Warning,
         message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
-        eventType: EventType.NotificationWarning,
-        spanId: `createSendNotificationUseCase`,
-        payload: results,
+        eventType: EventType.MessagePublish,
+        details: results,
       });
     } else {
       loggerAdapter.writeLog({
         level: LogLevel.Info,
         message: `Уведомление успешно отправлено`,
-        eventType: EventType.NotificationSuccess,
-        spanId: `createSendNotificationUseCase`,
-        payload: results,
+        eventType: EventType.MessagePublish,
+        details: results,
       });
     }
   };
@@ -58,18 +55,16 @@ export const createSendNotificationUseCase = (
       loggerAdapter.writeLog({
         level: LogLevel.Debug,
         message: `${unurgentNotifications.length} несрочных уведомлений добавлено в буфер`,
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: unurgentNotifications,
+        eventType: EventType.CacheOperation,
+        details: unurgentNotifications,
       });
     } catch (error) {
       loggerAdapter.writeLog({
         level: LogLevel.Error,
         message: "Не удалось добавить уведомления в буфер",
-        eventType: EventType.NotificationError,
-        spanId: "createSendNotificationUseCase",
+        eventType: EventType.CacheOperation,
+        details: unurgentNotifications,
         error,
-        payload: unurgentNotifications,
       });
     }
   };

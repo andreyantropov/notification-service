@@ -21,8 +21,7 @@ export const bootstrap = async (): Promise<void> => {
     await loggerAdapter.writeLog({
       level: LogLevel.Debug,
       message: "Приложение успешно запущено",
-      eventType: EventType.BootstrapSuccess,
-      spanId: "bootstrap",
+      eventType: EventType.Bootstrap,
     });
 
     const shutdown = async () => {
@@ -33,8 +32,7 @@ export const bootstrap = async (): Promise<void> => {
         await loggerAdapter?.writeLog({
           level: LogLevel.Debug,
           message: "Приложение корректно завершило работу",
-          eventType: EventType.BootstrapSuccess,
-          spanId: "bootstrap",
+          eventType: EventType.Shutdown,
         });
       } catch (error) {
         console.error("Ошибка при завершении работы:", error);
@@ -55,9 +53,8 @@ export const bootstrap = async (): Promise<void> => {
       await loggerAdapter.writeLog({
         level: LogLevel.Critical,
         message: "Критическая ошибка при запуске приложения",
-        eventType: EventType.BootstrapError,
-        spanId: "bootstrap",
-        error: error instanceof Error ? error : new Error(String(error)),
+        eventType: EventType.Bootstrap,
+        error: error,
       });
     } else {
       console.error("Критическая ошибка при запуске приложения", error);

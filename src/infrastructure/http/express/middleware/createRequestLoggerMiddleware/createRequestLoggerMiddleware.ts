@@ -14,26 +14,21 @@ export const createRequestLoggerMiddleware = (
 
     res.on("finish", () => {
       const duration = Date.now() - start;
-      const isSuccess = res.statusCode >= 200 && res.statusCode < 300;
 
+      const isSuccess = res.statusCode >= 200 && res.statusCode < 500;
       const logLevel = isSuccess ? LogLevel.Info : LogLevel.Error;
-      const eventType = isSuccess
-        ? EventType.RequestSuccess
-        : EventType.RequestError;
 
       loggerAdapter.writeLog({
         level: logLevel,
-        message: `${req.method} ${req.url}`,
-        eventType: eventType,
-        spanId: `${req.method} ${req.url}`,
-        payload: {
+        message: `Запрос ${req.method} ${req.url} обработан`,
+        eventType: EventType.Request,
+        duration,
+        details: {
           method: req.method,
           url: req.url,
           statusCode: res.statusCode,
-          durationMs: duration,
           ip: req.ip,
-          userAgent: req.get("User-Agent") || null,
-          body: req.body,
+          userAgent: req.get("User-Agent") || "-",
         },
       });
     });
@@ -44,17 +39,15 @@ export const createRequestLoggerMiddleware = (
 
         loggerAdapter.writeLog({
           level: LogLevel.Warning,
-          message: `${req.method} ${req.url}`,
-          eventType: EventType.RequestWarning,
-          spanId: `${req.method} ${req.url}`,
-          payload: {
+          message: `Запрос ${req.method} ${req.url} был прерван клиентом до завершения обработки`,
+          eventType: EventType.Request,
+          duration,
+          details: {
             method: req.method,
             url: req.url,
             statusCode: res.statusCode,
-            durationMs: duration,
             ip: req.ip,
-            userAgent: req.get("User-Agent") || null,
-            body: req.body,
+            userAgent: req.get("User-Agent") || "-",
           },
         });
       }

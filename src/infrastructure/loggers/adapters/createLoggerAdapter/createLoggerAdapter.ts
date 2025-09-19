@@ -20,10 +20,9 @@ export const createLoggerAdapter = (
   const formatLog = ({
     level,
     eventType,
-    spanId,
     message,
     duration,
-    payload,
+    details,
     error,
   }: RawLog): Log => {
     const safeStringify = (data: unknown): string | undefined => {
@@ -42,19 +41,18 @@ export const createLoggerAdapter = (
       measurement: measurement,
       timestamp: Date.now() * 1_000_000,
       tags: {
-        level: level,
+        level,
         currentService,
         trigger: TriggerType.Api,
         environment,
-        eventType: eventType,
+        eventType,
         host: os.hostname(),
-        spanId: spanId,
       },
       fields: {
         id: v4(),
-        message: message,
+        message,
         durationMs: duration || 0,
-        payload: safeStringify(payload),
+        details: safeStringify(details),
         error: processedError,
       },
     };

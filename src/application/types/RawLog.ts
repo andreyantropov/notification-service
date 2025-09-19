@@ -5,8 +5,7 @@ export interface RawLog {
   level: LogLevel;
   message: string;
   eventType: EventType;
-  spanId: string;
   duration?: number;
-  payload?: unknown;
+  details?: unknown;
   error?: unknown;
 }

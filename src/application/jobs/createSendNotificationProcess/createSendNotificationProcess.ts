@@ -42,33 +42,29 @@ export const createSendNotificationProcess = (
         loggerAdapter.writeLog({
           level: LogLevel.Error,
           message: `Не удалось отправить одно или несколько уведомлений`,
-          eventType: EventType.NotificationError,
-          spanId: `createSendNotificationProcess`,
-          payload: results,
+          eventType: EventType.MessagePublish,
+          details: results,
         });
       } else if (isWarnings) {
         loggerAdapter.writeLog({
           level: LogLevel.Warning,
           message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
-          eventType: EventType.NotificationWarning,
-          spanId: `createSendNotificationProcess`,
-          payload: results,
+          eventType: EventType.MessagePublish,
+          details: results,
         });
       } else {
         loggerAdapter.writeLog({
           level: LogLevel.Info,
           message: `Уведомление успешно отправлено`,
-          eventType: EventType.NotificationSuccess,
-          spanId: `createSendNotificationProcess`,
-          payload: results,
+          eventType: EventType.MessagePublish,
+          details: results,
         });
       }
     } catch (error) {
       loggerAdapter.writeLog({
         level: LogLevel.Error,
         message: `Не удалось отправить уведомление`,
-        eventType: EventType.NotificationError,
-        spanId: `createSendNotificationProcess`,
+        eventType: EventType.MessagePublish,
         error,
       });
     } finally {
