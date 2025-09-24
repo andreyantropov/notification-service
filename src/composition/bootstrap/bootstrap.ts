@@ -1,3 +1,7 @@
+import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
+import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+
 import { SendNotificationProcess } from "../../application/jobs/createSendNotificationProcess/index.js";
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
 import { Server } from "../../infrastructure/ports/Server.js";
@@ -9,6 +13,14 @@ export const bootstrap = async (): Promise<void> => {
   let loggerAdapter: LoggerAdapter | undefined;
 
   try {
+    const otelSdk = new NodeSDK({
+      instrumentations: [
+        new HttpInstrumentation(),
+        new ExpressInstrumentation(),
+      ],
+    });
+    otelSdk.start();
+
     loggerAdapter = container.resolve<LoggerAdapter>("loggerAdapter");
     const sendNotificationProcess = container.resolve<SendNotificationProcess>(
       "sendNotificationProcess",
@@ -34,6 +46,10 @@ export const bootstrap = async (): Promise<void> => {
           message: "Приложение корректно завершило работу",
           eventType: EventType.Shutdown,
         });
+
+        if (otelSdk) {
+          await otelSdk.shutdown();
+        }
       } catch (error) {
         console.error("Ошибка при завершении работы:", error);
       } finally {

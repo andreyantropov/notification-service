@@ -1,9 +1,12 @@
+import { context } from "@opentelemetry/api";
+
 import { SendNotificationUseCase } from "./interfaces/SendNotificationUseCase.js";
 import { SendNotificationUseCaseDependencies } from "./interfaces/SendNotificationUseCaseDependencies.js";
 import { Notification } from "../../../domain/types/Notification.js";
 import { DEFAULT_LOGGER } from "../../../shared/constants/defaults.js";
 import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
+import { BufferedNotification } from "../../types/BufferedNotification.js";
 
 export const createSendNotificationUseCase = (
   dependencies: SendNotificationUseCaseDependencies,
@@ -48,22 +51,22 @@ export const createSendNotificationUseCase = (
   };
 
   const enqueueUnurgentNotifications = async (
-    unurgentNotifications: Notification[],
+    bufferedNotifications: BufferedNotification[],
   ) => {
     try {
-      await buffer.append(unurgentNotifications);
+      await buffer.append(bufferedNotifications);
       loggerAdapter.writeLog({
         level: LogLevel.Debug,
-        message: `${unurgentNotifications.length} несрочных уведомлений добавлено в буфер`,
+        message: `${bufferedNotifications.length} несрочных уведомлений добавлено в буфер`,
         eventType: EventType.CacheOperation,
-        details: unurgentNotifications,
+        details: bufferedNotifications.map((n) => n.notification),
       });
     } catch (error) {
       loggerAdapter.writeLog({
         level: LogLevel.Error,
         message: "Не удалось добавить уведомления в буфер",
         eventType: EventType.CacheOperation,
-        details: unurgentNotifications,
+        details: bufferedNotifications.map((n) => n.notification),
         error,
       });
     }
@@ -80,16 +83,21 @@ export const createSendNotificationUseCase = (
       return;
     }
 
-    const urgentNotifications = notifications.filter((elem) => elem.isUrgent);
+    const urgentNotifications = notifications.filter((n) => n.isUrgent);
+    const unurgentNotifications = notifications.filter((n) => !n.isUrgent);
+
     if (urgentNotifications.length > 0) {
       await sendUrgentNotifications(urgentNotifications);
     }
 
-    const unurgentNotifications = notifications.filter(
-      (elem) => !elem.isUrgent,
-    );
     if (unurgentNotifications.length > 0) {
-      await enqueueUnurgentNotifications(unurgentNotifications);
+      const currentContext = context.active();
+      const bufferedNotifications: BufferedNotification[] =
+        unurgentNotifications.map((n) => ({
+          notification: n,
+          otelContext: currentContext,
+        }));
+      await enqueueUnurgentNotifications(bufferedNotifications);
     }
   };
 

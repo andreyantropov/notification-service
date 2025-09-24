@@ -20,7 +20,6 @@ export interface Log {
     durationMs?: number;
     traceId?: string;
     spanId?: string;
-    parentSpanId?: string;
     details?: string;
     error?: string;
   };
