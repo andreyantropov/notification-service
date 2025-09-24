@@ -1,4 +1,4 @@
-import { Context, context } from "@opentelemetry/api";
+import { context } from "@opentelemetry/api";
 
 import { SendNotificationProcess } from "./interfaces/SendNotificationProcess.js";
 import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
@@ -9,7 +9,6 @@ import {
 } from "../../../shared/constants/defaults.js";
 import { EventType } from "../../../shared/enums/EventType.js";
 import { LogLevel } from "../../../shared/enums/LogLevel.js";
-import { BufferedNotification } from "../../types/BufferedNotification.js";
 
 const DEFAULT_INTERVAL = 60_000;
 
@@ -31,100 +30,63 @@ export const createSendNotificationProcess = (
     if (isProcessing) return;
     isProcessing = true;
 
-    let bufferedNotifications: BufferedNotification[] = [];
-    let firstContext: Context | undefined;
-
     try {
-      bufferedNotifications = await buffer.takeAll();
+      const bufferedNotifications = await buffer.takeAll();
       if (bufferedNotifications.length === 0) return;
 
-      firstContext = bufferedNotifications[0]?.otelContext;
+      for (const buffered of bufferedNotifications) {
+        const { notification, otelContext } = buffered;
 
-      if (firstContext) {
-        await context.with(firstContext, async () => {
-          const notifications = bufferedNotifications.map(
-            (n) => n.notification,
-          );
-          const results = await notificationDeliveryService.send(notifications);
-          const isErrors = results.some((res) => !res.success);
-          const isWarnings = results.some(
-            (res) => res.warnings && res.warnings.length !== 0,
-          );
+        await context.with(otelContext, async () => {
+          try {
+            const results = await notificationDeliveryService.send([
+              notification,
+            ]);
+            const isErrors = results.some((res) => !res.success);
+            const isWarnings = results.some(
+              (res) => res.warnings && res.warnings.length !== 0,
+            );
 
-          if (isErrors) {
+            if (isErrors) {
+              loggerAdapter.writeLog({
+                level: LogLevel.Error,
+                message: `Не удалось отправить одно или несколько уведомлений`,
+                eventType: EventType.MessagePublish,
+                details: results,
+              });
+            } else if (isWarnings) {
+              loggerAdapter.writeLog({
+                level: LogLevel.Warning,
+                message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
+                eventType: EventType.MessagePublish,
+                details: results,
+              });
+            } else {
+              loggerAdapter.writeLog({
+                level: LogLevel.Info,
+                message: `Уведомление успешно отправлено`,
+                eventType: EventType.MessagePublish,
+                details: results,
+              });
+            }
+          } catch (error) {
             loggerAdapter.writeLog({
               level: LogLevel.Error,
-              message: `Не удалось отправить одно или несколько уведомлений`,
+              message: `Не удалось отправить уведомления`,
               eventType: EventType.MessagePublish,
-              details: results,
-            });
-          } else if (isWarnings) {
-            loggerAdapter.writeLog({
-              level: LogLevel.Warning,
-              message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
-              eventType: EventType.MessagePublish,
-              details: results,
-            });
-          } else {
-            loggerAdapter.writeLog({
-              level: LogLevel.Info,
-              message: `Уведомление успешно отправлено`,
-              eventType: EventType.MessagePublish,
-              details: results,
+              details: [buffered.notification],
+              error,
             });
           }
         });
-      } else {
-        const notifications = bufferedNotifications.map((n) => n.notification);
-        const results = await notificationDeliveryService.send(notifications);
-        const isErrors = results.some((res) => !res.success);
-        const isWarnings = results.some(
-          (res) => res.warnings && res.warnings.length !== 0,
-        );
-
-        if (isErrors) {
-          loggerAdapter.writeLog({
-            level: LogLevel.Error,
-            message: `Не удалось отправить одно или несколько уведомлений`,
-            eventType: EventType.MessagePublish,
-            details: results,
-          });
-        } else if (isWarnings) {
-          loggerAdapter.writeLog({
-            level: LogLevel.Warning,
-            message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
-            eventType: EventType.MessagePublish,
-            details: results,
-          });
-        } else {
-          loggerAdapter.writeLog({
-            level: LogLevel.Info,
-            message: `Уведомление успешно отправлено`,
-            eventType: EventType.MessagePublish,
-            details: results,
-          });
-        }
       }
     } catch (error) {
-      if (firstContext) {
-        context.with(firstContext, () => {
-          loggerAdapter.writeLog({
-            level: LogLevel.Error,
-            message: `Не удалось отправить уведомления`,
-            eventType: EventType.MessagePublish,
-            details: bufferedNotifications.map((n) => n.notification),
-            error,
-          });
-        });
-      } else {
-        loggerAdapter.writeLog({
-          level: LogLevel.Error,
-          message: `Не удалось отправить уведомления`,
-          eventType: EventType.MessagePublish,
-          details: bufferedNotifications.map((n) => n.notification),
-          error,
-        });
-      }
+      loggerAdapter.writeLog({
+        level: LogLevel.Error,
+        message: `Не удалось обработать буфер уведомлений`,
+        eventType: EventType.MessagePublish,
+        error,
+      });
     } finally {
       isProcessing = false;
     }
