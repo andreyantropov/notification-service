@@ -1,3 +1,5 @@
+import { propagation } from "@opentelemetry/api";
+import { W3CTraceContextPropagator } from "@opentelemetry/core";
 import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
 import { NodeSDK } from "@opentelemetry/sdk-node";
@@ -13,6 +15,7 @@ export const bootstrap = async (): Promise<void> => {
   let loggerAdapter: LoggerAdapter | undefined;
 
   try {
+    propagation.setGlobalPropagator(new W3CTraceContextPropagator());
     const otelSdk = new NodeSDK({
       instrumentations: [
         new HttpInstrumentation(),
