@@ -21,7 +21,7 @@ export const registerLogger = (container: AwilixContainer<Container>) => {
       const fallbackLogger = createFallbackLogger(
         { loggers: [influxDbLogger, localFileLogger] },
         {
-          onError: (payload: Log, error: Error) => console.warn(payload, error),
+          onError: (details: Log, error: Error) => console.warn(details, error),
         },
       );
 
