@@ -1,6 +1,5 @@
 import os from "os";
 
-import { context, trace } from "@opentelemetry/api";
 import { serializeError } from "serialize-error";
 import { v4 } from "uuid";
 
@@ -16,18 +15,15 @@ export const createLoggerAdapter = (
   dependencies: LoggerAdapterDependencies,
   config: LoggerAdapterConfig,
 ): LoggerAdapter => {
-  const { logger } = dependencies;
+  const { logger, tracingContextManager } = dependencies;
   const { measurement, currentService, environment } = config;
 
   const formatLog = (
     level: LogLevel,
     { eventType, message, duration, details, error }: RawLog,
   ): Log => {
-    const activeCtx = context.active();
-    const span = trace.getSpan(activeCtx);
-    const spanContext = span?.spanContext();
-    const traceId = spanContext?.traceId;
-    const spanId = spanContext?.spanId;
+    const activeCtx = tracingContextManager.active();
+    const traceCtx = tracingContextManager.getTraceContext(activeCtx);
 
     const safeStringify = (data: unknown): string | undefined => {
       try {
@@ -56,8 +52,8 @@ export const createLoggerAdapter = (
         id: v4(),
         message,
         durationMs: duration || 0,
-        traceId,
-        spanId,
+        traceId: traceCtx?.traceId,
+        spanId: traceCtx?.spanId,
         details: safeStringify(details),
         error: processedError,
       },

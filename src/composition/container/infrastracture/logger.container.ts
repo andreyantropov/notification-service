@@ -14,7 +14,7 @@ import { Container } from "../../types/Container.js";
 
 export const registerLogger = (container: AwilixContainer<Container>) => {
   container.register({
-    loggerAdapter: asFunction(() => {
+    loggerAdapter: asFunction(({ tracingContextManager }) => {
       const influxDbLogger = createInfluxDbLogger(influxDbLoggerConfig);
       const localFileLogger = createLocalFileLogger(localFileConfig);
 
@@ -26,7 +26,7 @@ export const registerLogger = (container: AwilixContainer<Container>) => {
       );
 
       return createLoggerAdapter(
-        { logger: fallbackLogger },
+        { logger: fallbackLogger, tracingContextManager },
         loggerAdapterConfig,
       );
     }).singleton(),
