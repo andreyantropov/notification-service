@@ -4,8 +4,8 @@ import { SendNotificationProcess } from "../../application/jobs/createSendNotifi
 import { Buffer } from "../../application/ports/Buffer.js";
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
 import { NotificationDeliveryService } from "../../application/services/createNotificationDeliveryService/index.js";
+import { BufferedNotification } from "../../application/types/BufferedNotification.js";
 import { SendNotificationUseCase } from "../../application/useCases/createSendNotificationUseCase/index.js";
-import { Notification } from "../../domain/types/Notification.js";
 import { Counter } from "../../infrastructure/ports/Counter.js";
 import { Server } from "../../infrastructure/ports/Server.js";
 
@@ -13,7 +13,7 @@ export type Container = {
   app: Express;
   loggerAdapter: LoggerAdapter;
   activeRequestsCounter: Counter;
-  buffer: Buffer<Notification>;
+  buffer: Buffer<BufferedNotification>;
   server: Server;
 
   notificationDeliveryService: NotificationDeliveryService;

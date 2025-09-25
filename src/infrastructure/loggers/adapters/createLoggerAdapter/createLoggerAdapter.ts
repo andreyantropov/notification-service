@@ -8,6 +8,7 @@ import { LoggerAdapterConfig } from "./interfaces/LoggerAdapterConfig.js";
 import { LoggerAdapterDependencies } from "./interfaces/LoggerAdapterDependencies.js";
 import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
 import { RawLog } from "../../../../application/types/RawLog.js";
+import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
 import { Log } from "../../../types/Log.js";
 
@@ -18,14 +19,10 @@ export const createLoggerAdapter = (
   const { logger } = dependencies;
   const { measurement, currentService, environment } = config;
 
-  const formatLog = ({
-    level,
-    eventType,
-    message,
-    duration,
-    details,
-    error,
-  }: RawLog): Log => {
+  const formatLog = (
+    level: LogLevel,
+    { eventType, message, duration, details, error }: RawLog,
+  ): Log => {
     const activeCtx = context.active();
     const span = trace.getSpan(activeCtx);
     const spanContext = span?.spanContext();
@@ -67,9 +64,9 @@ export const createLoggerAdapter = (
     };
   };
 
-  const writeLog = async (rawLog: RawLog): Promise<void> => {
+  const writeLog = async (level: LogLevel, rawLog: RawLog): Promise<void> => {
     try {
-      const log = formatLog(rawLog);
+      const log = formatLog(level, rawLog);
       await logger.writeLog(log);
     } catch (error) {
       console.error("Не удалось записать лог в систему:", {
@@ -80,6 +77,10 @@ export const createLoggerAdapter = (
   };
 
   return {
-    writeLog,
+    debug: (rawLog) => writeLog(LogLevel.Debug, rawLog),
+    info: (rawLog) => writeLog(LogLevel.Info, rawLog),
+    warning: (rawLog) => writeLog(LogLevel.Warning, rawLog),
+    error: (rawLog) => writeLog(LogLevel.Error, rawLog),
+    critical: (rawLog) => writeLog(LogLevel.Critical, rawLog),
   };
 };

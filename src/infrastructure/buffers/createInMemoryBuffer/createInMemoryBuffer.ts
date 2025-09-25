@@ -1,14 +1,14 @@
 import { Buffer } from "../../../application/ports/Buffer.js";
-import { Notification } from "../../../domain/types/Notification.js";
+import { BufferedNotification } from "../../../application/types/BufferedNotification.js";
 
-export const createInMemoryBuffer = (): Buffer<Notification> => {
-  let buffer: Notification[] = [];
+export const createInMemoryBuffer = (): Buffer<BufferedNotification> => {
+  let buffer: BufferedNotification[] = [];
 
-  const append = async (items: Notification[]): Promise<void> => {
+  const append = async (items: BufferedNotification[]): Promise<void> => {
     buffer.push(...items);
   };
 
-  const takeAll = async (): Promise<Notification[]> => {
+  const takeAll = async (): Promise<BufferedNotification[]> => {
     const result = [...buffer];
     buffer = [];
     return result;
