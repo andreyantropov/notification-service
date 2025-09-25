@@ -8,7 +8,6 @@ import {
   DEFAULT_LOGGER,
 } from "../../../shared/constants/defaults.js";
 import { EventType } from "../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
 
 const DEFAULT_INTERVAL = 60_000;
 
@@ -48,30 +47,26 @@ export const createSendNotificationProcess = (
             );
 
             if (isErrors) {
-              loggerAdapter.writeLog({
-                level: LogLevel.Error,
+              loggerAdapter.error({
                 message: `Не удалось отправить одно или несколько уведомлений`,
                 eventType: EventType.MessagePublish,
                 details: results,
               });
             } else if (isWarnings) {
-              loggerAdapter.writeLog({
-                level: LogLevel.Warning,
+              loggerAdapter.warning({
                 message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
                 eventType: EventType.MessagePublish,
                 details: results,
               });
             } else {
-              loggerAdapter.writeLog({
-                level: LogLevel.Info,
+              loggerAdapter.info({
                 message: `Уведомление успешно отправлено`,
                 eventType: EventType.MessagePublish,
                 details: results,
               });
             }
           } catch (error) {
-            loggerAdapter.writeLog({
-              level: LogLevel.Error,
+            loggerAdapter.error({
               message: `Не удалось отправить уведомления`,
               eventType: EventType.MessagePublish,
               details: [buffered.notification],
@@ -81,8 +76,7 @@ export const createSendNotificationProcess = (
         });
       }
     } catch (error) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Error,
+      loggerAdapter.error({
         message: `Не удалось обработать буфер уведомлений`,
         eventType: EventType.MessagePublish,
         error,

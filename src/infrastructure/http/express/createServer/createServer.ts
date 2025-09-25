@@ -2,7 +2,6 @@ import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
 import { DEFAULT_LOGGER } from "../../../../shared/constants/defaults.js";
 import { EventType } from "../../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { noop } from "../../../../shared/utils/noop/noop.js";
 import { Server } from "../../../ports/Server.js";
 
@@ -30,8 +29,7 @@ export const createServer = (
 
   const start = () => {
     if (isStarting) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Сервер уже запускается`,
         eventType: EventType.Bootstrap,
       });
@@ -39,8 +37,7 @@ export const createServer = (
     }
 
     if (server) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Сервер уже запущен`,
         eventType: EventType.Bootstrap,
       });
@@ -48,8 +45,7 @@ export const createServer = (
     }
 
     if (isStopping) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Нельзя запустить сервер во время остановки`,
         eventType: EventType.Bootstrap,
       });
@@ -62,8 +58,7 @@ export const createServer = (
       server = app.listen(port, async () => {
         isStarting = false;
       });
-      loggerAdapter.writeLog({
-        level: LogLevel.Debug,
+      loggerAdapter.debug({
         message: `Сервер успешно запущен`,
         eventType: EventType.Bootstrap,
       });
@@ -73,8 +68,7 @@ export const createServer = (
           cause: error,
         }),
       );
-      loggerAdapter.writeLog({
-        level: LogLevel.Critical,
+      loggerAdapter.critical({
         message: `Не удалось запустить сервер на порту ${port}`,
         eventType: EventType.Bootstrap,
         error: error,
@@ -86,8 +80,7 @@ export const createServer = (
 
   const stop = async (): Promise<void> => {
     if (isStopping) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Сервер уже останавливается`,
         eventType: EventType.Shutdown,
       });
@@ -95,8 +88,7 @@ export const createServer = (
     }
 
     if (isStarting) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Нельзя остановить сервер во время запуска`,
         eventType: EventType.Shutdown,
       });
@@ -104,8 +96,7 @@ export const createServer = (
     }
 
     if (!server) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Сервер уже остановлен`,
         eventType: EventType.Shutdown,
       });
@@ -148,8 +139,7 @@ export const createServer = (
 
       server = null;
 
-      loggerAdapter.writeLog({
-        level: LogLevel.Debug,
+      loggerAdapter.debug({
         message: `Сервер успешно остановлен`,
         eventType: EventType.Shutdown,
       });
@@ -159,8 +149,7 @@ export const createServer = (
           cause: error,
         }),
       );
-      loggerAdapter.writeLog({
-        level: LogLevel.Critical,
+      loggerAdapter.critical({
         message: `Не удалось корректно завершить работу сервера`,
         eventType: EventType.Shutdown,
         error: error,

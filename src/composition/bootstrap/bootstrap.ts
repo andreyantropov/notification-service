@@ -8,7 +8,6 @@ import { SendNotificationProcess } from "../../application/jobs/createSendNotifi
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
 import { Server } from "../../infrastructure/ports/Server.js";
 import { EventType } from "../../shared/enums/EventType.js";
-import { LogLevel } from "../../shared/enums/LogLevel.js";
 import { container } from "../container/index.js";
 
 export const bootstrap = async (): Promise<void> => {
@@ -33,8 +32,7 @@ export const bootstrap = async (): Promise<void> => {
     sendNotificationProcess.start();
     server.start();
 
-    await loggerAdapter.writeLog({
-      level: LogLevel.Debug,
+    await loggerAdapter.debug({
       message: "Приложение успешно запущено",
       eventType: EventType.Bootstrap,
     });
@@ -44,8 +42,7 @@ export const bootstrap = async (): Promise<void> => {
         sendNotificationProcess.stop();
         await server.stop();
 
-        await loggerAdapter?.writeLog({
-          level: LogLevel.Debug,
+        await loggerAdapter?.debug({
           message: "Приложение корректно завершило работу",
           eventType: EventType.Shutdown,
         });
@@ -69,8 +66,7 @@ export const bootstrap = async (): Promise<void> => {
     });
   } catch (error) {
     if (loggerAdapter) {
-      await loggerAdapter.writeLog({
-        level: LogLevel.Critical,
+      await loggerAdapter.critical({
         message: "Критическая ошибка при запуске приложения",
         eventType: EventType.Bootstrap,
         error: error,

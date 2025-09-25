@@ -5,7 +5,6 @@ import { SendNotificationUseCaseDependencies } from "./interfaces/SendNotificati
 import { Notification } from "../../../domain/types/Notification.js";
 import { DEFAULT_LOGGER } from "../../../shared/constants/defaults.js";
 import { EventType } from "../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { BufferedNotification } from "../../types/BufferedNotification.js";
 
 export const createSendNotificationUseCase = (
@@ -27,22 +26,19 @@ export const createSendNotificationUseCase = (
     );
 
     if (isErrors) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Error,
+      loggerAdapter.error({
         message: `Не удалось отправить одно или несколько уведомлений`,
         eventType: EventType.MessagePublish,
         details: results,
       });
     } else if (isWarnings) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      loggerAdapter.warning({
         message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
         eventType: EventType.MessagePublish,
         details: results,
       });
     } else {
-      loggerAdapter.writeLog({
-        level: LogLevel.Info,
+      loggerAdapter.info({
         message: `Уведомление успешно отправлено`,
         eventType: EventType.MessagePublish,
         details: results,
@@ -55,15 +51,13 @@ export const createSendNotificationUseCase = (
   ) => {
     try {
       await buffer.append(bufferedNotifications);
-      loggerAdapter.writeLog({
-        level: LogLevel.Debug,
+      loggerAdapter.debug({
         message: `${bufferedNotifications.length} несрочных уведомлений добавлено в буфер`,
         eventType: EventType.CacheOperation,
         details: bufferedNotifications.map((n) => n.notification),
       });
     } catch (error) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Error,
+      loggerAdapter.error({
         message: "Не удалось добавить уведомления в буфер",
         eventType: EventType.CacheOperation,
         details: bufferedNotifications.map((n) => n.notification),
