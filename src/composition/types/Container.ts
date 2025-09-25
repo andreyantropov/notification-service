@@ -3,6 +3,7 @@ import { Express } from "express";
 import { SendNotificationProcess } from "../../application/jobs/createSendNotificationProcess/index.js";
 import { Buffer } from "../../application/ports/Buffer.js";
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
+import { TracingContextManager } from "../../application/ports/TracingContextManager.js";
 import { NotificationDeliveryService } from "../../application/services/createNotificationDeliveryService/index.js";
 import { BufferedNotification } from "../../application/types/BufferedNotification.js";
 import { SendNotificationUseCase } from "../../application/useCases/createSendNotificationUseCase/index.js";
@@ -12,6 +13,7 @@ import { Server } from "../../infrastructure/ports/Server.js";
 export type Container = {
   app: Express;
   loggerAdapter: LoggerAdapter;
+  tracingContextManager: TracingContextManager;
   activeRequestsCounter: Counter;
   buffer: Buffer<BufferedNotification>;
   server: Server;

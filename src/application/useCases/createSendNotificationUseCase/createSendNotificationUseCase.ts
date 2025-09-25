@@ -1,5 +1,3 @@
-import { context } from "@opentelemetry/api";
-
 import { SendNotificationUseCase } from "./interfaces/SendNotificationUseCase.js";
 import { SendNotificationUseCaseDependencies } from "./interfaces/SendNotificationUseCaseDependencies.js";
 import { Notification } from "../../../domain/types/Notification.js";
@@ -13,6 +11,7 @@ export const createSendNotificationUseCase = (
   const {
     buffer,
     notificationDeliveryService,
+    tracingContextManager,
     loggerAdapter = DEFAULT_LOGGER,
   } = dependencies;
 
@@ -85,7 +84,7 @@ export const createSendNotificationUseCase = (
     }
 
     if (unurgentNotifications.length > 0) {
-      const currentContext = context.active();
+      const currentContext = tracingContextManager.active();
       const bufferedNotifications: BufferedNotification[] =
         unurgentNotifications.map((n) => ({
           notification: n,

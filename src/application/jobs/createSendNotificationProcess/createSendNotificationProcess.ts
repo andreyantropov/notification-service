@@ -1,5 +1,3 @@
-import { context } from "@opentelemetry/api";
-
 import { SendNotificationProcess } from "./interfaces/SendNotificationProcess.js";
 import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
 import { SendNotificationProcessDependencies } from "./interfaces/SendNotificationProcessDependencies.js";
@@ -18,6 +16,7 @@ export const createSendNotificationProcess = (
   const {
     buffer,
     notificationDeliveryService,
+    tracingContextManager,
     loggerAdapter = DEFAULT_LOGGER,
   } = dependencies;
   const { interval = DEFAULT_INTERVAL } = config;
@@ -36,7 +35,7 @@ export const createSendNotificationProcess = (
       for (const buffered of bufferedNotifications) {
         const { notification, otelContext } = buffered;
 
-        await context.with(otelContext, async () => {
+        await tracingContextManager.with(otelContext, async () => {
           try {
             const results = await notificationDeliveryService.send([
               notification,
