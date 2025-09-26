@@ -3,13 +3,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSendNotificationUseCase } from "./createSendNotificationUseCase.js";
 import { Notification } from "../../../domain/types/Notification.js";
 import { EventType } from "../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { Buffer } from "../../ports/Buffer.js";
 import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
+import { TracingContextManager } from "../../ports/TracingContextManager.js";
 import {
   NotificationDeliveryService,
   SendResult,
 } from "../../services/createNotificationDeliveryService/index.js";
+import { BufferedNotification } from "../../types/BufferedNotification.js";
 
 const mockNotification = (message: string, isUrgent = false): Notification => ({
   recipients: [{ type: "email", value: "user@com" }],
@@ -17,13 +18,17 @@ const mockNotification = (message: string, isUrgent = false): Notification => ({
   isUrgent,
 });
 
-const mockBuffer = (): Buffer<Notification> => ({
+const mockBuffer = (): Buffer<BufferedNotification> => ({
   append: vi.fn(),
   takeAll: vi.fn(),
 });
 
 const mockLoggerAdapter = (): LoggerAdapter => ({
-  writeLog: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn(),
+  critical: vi.fn(),
 });
 
 const mockDeliveryService = (): NotificationDeliveryService => ({
@@ -32,16 +37,29 @@ const mockDeliveryService = (): NotificationDeliveryService => ({
 });
 
 describe("createSendNotificationUseCase", () => {
-  let buffer: Buffer<Notification>;
+  let buffer: Buffer<BufferedNotification>;
   let loggerAdapter: LoggerAdapter;
   let deliveryService: NotificationDeliveryService;
+  let tracingContextManager: TracingContextManager;
 
   beforeEach(() => {
     buffer = mockBuffer();
     loggerAdapter = mockLoggerAdapter();
     deliveryService = mockDeliveryService();
 
+    tracingContextManager = {
+      active: vi.fn(),
+      with: vi.fn((ctx, fn) => fn()),
+      getTraceContext: vi.fn(),
+      startActiveSpan: vi.fn((name, options, fn) => fn()),
+    };
+
     vi.clearAllMocks();
+
+    (tracingContextManager.active as ReturnType<typeof vi.fn>).mockReturnValue({
+      traceId: "test-trace",
+      spanId: "test-span",
+    });
   });
 
   describe("send", () => {
@@ -49,6 +67,7 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
@@ -56,7 +75,8 @@ describe("createSendNotificationUseCase", () => {
 
       expect(buffer.append).not.toHaveBeenCalled();
       expect(deliveryService.send).not.toHaveBeenCalled();
-      expect(loggerAdapter.writeLog).not.toHaveBeenCalled();
+      expect(loggerAdapter.info).not.toHaveBeenCalled();
+      expect(loggerAdapter.debug).not.toHaveBeenCalled();
     });
 
     it("should buffer non-urgent notifications and log success", async () => {
@@ -67,18 +87,28 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
       await send(notifications);
 
-      expect(buffer.append).toHaveBeenCalledWith(notifications);
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Debug,
+      const expectedBufferedNotifications: BufferedNotification[] = [
+        {
+          notification: notif1,
+          otelContext: { traceId: "test-trace", spanId: "test-span" },
+        },
+        {
+          notification: notif2,
+          otelContext: { traceId: "test-trace", spanId: "test-span" },
+        },
+      ];
+
+      expect(buffer.append).toHaveBeenCalledWith(expectedBufferedNotifications);
+      expect(loggerAdapter.debug).toHaveBeenCalledWith({
         message: "2 несрочных уведомлений добавлено в буфер",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: notifications,
+        eventType: EventType.CacheOperation,
+        details: [notif1, notif2],
       });
       expect(deliveryService.send).not.toHaveBeenCalled();
     });
@@ -96,18 +126,17 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
       await send([notif1, notif2]);
 
       expect(deliveryService.send).toHaveBeenCalledWith([notif1, notif2]);
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Info,
+      expect(loggerAdapter.info).toHaveBeenCalledWith({
         message: "Уведомление успешно отправлено",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: results,
+        eventType: EventType.MessagePublish,
+        details: results,
       });
       expect(buffer.append).not.toHaveBeenCalled();
     });
@@ -126,28 +155,32 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
       await send(notifications);
 
-      expect(buffer.append).toHaveBeenCalledWith([nonUrgent]);
+      const expectedBufferedNotification: BufferedNotification[] = [
+        {
+          notification: nonUrgent,
+          otelContext: { traceId: "test-trace", spanId: "test-span" },
+        },
+      ];
+
+      expect(buffer.append).toHaveBeenCalledWith(expectedBufferedNotification);
       expect(deliveryService.send).toHaveBeenCalledWith([urgent]);
 
-      expect(loggerAdapter.writeLog).toHaveBeenNthCalledWith(1, {
-        level: LogLevel.Info,
+      expect(loggerAdapter.info).toHaveBeenCalledWith({
         message: "Уведомление успешно отправлено",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: sendResults,
+        eventType: EventType.MessagePublish,
+        details: sendResults,
       });
 
-      expect(loggerAdapter.writeLog).toHaveBeenNthCalledWith(2, {
-        level: LogLevel.Debug,
+      expect(loggerAdapter.debug).toHaveBeenCalledWith({
         message: "1 несрочных уведомлений добавлено в буфер",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: [nonUrgent],
+        eventType: EventType.CacheOperation,
+        details: [nonUrgent],
       });
     });
 
@@ -155,25 +188,22 @@ describe("createSendNotificationUseCase", () => {
       const nonUrgent = mockNotification("Non-urgent", false);
       const error = new Error("Buffer failed");
 
-      buffer.append = vi.fn().mockImplementation(() => {
-        throw error;
-      });
+      buffer.append = vi.fn().mockRejectedValue(error);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
-      await send(nonUrgent);
+      await send([nonUrgent]);
 
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Error,
+      expect(loggerAdapter.error).toHaveBeenCalledWith({
         message: "Не удалось добавить уведомления в буфер",
-        eventType: EventType.NotificationError,
-        spanId: "createSendNotificationUseCase",
+        eventType: EventType.CacheOperation,
+        details: [nonUrgent],
         error,
-        payload: [nonUrgent],
       });
     });
 
@@ -189,17 +219,16 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
-      await send(urgent);
+      await send([urgent]);
 
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Error,
+      expect(loggerAdapter.error).toHaveBeenCalledWith({
         message: "Не удалось отправить одно или несколько уведомлений",
-        eventType: EventType.NotificationError,
-        spanId: "createSendNotificationUseCase",
-        payload: results,
+        eventType: EventType.MessagePublish,
+        details: results,
       });
     });
 
@@ -220,17 +249,16 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
-      await send(urgent);
+      await send([urgent]);
 
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Warning,
+      expect(loggerAdapter.warning).toHaveBeenCalledWith({
         message: "Уведомление отправлено, но в ходе работы возникли ошибки",
-        eventType: EventType.NotificationWarning,
-        spanId: "createSendNotificationUseCase",
-        payload: results,
+        eventType: EventType.MessagePublish,
+        details: results,
       });
     });
 
@@ -243,6 +271,7 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
@@ -251,29 +280,35 @@ describe("createSendNotificationUseCase", () => {
       expect(deliveryService.send).toHaveBeenCalledWith([notif]);
     });
 
-    it("should do nothing if there are no urgent notifications", async () => {
+    it("should buffer non-urgent notifications and not send them", async () => {
       const nonUrgent = mockNotification("Non-urgent", false);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
-      await send(nonUrgent);
+      await send([nonUrgent]);
 
-      expect(buffer.append).toHaveBeenCalledWith([nonUrgent]);
+      const expectedBufferedNotification: BufferedNotification[] = [
+        {
+          notification: nonUrgent,
+          otelContext: { traceId: "test-trace", spanId: "test-span" },
+        },
+      ];
+
+      expect(buffer.append).toHaveBeenCalledWith(expectedBufferedNotification);
       expect(deliveryService.send).not.toHaveBeenCalled();
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Debug,
+      expect(loggerAdapter.debug).toHaveBeenCalledWith({
         message: "1 несрочных уведомлений добавлено в буфер",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: [nonUrgent],
+        eventType: EventType.CacheOperation,
+        details: [nonUrgent],
       });
     });
 
-    it("should do nothing if there are no non-urgent notifications", async () => {
+    it("should send urgent notifications and not buffer them", async () => {
       const urgent = mockNotification("Urgent", true);
       const results: SendResult[] = [{ success: true, notification: urgent }];
 
@@ -282,10 +317,11 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
-      await send(urgent);
+      await send([urgent]);
 
       expect(buffer.append).not.toHaveBeenCalled();
       expect(deliveryService.send).toHaveBeenCalledWith([urgent]);
@@ -301,6 +337,7 @@ describe("createSendNotificationUseCase", () => {
       const useCase = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryServiceWithoutHealth,
+        tracingContextManager,
         loggerAdapter,
       });
 
@@ -308,9 +345,12 @@ describe("createSendNotificationUseCase", () => {
     });
 
     it("should call deliveryService.checkHealth if available", async () => {
+      deliveryService.checkHealth = vi.fn().mockResolvedValue(undefined);
+
       const { checkHealth } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
@@ -326,6 +366,7 @@ describe("createSendNotificationUseCase", () => {
       const { checkHealth } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        tracingContextManager,
         loggerAdapter,
       });
 
