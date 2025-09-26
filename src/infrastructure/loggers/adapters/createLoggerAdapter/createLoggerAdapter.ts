@@ -16,7 +16,7 @@ export const createLoggerAdapter = (
   config: LoggerAdapterConfig,
 ): LoggerAdapter => {
   const { logger, tracingContextManager } = dependencies;
-  const { measurement, currentService, environment } = config;
+  const { measurement, serviceName, serviceVersion, environment } = config;
 
   const formatLog = (
     level: LogLevel,
@@ -42,7 +42,8 @@ export const createLoggerAdapter = (
       timestamp: Date.now() * 1_000_000,
       tags: {
         level,
-        currentService,
+        serviceName,
+        serviceVersion,
         trigger: TriggerType.Api,
         environment,
         eventType,

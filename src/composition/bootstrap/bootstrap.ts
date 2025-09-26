@@ -2,17 +2,30 @@ import { propagation } from "@opentelemetry/api";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
 import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
+import {
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
+} from "@opentelemetry/semantic-conventions";
 
 import { SendNotificationProcess } from "../../application/jobs/createSendNotificationProcess/index.js";
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
+import { loggerAdapterConfig } from "../../configs/index.js";
 import { Server } from "../../infrastructure/ports/Server.js";
 import { EventType } from "../../shared/enums/EventType.js";
 import { container } from "../container/index.js";
 
 const initOpenTelemetry = (): NodeSDK => {
   propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+
+  const resource = resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: loggerAdapterConfig.serviceName,
+    [ATTR_SERVICE_VERSION]: loggerAdapterConfig.serviceVersion,
+  });
+
   const sdk = new NodeSDK({
+    resource,
     instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
   });
   sdk.start();

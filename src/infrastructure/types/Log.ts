@@ -8,7 +8,8 @@ export interface Log {
   timestamp: number;
   tags: {
     level: LogLevel;
-    currentService?: string;
+    serviceName?: string;
+    serviceVersion?: string;
     trigger?: TriggerType;
     environment?: EnvironmentType;
     eventType?: EventType;
