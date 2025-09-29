@@ -12,7 +12,7 @@ import { Container } from "../../types/Container.js";
 export const registerServices = (container: AwilixContainer<Container>) => {
   container.register({
     notificationDeliveryService: asFunction(
-      (tracingContextManager, loggerAdapter) => {
+      ({ tracingContextManager, loggerAdapter }) => {
         const bitrixSender = createBitrixSender(bitrixConfig);
         const smtpSender = createSmtpSender(smtpConfig);
 
