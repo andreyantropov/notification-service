@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, Mocked } from "vitest";
 
-import { createTracedSender } from "./createTracedSender";
-import type { TrasedSenderDependencies } from "./interfaces/TracedSenderDependencies";
-import { TracingContextManager } from "../../../../application/ports/TracingContextManager";
-import type { Sender } from "../../../../domain/ports/Sender";
-import type { Recipient } from "../../../../domain/types/Recipient";
+import { createTracedSender } from "./createTracedSender.js";
+import type { TrasedSenderDependencies } from "./interfaces/TracedSenderDependencies.js";
+import { TracingContextManager } from "../../../../application/ports/TracingContextManager.js";
+import type { Sender } from "../../../../domain/ports/Sender.js";
+import type { Recipient } from "../../../../domain/types/Recipient.js";
 
 describe("createTracedSender", () => {
   let mockSender: Mocked<Sender>;
@@ -50,7 +50,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
-            end: vi.fn(),
             recordException: vi.fn(),
             setStatus: vi.fn(),
           });
@@ -82,7 +81,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
-            end: vi.fn(),
             recordException: vi.fn(),
             setStatus: vi.fn(),
           });
@@ -103,7 +101,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return await fn({
-            end: vi.fn(),
             recordException: vi.fn().mockImplementation(() => {}),
             setStatus: vi.fn().mockImplementation(() => {}),
           });
@@ -135,7 +132,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
-            end: vi.fn(),
             recordException: vi.fn(),
             setStatus: vi.fn(),
           });
@@ -157,7 +153,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
-            end: vi.fn(),
             recordException: vi.fn(),
             setStatus: vi.fn(),
           });
@@ -191,7 +186,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
-            end: vi.fn(),
             recordException: vi.fn(),
             setStatus: vi.fn(),
           });
@@ -233,7 +227,6 @@ describe("createTracedSender", () => {
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
-            end: vi.fn(),
             recordException: vi.fn(),
             setStatus: vi.fn(),
           });

@@ -36,8 +36,7 @@ describe("LocalFileLogger", () => {
     timestamp: fixedTimestamp,
     tags: {
       level: LogLevel.Info,
-      currentService: "notification-service",
-      callerService: "firebird",
+      serviceName: "notification-service",
       trigger: TriggerType.Manual,
     },
     fields: {

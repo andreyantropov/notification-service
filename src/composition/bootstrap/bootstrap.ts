@@ -39,7 +39,7 @@ const startApplication = async (loggerAdapter: LoggerAdapter) => {
   const server = container.resolve<Server>("server");
 
   sendNotificationProcess.start();
-  server.start();
+  await server.start();
 
   await loggerAdapter.debug({
     message: "Приложение успешно запущено",

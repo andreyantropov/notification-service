@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
-import { createLoggedSender } from "./createLoggedSender";
-import type { LoggedSenderDependencies } from "./interfaces/LoggedSenderDependencies";
-import type { LoggerAdapter } from "../../../../application/ports/LoggerAdapter";
-import type { Sender } from "../../../../domain/ports/Sender";
-import type { Recipient } from "../../../../domain/types/Recipient";
-import { EventType } from "../../../../shared/enums/EventType";
+import { createLoggedSender } from "./createLoggedSender.js";
+import type { LoggedSenderDependencies } from "./interfaces/LoggedSenderDependencies.js";
+import type { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
+import type { Sender } from "../../../../domain/ports/Sender.js";
+import type { Recipient } from "../../../../domain/types/Recipient.js";
+import { EventType } from "../../../../shared/enums/EventType.js";
 
 const mockLoggerAdapter = (): LoggerAdapter => ({
   debug: vi.fn(),

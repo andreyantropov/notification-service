@@ -27,9 +27,9 @@ export const createServer = (
   let isStarting = false;
   let isStopping = false;
 
-  const start = () => {
+  const start = async (): Promise<void> => {
     if (isStarting) {
-      loggerAdapter.warning({
+      await loggerAdapter.warning({
         message: `Сервер уже запускается`,
         eventType: EventType.Bootstrap,
       });
@@ -37,7 +37,7 @@ export const createServer = (
     }
 
     if (server) {
-      loggerAdapter.warning({
+      await loggerAdapter.warning({
         message: `Сервер уже запущен`,
         eventType: EventType.Bootstrap,
       });
@@ -45,7 +45,7 @@ export const createServer = (
     }
 
     if (isStopping) {
-      loggerAdapter.warning({
+      await loggerAdapter.warning({
         message: `Нельзя запустить сервер во время остановки`,
         eventType: EventType.Bootstrap,
       });
@@ -58,7 +58,7 @@ export const createServer = (
       server = app.listen(port, async () => {
         isStarting = false;
       });
-      loggerAdapter.debug({
+      await loggerAdapter.debug({
         message: `Сервер успешно запущен`,
         eventType: EventType.Bootstrap,
       });
@@ -68,7 +68,7 @@ export const createServer = (
           cause: error,
         }),
       );
-      loggerAdapter.critical({
+      await loggerAdapter.critical({
         message: `Не удалось запустить сервер на порту ${port}`,
         eventType: EventType.Bootstrap,
         error: error,
@@ -80,7 +80,7 @@ export const createServer = (
 
   const stop = async (): Promise<void> => {
     if (isStopping) {
-      loggerAdapter.warning({
+      await loggerAdapter.warning({
         message: `Сервер уже останавливается`,
         eventType: EventType.Shutdown,
       });
@@ -88,7 +88,7 @@ export const createServer = (
     }
 
     if (isStarting) {
-      loggerAdapter.warning({
+      await loggerAdapter.warning({
         message: `Нельзя остановить сервер во время запуска`,
         eventType: EventType.Shutdown,
       });
@@ -96,7 +96,7 @@ export const createServer = (
     }
 
     if (!server) {
-      loggerAdapter.warning({
+      await loggerAdapter.warning({
         message: `Сервер уже остановлен`,
         eventType: EventType.Shutdown,
       });
@@ -139,7 +139,7 @@ export const createServer = (
 
       server = null;
 
-      loggerAdapter.debug({
+      await loggerAdapter.debug({
         message: `Сервер успешно остановлен`,
         eventType: EventType.Shutdown,
       });
@@ -149,7 +149,7 @@ export const createServer = (
           cause: error,
         }),
       );
-      loggerAdapter.critical({
+      await loggerAdapter.critical({
         message: `Не удалось корректно завершить работу сервера`,
         eventType: EventType.Shutdown,
         error: error,

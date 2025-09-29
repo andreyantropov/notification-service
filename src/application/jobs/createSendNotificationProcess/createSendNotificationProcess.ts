@@ -15,7 +15,7 @@ export const createSendNotificationProcess = (
   let timer: ReturnType<typeof setInterval> | null = null;
   let isProcessing = false;
 
-  const run = async () => {
+  const run = async (): Promise<void> => {
     if (isProcessing) return;
 
     isProcessing = true;
@@ -36,12 +36,12 @@ export const createSendNotificationProcess = (
     }
   };
 
-  const start = () => {
+  const start = (): void => {
     if (timer) return;
     timer = setInterval(run, interval);
   };
 
-  const stop = () => {
+  const stop = (): void => {
     if (timer) {
       clearInterval(timer);
       timer = null;

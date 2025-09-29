@@ -74,10 +74,10 @@ export const createLoggerAdapter = (
   };
 
   return {
-    debug: (rawLog) => writeLog(LogLevel.Debug, rawLog),
-    info: (rawLog) => writeLog(LogLevel.Info, rawLog),
-    warning: (rawLog) => writeLog(LogLevel.Warning, rawLog),
-    error: (rawLog) => writeLog(LogLevel.Error, rawLog),
-    critical: (rawLog) => writeLog(LogLevel.Critical, rawLog),
+    debug: async (rawLog) => await writeLog(LogLevel.Debug, rawLog),
+    info: async (rawLog) => await writeLog(LogLevel.Info, rawLog),
+    warning: async (rawLog) => await writeLog(LogLevel.Warning, rawLog),
+    error: async (rawLog) => await writeLog(LogLevel.Error, rawLog),
+    critical: async (rawLog) => await writeLog(LogLevel.Critical, rawLog),
   };
 };

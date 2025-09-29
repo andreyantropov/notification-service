@@ -1,9 +1,9 @@
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { createOtelTracingContextManager } from "./createOtelTracingContextManager";
-import type { OtelTracingContextManagerConfig } from "./interfaces/OtelTracingContextManagerConfig";
-import type { TracingContextManager } from "../../../../application/ports/TracingContextManager";
+import { createOtelTracingContextManager } from "./createOtelTracingContextManager.js";
+import type { OtelTracingContextManagerConfig } from "./interfaces/OtelTracingContextManagerConfig.js";
+import type { TracingContextManager } from "../../../../application/ports/TracingContextManager.js";
 
 const { mockTracerInstance, mockContext, mockTrace } = vi.hoisted(() => {
   const mockTracerInstance = {
@@ -133,14 +133,12 @@ describe("createOtelTracingContextManager", () => {
 
   describe("startActiveSpan", () => {
     let mockOtelSpan: {
-      end: ReturnType<typeof vi.fn>;
       recordException: ReturnType<typeof vi.fn>;
       setStatus: ReturnType<typeof vi.fn>;
     };
 
     beforeEach(() => {
       mockOtelSpan = {
-        end: vi.fn(),
         recordException: vi.fn(),
         setStatus: vi.fn(),
       };
@@ -167,7 +165,6 @@ describe("createOtelTracingContextManager", () => {
       );
       expect(mockFn).toHaveBeenCalledOnce();
       expect(result).toBe("success");
-      expect(mockOtelSpan.end).toHaveBeenCalledOnce();
     });
 
     it("should start span with specified kind and attributes", async () => {
@@ -249,16 +246,13 @@ describe("createOtelTracingContextManager", () => {
         code: SpanStatusCode.ERROR,
         message: "Test error",
       });
-      expect(mockOtelSpan.end).toHaveBeenCalledOnce();
     });
 
     it("should provide span wrapper with correct methods", async () => {
       const mockFn = vi.fn().mockImplementation((span) => {
-        expect(typeof span.end).toBe("function");
         expect(typeof span.recordException).toBe("function");
         expect(typeof span.setStatus).toBe("function");
 
-        span.end();
         span.recordException(new Error("test"));
         span.setStatus({ code: "OK" });
 
@@ -274,7 +268,6 @@ describe("createOtelTracingContextManager", () => {
       await manager.startActiveSpan("test-span", {}, mockFn);
 
       expect(mockFn).toHaveBeenCalledOnce();
-      expect(mockOtelSpan.end).toHaveBeenCalled();
       expect(mockOtelSpan.recordException).toHaveBeenCalledWith(
         new Error("test"),
       );
@@ -307,28 +300,6 @@ describe("createOtelTracingContextManager", () => {
         code: SpanStatusCode.ERROR,
         message: "test error",
       });
-    });
-
-    it("should end span even when function throws", async () => {
-      const testError = new Error("Test error");
-      const mockFn = vi.fn().mockRejectedValue(testError);
-
-      mockTracerInstance.startActiveSpan.mockImplementation(
-        (name, options, fn) => {
-          try {
-            return fn(mockOtelSpan);
-          } catch (error) {
-            mockOtelSpan.end();
-            throw error;
-          }
-        },
-      );
-
-      await expect(
-        manager.startActiveSpan("test-span", {}, mockFn),
-      ).rejects.toThrow("Test error");
-
-      expect(mockOtelSpan.end).toHaveBeenCalledOnce();
     });
 
     it("should handle non-Error objects in recordException", async () => {

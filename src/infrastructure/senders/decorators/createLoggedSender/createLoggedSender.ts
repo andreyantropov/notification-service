@@ -11,13 +11,13 @@ export const createLoggedSender = (
   const send = async (recipient: Recipient, message: string): Promise<void> => {
     try {
       await sender.send(recipient, message);
-      loggerAdapter.info({
+      await loggerAdapter.info({
         message: `Уведомление успешно отправлено`,
         eventType: EventType.MessagePublish,
         details: { recipient, message },
       });
     } catch (error) {
-      loggerAdapter.error({
+      await loggerAdapter.error({
         message: `Не удалось отправить уведомление`,
         eventType: EventType.MessagePublish,
         details: { recipient, message },
@@ -31,12 +31,12 @@ export const createLoggedSender = (
     ? async (): Promise<void> => {
         try {
           await sender.checkHealth!();
-          loggerAdapter.debug({
+          await loggerAdapter.debug({
             message: `Сендер ${sender.constructor.name} готов к работе`,
             eventType: EventType.HealthCheck,
           });
         } catch (error) {
-          loggerAdapter.error({
+          await loggerAdapter.error({
             message: `Сендер ${sender.constructor.name} не отвечает`,
             eventType: EventType.HealthCheck,
             error: error,

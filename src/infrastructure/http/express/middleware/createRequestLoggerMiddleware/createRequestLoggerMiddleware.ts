@@ -11,13 +11,13 @@ export const createRequestLoggerMiddleware = (
   return (req: Request, res: Response, next: NextFunction): void => {
     const start = Date.now();
 
-    res.on("finish", () => {
+    res.on("finish", async () => {
       const duration = Date.now() - start;
 
       const isSuccess = res.statusCode >= 200 && res.statusCode < 500;
 
       if (isSuccess) {
-        loggerAdapter.info({
+        await loggerAdapter.info({
           message: `Запрос ${req.method} ${req.url} обработан`,
           eventType: EventType.Request,
           duration,
@@ -30,7 +30,7 @@ export const createRequestLoggerMiddleware = (
           },
         });
       } else {
-        loggerAdapter.error({
+        await loggerAdapter.error({
           message: `Не удалось обработать запрос ${req.method} ${req.url}`,
           eventType: EventType.Request,
           duration,
@@ -45,11 +45,11 @@ export const createRequestLoggerMiddleware = (
       }
     });
 
-    res.on("close", () => {
+    res.on("close", async () => {
       if (!res.headersSent) {
         const duration = Date.now() - start;
 
-        loggerAdapter.warning({
+        await loggerAdapter.warning({
           message: `Запрос ${req.method} ${req.url} был прерван клиентом до завершения обработки`,
           eventType: EventType.Request,
           duration,
