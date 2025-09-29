@@ -8,7 +8,7 @@ import { Container } from "../../types/Container.js";
 
 export const registerBuffer = (container: AwilixContainer<Container>) => {
   container.register({
-    buffer: asFunction((tracingContextManager, loggerAdapter) => {
+    buffer: asFunction(({ tracingContextManager, loggerAdapter }) => {
       const buffer = createInMemoryBuffer<Notification>();
       const tracedBuffer = createTracedBuffer<Notification>({
         buffer,
