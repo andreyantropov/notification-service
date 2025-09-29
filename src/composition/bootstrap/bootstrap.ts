@@ -1,36 +1,9 @@
-import { propagation } from "@opentelemetry/api";
-import { W3CTraceContextPropagator } from "@opentelemetry/core";
-import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
-import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
-import { resourceFromAttributes } from "@opentelemetry/resources";
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import {
-  ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
-} from "@opentelemetry/semantic-conventions";
-
 import { SendNotificationProcess } from "../../application/jobs/createSendNotificationProcess/index.js";
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
-import { loggerAdapterConfig } from "../../configs/index.js";
 import { Server } from "../../infrastructure/ports/Server.js";
 import { EventType } from "../../shared/enums/EventType.js";
-import { container } from "../container/index.js";
-
-const initOpenTelemetry = (): NodeSDK => {
-  propagation.setGlobalPropagator(new W3CTraceContextPropagator());
-
-  const resource = resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: loggerAdapterConfig.serviceName,
-    [ATTR_SERVICE_VERSION]: loggerAdapterConfig.serviceVersion,
-  });
-
-  const sdk = new NodeSDK({
-    resource,
-    instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
-  });
-  sdk.start();
-  return sdk;
-};
+import { container } from "../container/container.js";
+import { telemetrySdk } from "../tracing/tracing.js";
 
 const startApplication = async (loggerAdapter: LoggerAdapter) => {
   const sendNotificationProcess = container.resolve<SendNotificationProcess>(
@@ -51,7 +24,6 @@ const startApplication = async (loggerAdapter: LoggerAdapter) => {
 
 const setupGracefulShutdown = (
   loggerAdapter: LoggerAdapter,
-  otelSdk: NodeSDK,
   sendNotificationProcess: SendNotificationProcess,
   server: Server,
 ) => {
@@ -65,7 +37,7 @@ const setupGracefulShutdown = (
         eventType: EventType.Shutdown,
       });
 
-      await otelSdk.shutdown();
+      await telemetrySdk.shutdown();
     } catch (error) {
       await loggerAdapter.error({
         message: "Ошибка при завершении работы",
@@ -88,20 +60,13 @@ const setupGracefulShutdown = (
 
 export const bootstrap = async (): Promise<void> => {
   let loggerAdapter: LoggerAdapter | undefined;
-  let otelSdk: NodeSDK | undefined;
 
   try {
-    otelSdk = initOpenTelemetry();
     loggerAdapter = container.resolve<LoggerAdapter>("loggerAdapter");
 
     const { sendNotificationProcess, server } =
       await startApplication(loggerAdapter);
-    setupGracefulShutdown(
-      loggerAdapter,
-      otelSdk,
-      sendNotificationProcess,
-      server,
-    );
+    setupGracefulShutdown(loggerAdapter, sendNotificationProcess, server);
   } catch (error) {
     if (loggerAdapter) {
       await loggerAdapter.critical({
