@@ -1,65 +1,55 @@
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import {
+  beforeEach,
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+  MockInstance,
+} from "vitest";
 
 import { createSendNotificationProcess } from "./createSendNotificationProcess.js";
 import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
 import { Notification } from "../../../domain/types/Notification.js";
-import { EventType } from "../../../shared/enums/EventType.js";
 import { Buffer } from "../../ports/Buffer.js";
-import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
-import { TracingContextManager } from "../../ports/TracingContextManager.js";
 import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
 
-const mockNotification: Notification = {
-  recipients: [{ type: "email", value: "test@example.com" }],
-  message: "Test notification",
+const mockNotification1: Notification = {
+  recipients: [{ type: "email", value: "test1@example.com" }],
+  message: "Test notification 1",
   isUrgent: false,
 };
 
-const mockOtelContext = { traceId: "trace-1", spanId: "span-1" };
+const mockNotification2: Notification = {
+  recipients: [{ type: "email", value: "test2@example.com" }],
+  message: "Test notification 2",
+  isUrgent: false,
+};
 
 const mockBuffer = {
   append: vi.fn(),
   takeAll: vi.fn(),
-} satisfies Buffer<{ notification: Notification; otelContext: unknown }>;
-
-const mockLoggerAdapter = {
-  debug: vi.fn(),
-  info: vi.fn(),
-  warning: vi.fn(),
-  error: vi.fn(),
-  critical: vi.fn(),
-} satisfies LoggerAdapter;
+} satisfies Buffer<Notification>;
 
 const mockNotificationDeliveryService = {
   send: vi.fn(),
 } satisfies NotificationDeliveryService;
 
-const mockTracingContextManager = {
-  active: vi.fn(),
-  with: vi.fn((ctx, fn) => fn()),
-  getTraceContext: vi.fn(),
-  startActiveSpan: vi.fn((name, options, fn) => fn()),
-} satisfies TracingContextManager;
-
 describe("createSendNotificationProcess", () => {
   let process: ReturnType<typeof createSendNotificationProcess>;
-  let setIntervalSpy: ReturnType<typeof vi.spyOn>;
-  let clearIntervalSpy: ReturnType<typeof vi.spyOn>;
+  let setIntervalSpy: MockInstance<typeof setInterval>;
+  let clearIntervalSpy: MockInstance<typeof clearInterval>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
 
-    setIntervalSpy = vi.spyOn(global, "setInterval") as ReturnType<
-      typeof vi.spyOn
-    >;
+    setIntervalSpy = vi.spyOn(global, "setInterval");
     clearIntervalSpy = vi.spyOn(global, "clearInterval");
 
     process = createSendNotificationProcess({
       buffer: mockBuffer,
       notificationDeliveryService: mockNotificationDeliveryService,
-      tracingContextManager: mockTracingContextManager,
-      loggerAdapter: mockLoggerAdapter,
     });
   });
 
@@ -69,7 +59,7 @@ describe("createSendNotificationProcess", () => {
     vi.restoreAllMocks();
   });
 
-  it("should start the interval with default interval", () => {
+  it("should start the interval with default interval (60s)", () => {
     process.start();
     expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 60_000);
     expect(setIntervalSpy).toHaveBeenCalledTimes(1);
@@ -81,8 +71,6 @@ describe("createSendNotificationProcess", () => {
       {
         buffer: mockBuffer,
         notificationDeliveryService: mockNotificationDeliveryService,
-        tracingContextManager: mockTracingContextManager,
-        loggerAdapter: mockLoggerAdapter,
       },
       config,
     );
@@ -105,36 +93,32 @@ describe("createSendNotificationProcess", () => {
   });
 
   it("should not run if already processing", async () => {
-    mockBuffer.takeAll.mockResolvedValue([
-      { notification: mockNotification, otelContext: mockOtelContext },
-    ]);
-
-    mockNotificationDeliveryService.send.mockReturnValue(new Promise(() => {}));
+    mockBuffer.takeAll.mockResolvedValue([mockNotification1]);
+    // Simulate hanging send
+    mockNotificationDeliveryService.send.mockImplementation(
+      () => new Promise(() => {}),
+    );
 
     process.start();
-
     vi.runOnlyPendingTimers();
     await vi.waitFor(() => {
       expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
     });
 
+    // Trigger another tick — should not run again
     vi.runOnlyPendingTimers();
-
     await Promise.resolve();
 
     expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
     expect(mockNotificationDeliveryService.send).toHaveBeenCalledTimes(1);
   });
 
-  it("should take all notifications from buffer and send them", async () => {
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
-    mockBuffer.takeAll.mockResolvedValue([bufferedNotification]);
+  it("should take all notifications and send them in a single batch", async () => {
+    const notifications = [mockNotification1, mockNotification2];
+    mockBuffer.takeAll.mockResolvedValue(notifications);
     mockNotificationDeliveryService.send.mockResolvedValue([
-      { success: true, notification: mockNotification },
+      { success: true, notification: mockNotification1 },
+      { success: true, notification: mockNotification2 },
     ]);
 
     process.start();
@@ -142,118 +126,14 @@ describe("createSendNotificationProcess", () => {
 
     await vi.waitFor(() => {
       expect(mockBuffer.takeAll).toHaveBeenCalled();
-      expect(mockTracingContextManager.with).toHaveBeenCalledWith(
-        mockOtelContext,
-        expect.any(Function),
+      expect(mockNotificationDeliveryService.send).toHaveBeenCalledTimes(1);
+      expect(mockNotificationDeliveryService.send).toHaveBeenCalledWith(
+        notifications,
       );
-      expect(mockNotificationDeliveryService.send).toHaveBeenCalledWith([
-        mockNotification,
-      ]);
     });
   });
 
-  it("should log success when all notifications are sent successfully", async () => {
-    const result = [{ success: true, notification: mockNotification }];
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
-    mockBuffer.takeAll.mockResolvedValue([bufferedNotification]);
-    mockNotificationDeliveryService.send.mockResolvedValue(result);
-
-    process.start();
-    vi.runOnlyPendingTimers();
-
-    await vi.waitFor(() => {
-      expect(mockLoggerAdapter.info).toHaveBeenCalledWith({
-        message: "Уведомление успешно отправлено",
-        eventType: EventType.MessagePublish,
-        details: result,
-      });
-    });
-  });
-
-  it("should log warning when notifications have warnings", async () => {
-    const result = [
-      {
-        success: true,
-        notification: mockNotification,
-        warnings: ["Some warning"],
-      },
-    ];
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
-    mockBuffer.takeAll.mockResolvedValue([bufferedNotification]);
-    mockNotificationDeliveryService.send.mockResolvedValue(result);
-
-    process.start();
-    vi.runOnlyPendingTimers();
-
-    await vi.waitFor(() => {
-      expect(mockLoggerAdapter.warning).toHaveBeenCalledWith({
-        message: "Уведомление отправлено, но в ходе работы возникли ошибки",
-        eventType: EventType.MessagePublish,
-        details: result,
-      });
-    });
-  });
-
-  it("should log error when some notifications fail", async () => {
-    const result = [
-      { success: true, notification: mockNotification },
-      { success: false, notification: mockNotification, error: "Failed" },
-    ];
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
-    mockBuffer.takeAll.mockResolvedValue([
-      bufferedNotification,
-      bufferedNotification,
-    ]);
-    mockNotificationDeliveryService.send.mockResolvedValue(result);
-
-    process.start();
-    vi.runOnlyPendingTimers();
-
-    await vi.waitFor(() => {
-      expect(mockLoggerAdapter.error).toHaveBeenCalledWith({
-        message: "Не удалось отправить одно или несколько уведомлений",
-        eventType: EventType.MessagePublish,
-        details: result,
-      });
-    });
-  });
-
-  it("should log error if delivery service throws an exception", async () => {
-    const error = new Error("Network error");
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
-    mockBuffer.takeAll.mockResolvedValue([bufferedNotification]);
-    mockNotificationDeliveryService.send.mockRejectedValue(error);
-
-    process.start();
-    vi.runOnlyPendingTimers();
-
-    await vi.waitFor(() => {
-      expect(mockLoggerAdapter.error).toHaveBeenCalledWith({
-        message: "Не удалось отправить уведомления",
-        eventType: EventType.MessagePublish,
-        details: [mockNotification],
-        error,
-      });
-    });
-  });
-
-  it("should not throw if buffer is empty", async () => {
+  it("should not call send if buffer is empty", async () => {
     mockBuffer.takeAll.mockResolvedValue([]);
     process.start();
 
@@ -261,25 +141,19 @@ describe("createSendNotificationProcess", () => {
     await Promise.resolve();
 
     expect(mockNotificationDeliveryService.send).not.toHaveBeenCalled();
-    expect(mockTracingContextManager.with).not.toHaveBeenCalled();
   });
 
   it("should reset isProcessing flag after success", async () => {
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
     mockBuffer.takeAll
-      .mockResolvedValueOnce([bufferedNotification])
-      .mockResolvedValueOnce([bufferedNotification]);
+      .mockResolvedValueOnce([mockNotification1])
+      .mockResolvedValueOnce([mockNotification2]);
 
     mockNotificationDeliveryService.send
       .mockResolvedValueOnce([
-        { success: true, notification: mockNotification },
+        { success: true, notification: mockNotification1 },
       ])
       .mockResolvedValueOnce([
-        { success: true, notification: mockNotification },
+        { success: true, notification: mockNotification2 },
       ]);
 
     process.start();
@@ -297,31 +171,21 @@ describe("createSendNotificationProcess", () => {
 
   it("should reset isProcessing flag after error", async () => {
     const error = new Error("Delivery failed");
-    const bufferedNotification = {
-      notification: mockNotification,
-      otelContext: mockOtelContext,
-    };
-
     mockBuffer.takeAll
-      .mockResolvedValueOnce([bufferedNotification])
-      .mockResolvedValueOnce([bufferedNotification]);
+      .mockResolvedValueOnce([mockNotification1])
+      .mockResolvedValueOnce([mockNotification2]);
 
     mockNotificationDeliveryService.send
       .mockRejectedValueOnce(error)
       .mockResolvedValueOnce([
-        { success: true, notification: mockNotification },
+        { success: true, notification: mockNotification2 },
       ]);
 
     process.start();
 
     vi.runOnlyPendingTimers();
     await vi.waitFor(() => {
-      expect(mockLoggerAdapter.error).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Не удалось отправить уведомления",
-          eventType: EventType.MessagePublish,
-        }),
-      );
+      expect(mockNotificationDeliveryService.send).toHaveBeenCalledTimes(1);
     });
 
     vi.runOnlyPendingTimers();
@@ -330,55 +194,57 @@ describe("createSendNotificationProcess", () => {
     });
   });
 
-  it("should log error when buffer.takeAll fails", async () => {
-    const error = new Error("Buffer error");
+  it("should call onError if buffer.takeAll throws", async () => {
+    const mockOnError = vi.fn();
+    const error = new Error("Buffer read failed");
     mockBuffer.takeAll.mockRejectedValue(error);
 
-    process.start();
+    const processWithErrorHandler = createSendNotificationProcess(
+      {
+        buffer: mockBuffer,
+        notificationDeliveryService: mockNotificationDeliveryService,
+      },
+      { onError: mockOnError },
+    );
+
+    processWithErrorHandler.start();
     vi.runOnlyPendingTimers();
 
     await vi.waitFor(() => {
-      expect(mockLoggerAdapter.error).toHaveBeenCalledWith({
-        message: "Не удалось обработать буфер уведомлений",
-        eventType: EventType.MessagePublish,
-        error,
-      });
+      expect(mockOnError).toHaveBeenCalled();
+      const err = mockOnError.mock.calls[0][0];
+      expect(err).toBeInstanceOf(Error);
+      expect(err.message).toBe(
+        "При обработке отложенных уведомлений произошла ошибка",
+      );
+      expect(err.cause).toBe(error);
     });
   });
 
-  it("should process each notification individually with tracing context", async () => {
-    const bufferedNotification1 = {
-      notification: { ...mockNotification, message: "First" },
-      otelContext: { traceId: "trace-1", spanId: "span-1" },
-    };
+  it("should call onError if notificationDeliveryService.send throws", async () => {
+    const mockOnError = vi.fn();
+    const error = new Error("Network error");
+    mockBuffer.takeAll.mockResolvedValue([mockNotification1]);
+    mockNotificationDeliveryService.send.mockRejectedValue(error);
 
-    const bufferedNotification2 = {
-      notification: { ...mockNotification, message: "Second" },
-      otelContext: { traceId: "trace-2", spanId: "span-2" },
-    };
+    const processWithErrorHandler = createSendNotificationProcess(
+      {
+        buffer: mockBuffer,
+        notificationDeliveryService: mockNotificationDeliveryService,
+      },
+      { onError: mockOnError },
+    );
 
-    mockBuffer.takeAll.mockResolvedValue([
-      bufferedNotification1,
-      bufferedNotification2,
-    ]);
-    mockNotificationDeliveryService.send.mockResolvedValue([
-      { success: true, notification: bufferedNotification1.notification },
-      { success: true, notification: bufferedNotification2.notification },
-    ]);
-
-    process.start();
+    processWithErrorHandler.start();
     vi.runOnlyPendingTimers();
 
     await vi.waitFor(() => {
-      expect(mockTracingContextManager.with).toHaveBeenCalledTimes(2);
-      expect(mockTracingContextManager.with).toHaveBeenCalledWith(
-        bufferedNotification1.otelContext,
-        expect.any(Function),
+      expect(mockOnError).toHaveBeenCalled();
+      const err = mockOnError.mock.calls[0][0];
+      expect(err.message).toBe(
+        "При обработке отложенных уведомлений произошла ошибка",
       );
-      expect(mockTracingContextManager.with).toHaveBeenCalledWith(
-        bufferedNotification2.otelContext,
-        expect.any(Function),
-      );
+      expect(err.cause).toBe(error);
     });
   });
 });

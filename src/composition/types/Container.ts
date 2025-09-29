@@ -5,8 +5,8 @@ import { Buffer } from "../../application/ports/Buffer.js";
 import { LoggerAdapter } from "../../application/ports/LoggerAdapter.js";
 import { TracingContextManager } from "../../application/ports/TracingContextManager.js";
 import { NotificationDeliveryService } from "../../application/services/createNotificationDeliveryService/index.js";
-import { BufferedNotification } from "../../application/types/BufferedNotification.js";
 import { SendNotificationUseCase } from "../../application/useCases/createSendNotificationUseCase/index.js";
+import { Notification } from "../../domain/types/Notification.js";
 import { Counter } from "../../infrastructure/ports/Counter.js";
 import { Server } from "../../infrastructure/ports/Server.js";
 
@@ -15,7 +15,7 @@ export type Container = {
   loggerAdapter: LoggerAdapter;
   tracingContextManager: TracingContextManager;
   activeRequestsCounter: Counter;
-  buffer: Buffer<BufferedNotification>;
+  buffer: Buffer<Notification>;
   server: Server;
 
   notificationDeliveryService: NotificationDeliveryService;

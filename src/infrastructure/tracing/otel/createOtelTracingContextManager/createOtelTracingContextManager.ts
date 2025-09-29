@@ -43,14 +43,13 @@ export const createOtelTracingContextManager = (
         spanId: spanContext.spanId,
       };
     },
-    startActiveSpan: async <T>(
+    startActiveSpan: <T>(
       name: string,
       options: {
         kind?: "SERVER" | "CLIENT" | "INTERNAL" | "PRODUCER" | "CONSUMER";
         attributes?: Record<string, string | number | boolean>;
       },
       fn: (span: {
-        end: () => void;
         recordException: (error: Error) => void;
         setStatus: (status: { code: "OK" | "ERROR"; message?: string }) => void;
       }) => Promise<T>,
@@ -63,7 +62,6 @@ export const createOtelTracingContextManager = (
         },
         async (otelSpan) => {
           const wrapperSpan = {
-            end: () => otelSpan.end(),
             recordException: (error: Error) =>
               otelSpan.recordException(error as Exception),
             setStatus: (status: { code: "OK" | "ERROR"; message?: string }) => {

@@ -1,11 +1,7 @@
 import { SendNotificationProcess } from "./interfaces/SendNotificationProcess.js";
 import { SendNotificationProcessConfig } from "./interfaces/SendNotificationProcessConfig.js";
 import { SendNotificationProcessDependencies } from "./interfaces/SendNotificationProcessDependencies.js";
-import {
-  DEFAULT_CONFIG,
-  DEFAULT_LOGGER,
-} from "../../../shared/constants/defaults.js";
-import { EventType } from "../../../shared/enums/EventType.js";
+import { DEFAULT_CONFIG } from "../../../shared/constants/defaults.js";
 
 const DEFAULT_INTERVAL = 60_000;
 
@@ -13,47 +9,28 @@ export const createSendNotificationProcess = (
   dependencies: SendNotificationProcessDependencies,
   config: SendNotificationProcessConfig = DEFAULT_CONFIG,
 ): SendNotificationProcess => {
-  const {
-    buffer,
-    notificationDeliveryService,
-    tracingContextManager,
-    loggerAdapter = DEFAULT_LOGGER,
-  } = dependencies;
-  const { interval = DEFAULT_INTERVAL } = config;
+  const { buffer, notificationDeliveryService } = dependencies;
+  const { interval = DEFAULT_INTERVAL, onError = () => {} } = config;
 
   let timer: ReturnType<typeof setInterval> | null = null;
   let isProcessing = false;
 
   const run = async () => {
     if (isProcessing) return;
+
     isProcessing = true;
 
     try {
-      const bufferedNotifications = await buffer.takeAll();
-      if (bufferedNotifications.length === 0) return;
+      const notifications = await buffer.takeAll();
+      if (notifications.length === 0) return;
 
-      for (const buffered of bufferedNotifications) {
-        const { notification, otelContext } = buffered;
-
-        await tracingContextManager.with(otelContext, async () => {
-          try {
-            await notificationDeliveryService.send([notification]);
-          } catch (error) {
-            loggerAdapter.error({
-              message: `Не удалось отправить уведомления`,
-              eventType: EventType.MessagePublish,
-              details: [buffered.notification],
-              error,
-            });
-          }
-        });
-      }
+      await notificationDeliveryService.send(notifications);
     } catch (error) {
-      loggerAdapter.error({
-        message: `Не удалось обработать буфер уведомлений`,
-        eventType: EventType.MessagePublish,
-        error,
-      });
+      onError(
+        new Error(`При обработке отложенных уведомлений произошла ошибка`, {
+          cause: error,
+        }),
+      );
     } finally {
       isProcessing = false;
     }

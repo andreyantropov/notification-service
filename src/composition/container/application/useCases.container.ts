@@ -6,17 +6,10 @@ import { Container } from "../../types/Container.js";
 export const registerUseCases = (container: AwilixContainer<Container>) => {
   container.register({
     sendNotificationUseCase: asFunction(
-      ({
-        buffer,
-        notificationDeliveryService,
-        tracingContextManager,
-        loggerAdapter,
-      }) =>
+      ({ buffer, notificationDeliveryService }) =>
         createSendNotificationUseCase({
           buffer,
           notificationDeliveryService,
-          tracingContextManager,
-          loggerAdapter,
         }),
     ).singleton(),
   });
