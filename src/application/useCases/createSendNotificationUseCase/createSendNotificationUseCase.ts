@@ -18,31 +18,7 @@ export const createSendNotificationUseCase = (
   const sendUrgentNotifications = async (
     urgentNotifications: Notification[],
   ): Promise<void> => {
-    const results = await notificationDeliveryService.send(urgentNotifications);
-    const isErrors = results.some((res) => !res.success);
-    const isWarnings = results.some(
-      (res) => res.warnings && res.warnings.length !== 0,
-    );
-
-    if (isErrors) {
-      loggerAdapter.error({
-        message: `Не удалось отправить одно или несколько уведомлений`,
-        eventType: EventType.MessagePublish,
-        details: results,
-      });
-    } else if (isWarnings) {
-      loggerAdapter.warning({
-        message: `Уведомление отправлено, но в ходе работы возникли ошибки`,
-        eventType: EventType.MessagePublish,
-        details: results,
-      });
-    } else {
-      loggerAdapter.info({
-        message: `Уведомление успешно отправлено`,
-        eventType: EventType.MessagePublish,
-        details: results,
-      });
-    }
+    await notificationDeliveryService.send(urgentNotifications);
   };
 
   const enqueueUnurgentNotifications = async (

@@ -84,8 +84,6 @@ export const createOtelTracingContextManager = (
               message: error instanceof Error ? error.message : String(error),
             });
             throw error;
-          } finally {
-            wrapperSpan.end();
           }
         },
       );

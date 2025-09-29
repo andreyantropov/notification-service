@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach, Mocked } from "vitest";
 
 import { createTracedSender } from "./createTracedSender";
 import type { TrasedSenderDependencies } from "./interfaces/TracedSenderDependencies";
-import { TracingContextManager } from "../../../application/ports/TracingContextManager";
-import type { Sender } from "../../../domain/ports/Sender";
-import type { Recipient } from "../../../domain/types/Recipient";
+import { TracingContextManager } from "../../../../application/ports/TracingContextManager";
+import type { Sender } from "../../../../domain/ports/Sender";
+import type { Recipient } from "../../../../domain/types/Recipient";
 
 describe("createTracedSender", () => {
   let mockSender: Mocked<Sender>;

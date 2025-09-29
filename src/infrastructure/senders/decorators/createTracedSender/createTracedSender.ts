@@ -1,6 +1,6 @@
 import { TrasedSenderDependencies } from "./interfaces/TracedSenderDependencies.js";
-import { Sender } from "../../../domain/ports/Sender.js";
-import { Recipient } from "../../../domain/types/Recipient.js";
+import { Sender } from "../../../../domain/ports/Sender.js";
+import { Recipient } from "../../../../domain/types/Recipient.js";
 
 export const createTracedSender = (
   dependencies: TrasedSenderDependencies,
