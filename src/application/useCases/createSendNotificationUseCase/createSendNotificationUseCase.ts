@@ -24,21 +24,7 @@ export const createSendNotificationUseCase = (
   const enqueueUnurgentNotifications = async (
     bufferedNotifications: BufferedNotification[],
   ) => {
-    try {
-      await buffer.append(bufferedNotifications);
-      loggerAdapter.debug({
-        message: `${bufferedNotifications.length} несрочных уведомлений добавлено в буфер`,
-        eventType: EventType.CacheOperation,
-        details: bufferedNotifications.map((n) => n.notification),
-      });
-    } catch (error) {
-      loggerAdapter.error({
-        message: "Не удалось добавить уведомления в буфер",
-        eventType: EventType.CacheOperation,
-        details: bufferedNotifications.map((n) => n.notification),
-        error,
-      });
-    }
+    await buffer.append(bufferedNotifications);
   };
 
   const send = async (
