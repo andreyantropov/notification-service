@@ -30,7 +30,7 @@ const setupGracefulShutdown = (
   const shutdown = async () => {
     try {
       sendNotificationProcess.stop();
-      await server.stop();
+      await server.shutdown();
 
       await loggerAdapter.debug({
         message: "Приложение корректно завершило работу",

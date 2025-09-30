@@ -7,18 +7,6 @@ export const createSendNotificationUseCase = (
 ): SendNotificationUseCase => {
   const { buffer, notificationDeliveryService } = dependencies;
 
-  const sendUrgentNotifications = async (
-    urgentNotifications: Notification[],
-  ): Promise<void> => {
-    await notificationDeliveryService.send(urgentNotifications);
-  };
-
-  const enqueueUnurgentNotifications = async (
-    bufferedNotifications: Notification[],
-  ) => {
-    await buffer.append(bufferedNotifications);
-  };
-
   const send = async (
     notification: Notification | Notification[],
   ): Promise<void> => {
@@ -34,11 +22,11 @@ export const createSendNotificationUseCase = (
     const unurgentNotifications = notifications.filter((n) => !n.isUrgent);
 
     if (urgentNotifications.length > 0) {
-      await sendUrgentNotifications(urgentNotifications);
+      await notificationDeliveryService.send(urgentNotifications);
     }
 
     if (unurgentNotifications.length > 0) {
-      await enqueueUnurgentNotifications(unurgentNotifications);
+      await buffer.append(unurgentNotifications);
     }
   };
 

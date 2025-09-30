@@ -20,7 +20,7 @@ export const createServer = (
     port,
     gracefulShutdownTimeout,
     onStartError = noop,
-    onStopError = noop,
+    onShutdownError = noop,
   } = config;
 
   let server: ReturnType<typeof app.listen> | null = null;
@@ -78,7 +78,7 @@ export const createServer = (
     }
   };
 
-  const stop = async (): Promise<void> => {
+  const shutdown = async (): Promise<void> => {
     if (isStopping) {
       await loggerAdapter.warning({
         message: `Сервер уже останавливается`,
@@ -144,7 +144,7 @@ export const createServer = (
         eventType: EventType.Shutdown,
       });
     } catch (error) {
-      onStopError(
+      onShutdownError(
         new Error(`Не удалось корректно завершить работу сервера`, {
           cause: error,
         }),
@@ -160,5 +160,5 @@ export const createServer = (
     }
   };
 
-  return { start, stop };
+  return { start, shutdown };
 };
