@@ -1,13 +1,13 @@
 import { AwilixContainer, asFunction } from "awilix";
 
 import { loggerAdapterConfig } from "../../../configs/index.js";
-import { createOtelTracingContextManager } from "../../../infrastructure/tracing/otel/createOtelTracingContextManager/index.js";
+import { createTracingContextManager } from "../../../infrastructure/telemetry/otel/createTracingContextManager/index.js";
 import { Container } from "../../types/Container.js";
 
 export const registerTelemetry = (container: AwilixContainer<Container>) => {
   container.register({
     tracingContextManager: asFunction(() =>
-      createOtelTracingContextManager(loggerAdapterConfig),
+      createTracingContextManager(loggerAdapterConfig),
     ).singleton(),
   });
 };

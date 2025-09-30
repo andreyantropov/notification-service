@@ -7,11 +7,11 @@ import {
   Context,
 } from "@opentelemetry/api";
 
-import { OtelTracingContextManagerConfig } from "./interfaces/OtelTracingContextManagerConfig.js";
+import { TracingContextManagerConfig } from "./interfaces/TracingContextManagerConfig.js";
 import { TracingContextManager } from "../../../../application/ports/TracingContextManager.js";
 
-export const createOtelTracingContextManager = (
-  config: OtelTracingContextManagerConfig,
+export const createTracingContextManager = (
+  config: TracingContextManagerConfig,
 ): TracingContextManager => {
   const { serviceName } = config;
   const tracer = trace.getTracer(serviceName);

@@ -1,8 +1,8 @@
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { createOtelTracingContextManager } from "./createOtelTracingContextManager.js";
-import type { OtelTracingContextManagerConfig } from "./interfaces/OtelTracingContextManagerConfig.js";
+import { createTracingContextManager } from "./createTracingContextManager.js";
+import type { TracingContextManagerConfig } from "./interfaces/TracingContextManagerConfig.js";
 import type { TracingContextManager } from "../../../../application/ports/TracingContextManager.js";
 
 const { mockTracerInstance, mockContext, mockTrace } = vi.hoisted(() => {
@@ -40,13 +40,13 @@ vi.mock("@opentelemetry/api", () => ({
 }));
 
 describe("createOtelTracingContextManager", () => {
-  let config: OtelTracingContextManagerConfig;
+  let config: TracingContextManagerConfig;
   let manager: TracingContextManager;
 
   beforeEach(() => {
     config = { serviceName: "test-service" };
     vi.clearAllMocks();
-    manager = createOtelTracingContextManager(config);
+    manager = createTracingContextManager(config);
   });
 
   afterEach(() => {
