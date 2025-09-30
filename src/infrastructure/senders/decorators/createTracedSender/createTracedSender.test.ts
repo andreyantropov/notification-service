@@ -15,13 +15,11 @@ describe("createTracedSender", () => {
 
   beforeEach(() => {
     mockSender = {
+      type: "email",
       isSupports: vi.fn(),
       send: vi.fn(),
       checkHealth: vi.fn(),
-      constructor: {
-        name: "TestSender",
-      },
-    } as Mocked<Sender>;
+    } as unknown as Mocked<Sender>;
 
     mockTracingContextManager = {
       startActiveSpan: vi.fn(),
@@ -59,11 +57,11 @@ describe("createTracedSender", () => {
       await tracedSender.send(recipient, message);
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "TestSender.send",
+        "email.send",
         {
           kind: "CLIENT",
           attributes: {
-            "sender.type": "TestSender",
+            "sender.type": "email",
             "recipient.type": "email",
             "recipient.value": "test@example.com",
           },
@@ -114,39 +112,6 @@ describe("createTracedSender", () => {
       expect(mockSender.send).toHaveBeenCalledWith(recipient, message);
     });
 
-    it("should use correct span name based on sender constructor name", async () => {
-      const customSender = {
-        ...mockSender,
-        constructor: {
-          name: "CustomSender",
-        },
-      };
-
-      const customDependencies = {
-        ...dependencies,
-        sender: customSender,
-      };
-
-      const tracedSender = createTracedSender(customDependencies);
-
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return fn({
-            recordException: vi.fn(),
-            setStatus: vi.fn(),
-          });
-        },
-      );
-
-      await tracedSender.send(recipient, message);
-
-      expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "CustomSender.send",
-        expect.any(Object),
-        expect.any(Function),
-      );
-    });
-
     it("should include recipient attributes in span", async () => {
       const tracedSender = createTracedSender(dependencies);
 
@@ -167,7 +132,7 @@ describe("createTracedSender", () => {
       await tracedSender.send(customRecipient, message);
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        expect.any(String),
+        "email.send",
         expect.objectContaining({
           attributes: expect.objectContaining({
             "recipient.type": "bitrix",
@@ -195,7 +160,7 @@ describe("createTracedSender", () => {
       await tracedSender.checkHealth!();
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "TestSender.checkHealth",
+        "email.checkHealth",
         {
           kind: "CLIENT",
         },
@@ -276,6 +241,7 @@ describe("createTracedSender", () => {
     it("should return an object with correct methods", () => {
       const tracedSender = createTracedSender(dependencies);
 
+      expect(tracedSender).toHaveProperty("type", "email");
       expect(tracedSender).toHaveProperty("isSupports");
       expect(tracedSender).toHaveProperty("send");
       expect(tracedSender).toHaveProperty("checkHealth");
@@ -287,9 +253,11 @@ describe("createTracedSender", () => {
     it("should maintain the same isSupports implementation as original sender", () => {
       const originalIsSupports = vi.fn();
       const customSender = {
-        ...mockSender,
+        type: "bitrix",
         isSupports: originalIsSupports,
-      };
+        send: vi.fn(),
+        checkHealth: vi.fn(),
+      } as unknown as Sender;
 
       const customDependencies = {
         ...dependencies,

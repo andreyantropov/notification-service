@@ -9,9 +9,6 @@ describe("createTracedBuffer", () => {
   let mockBuffer: {
     append: Mock;
     takeAll: Mock;
-    constructor: {
-      name: string;
-    };
   };
 
   let mockTracingContextManager: {
@@ -28,9 +25,6 @@ describe("createTracedBuffer", () => {
     mockBuffer = {
       append: vi.fn(),
       takeAll: vi.fn(),
-      constructor: {
-        name: "TestBuffer",
-      },
     };
 
     mockTracingContextManager = {
@@ -65,11 +59,10 @@ describe("createTracedBuffer", () => {
       await tracedBuffer.append(testItems);
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "TestBuffer.append",
+        "buffer.append",
         {
           kind: "INTERNAL",
           attributes: {
-            "buffer.type": "TestBuffer",
             "buffer.items.count": 5,
           },
         },
@@ -122,9 +115,6 @@ describe("createTracedBuffer", () => {
     it("should use correct span name based on buffer constructor name", async () => {
       const customBuffer = {
         ...mockBuffer,
-        constructor: {
-          name: "CustomBuffer",
-        },
       };
 
       const customDependencies = {
@@ -147,7 +137,7 @@ describe("createTracedBuffer", () => {
       await tracedBuffer.append(testItems);
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "CustomBuffer.append",
+        "buffer.append",
         expect.any(Object),
         expect.any(Function),
       );
@@ -229,7 +219,7 @@ describe("createTracedBuffer", () => {
       const result = await tracedBuffer.takeAll();
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "TestBuffer.takeAll",
+        "buffer.takeAll",
         {
           kind: "INTERNAL",
         },
@@ -284,9 +274,6 @@ describe("createTracedBuffer", () => {
     it("should use correct span name for takeAll based on buffer constructor name", async () => {
       const customBuffer = {
         ...mockBuffer,
-        constructor: {
-          name: "CustomBuffer",
-        },
       };
 
       const customDependencies = {
@@ -311,7 +298,7 @@ describe("createTracedBuffer", () => {
       await tracedBuffer.takeAll();
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
-        "CustomBuffer.takeAll",
+        "buffer.takeAll",
         expect.any(Object),
         expect.any(Function),
       );
@@ -334,10 +321,9 @@ describe("createTracedBuffer", () => {
 
       await tracedBuffer.takeAll();
 
-      // Проверяем, что в takeAll не передаются attributes с items count
       const spanCall =
         mockTracingContextManager.startActiveSpan.mock.calls.find(
-          (call) => call[0] === "TestBuffer.takeAll",
+          (call) => call[0] === "buffer.takeAll",
         );
       expect(spanCall?.[1]).toEqual({
         kind: "INTERNAL",
@@ -443,11 +429,11 @@ describe("createTracedBuffer", () => {
 
       const appendCall =
         mockTracingContextManager.startActiveSpan.mock.calls.find(
-          (call) => call[0] === "TestBuffer.append",
+          (call) => call[0] === "buffer.append",
         );
       const takeAllCall =
         mockTracingContextManager.startActiveSpan.mock.calls.find(
-          (call) => call[0] === "TestBuffer.takeAll",
+          (call) => call[0] === "buffer.takeAll",
         );
 
       expect(appendCall?.[1]).toMatchObject({ kind: "INTERNAL" });
@@ -471,11 +457,7 @@ describe("createTracedBuffer", () => {
 
       expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({
-          attributes: expect.objectContaining({
-            "buffer.type": "TestBuffer",
-          }),
-        }),
+        expect.objectContaining({}),
         expect.any(Function),
       );
     });
@@ -494,7 +476,6 @@ describe("createTracedBuffer", () => {
     it("should maintain method signatures", async () => {
       const tracedBuffer = createTracedBuffer(dependencies);
 
-      // Проверяем, что append возвращает Promise<void>
       mockTracingContextManager.startActiveSpan.mockImplementation(
         async (name, options, fn) => {
           return fn({
@@ -508,7 +489,6 @@ describe("createTracedBuffer", () => {
       const appendResult = tracedBuffer.append(testItems);
       expect(appendResult).toBeInstanceOf(Promise);
 
-      // Проверяем, что takeAll возвращает Promise<T[]>
       mockBuffer.takeAll.mockResolvedValue(testItems);
       const takeAllResult = await tracedBuffer.takeAll();
       expect(Array.isArray(takeAllResult)).toBe(true);

@@ -44,15 +44,15 @@ export const sendToAllAvailableStrategy: DeliveryStrategy = async (
         await sender.send(recipient, message);
         successfulDeliveries.push({
           recipient,
-          sender: sender.constructor.name,
+          sender: sender.type,
         });
         atLeastOneSuccess = true;
       } catch (error) {
         warnings.push({
-          message: `Ошибка отправки через канал ${sender.constructor.name}`,
+          message: `Ошибка отправки через канал ${sender.type}`,
           details: error,
           recipient,
-          sender: sender.constructor.name,
+          sender: sender.type,
         });
       }
     }

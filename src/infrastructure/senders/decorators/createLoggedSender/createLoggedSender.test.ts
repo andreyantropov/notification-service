@@ -17,12 +17,10 @@ const mockLoggerAdapter = (): LoggerAdapter => ({
 
 describe("createLoggedSender", () => {
   let mockSender: {
+    type: "bitrix";
     isSupports: Mock;
     send: Mock;
     checkHealth?: Mock;
-    constructor: {
-      name: string;
-    };
   };
 
   let mockLogger: LoggerAdapter;
@@ -32,12 +30,10 @@ describe("createLoggedSender", () => {
 
   beforeEach(() => {
     mockSender = {
+      type: "bitrix",
       isSupports: vi.fn(),
       send: vi.fn(),
       checkHealth: vi.fn(),
-      constructor: {
-        name: "TestSender",
-      },
     };
 
     mockLogger = mockLoggerAdapter();
@@ -69,7 +65,7 @@ describe("createLoggedSender", () => {
       await loggedSender.send(recipient, message);
 
       expect(mockLogger.info).toHaveBeenCalledWith({
-        message: "Уведомление успешно отправлено",
+        message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
         details: { recipient, message },
       });
@@ -86,7 +82,7 @@ describe("createLoggedSender", () => {
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith({
-        message: "Не удалось отправить уведомление",
+        message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
         details: { recipient, message },
         error: testError,
@@ -104,7 +100,7 @@ describe("createLoggedSender", () => {
       await loggedSender.send(customRecipient, customMessage);
 
       expect(mockLogger.info).toHaveBeenCalledWith({
-        message: "Уведомление успешно отправлено",
+        message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
         details: {
           recipient: customRecipient,
@@ -129,7 +125,7 @@ describe("createLoggedSender", () => {
       ).rejects.toThrow("Send failed");
 
       expect(mockLogger.error).toHaveBeenCalledWith({
-        message: "Не удалось отправить уведомление",
+        message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
         details: {
           recipient: customRecipient,
@@ -171,7 +167,7 @@ describe("createLoggedSender", () => {
       await loggedSender.checkHealth!();
 
       expect(mockLogger.debug).toHaveBeenCalledWith({
-        message: "Сендер TestSender готов к работе",
+        message: "Сендер bitrix готов к работе",
         eventType: EventType.HealthCheck,
       });
     });
@@ -187,32 +183,9 @@ describe("createLoggedSender", () => {
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith({
-        message: "Сендер TestSender не отвечает",
+        message: "Сендер bitrix не отвечает",
         eventType: EventType.HealthCheck,
         error: testError,
-      });
-    });
-
-    it("should include sender name in health check logs", async () => {
-      const customSender = {
-        ...mockSender,
-        constructor: {
-          name: "CustomSender",
-        },
-      };
-
-      const customDependencies = {
-        ...dependencies,
-        sender: customSender as Sender,
-      };
-
-      const loggedSender = createLoggedSender(customDependencies);
-
-      await loggedSender.checkHealth!();
-
-      expect(mockLogger.debug).toHaveBeenCalledWith({
-        message: "Сендер CustomSender готов к работе",
-        eventType: EventType.HealthCheck,
       });
     });
   });
@@ -254,6 +227,7 @@ describe("createLoggedSender", () => {
     it("should return an object with correct methods", () => {
       const loggedSender = createLoggedSender(dependencies);
 
+      expect(loggedSender).toHaveProperty("type", "bitrix");
       expect(loggedSender).toHaveProperty("isSupports");
       expect(loggedSender).toHaveProperty("send");
       expect(loggedSender).toHaveProperty("checkHealth");
@@ -265,13 +239,15 @@ describe("createLoggedSender", () => {
     it("should maintain the same isSupports implementation as original sender", () => {
       const originalIsSupports = vi.fn();
       const customSender = {
-        ...mockSender,
+        type: "email",
         isSupports: originalIsSupports,
-      };
+        send: vi.fn(),
+        checkHealth: vi.fn(),
+      } as unknown as Sender;
 
       const customDependencies = {
         ...dependencies,
-        sender: customSender as Sender,
+        sender: customSender,
       };
 
       const loggedSender = createLoggedSender(customDependencies);

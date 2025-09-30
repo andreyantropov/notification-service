@@ -23,8 +23,10 @@ export const createSmtpSender = (config: SmtpSenderConfig): Sender => {
     },
   });
 
+  const type = "email";
+
   const isSupports = (recipient: Recipient): boolean => {
-    return recipient.type === "email";
+    return recipient.type === type;
   };
 
   const send = async (recipient: Recipient, message: string): Promise<void> => {
@@ -73,6 +75,7 @@ export const createSmtpSender = (config: SmtpSenderConfig): Sender => {
   };
 
   return {
+    type,
     isSupports,
     send,
     checkHealth,

@@ -12,13 +12,13 @@ export const createLoggedSender = (
     try {
       await sender.send(recipient, message);
       await loggerAdapter.info({
-        message: `Уведомление успешно отправлено`,
+        message: `Уведомление успешно отправлено по каналу ${sender.type}`,
         eventType: EventType.MessagePublish,
         details: { recipient, message },
       });
     } catch (error) {
       await loggerAdapter.error({
-        message: `Не удалось отправить уведомление`,
+        message: `Не удалось отправить уведомление по каналу ${sender.type}`,
         eventType: EventType.MessagePublish,
         details: { recipient, message },
         error: error,
@@ -32,12 +32,12 @@ export const createLoggedSender = (
         try {
           await sender.checkHealth!();
           await loggerAdapter.debug({
-            message: `Сендер ${sender.constructor.name} готов к работе`,
+            message: `Сендер ${sender.type} готов к работе`,
             eventType: EventType.HealthCheck,
           });
         } catch (error) {
           await loggerAdapter.error({
-            message: `Сендер ${sender.constructor.name} не отвечает`,
+            message: `Сендер ${sender.type} не отвечает`,
             eventType: EventType.HealthCheck,
             error: error,
           });
@@ -47,6 +47,7 @@ export const createLoggedSender = (
     : undefined;
 
   return {
+    type: sender.type,
     isSupports: sender.isSupports,
     send,
     checkHealth,

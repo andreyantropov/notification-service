@@ -8,11 +8,10 @@ export const createTracedBuffer = <T>(
 
   const append = async (items: T[]): Promise<void> => {
     return tracingContextManager.startActiveSpan(
-      `${buffer.constructor.name}.append`,
+      `buffer.append`,
       {
         kind: "INTERNAL",
         attributes: {
-          "buffer.type": buffer.constructor.name,
           "buffer.items.count": items.length,
         },
       },
@@ -24,7 +23,7 @@ export const createTracedBuffer = <T>(
 
   const takeAll = async (): Promise<T[]> => {
     return tracingContextManager.startActiveSpan(
-      `${buffer.constructor.name}.takeAll`,
+      `buffer.takeAll`,
       {
         kind: "INTERNAL",
       },

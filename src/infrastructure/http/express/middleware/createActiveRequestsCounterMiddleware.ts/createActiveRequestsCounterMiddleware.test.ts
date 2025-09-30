@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { createActiveRequestsCounterMiddleware } from "./createActiveRequestsCounterMiddleware";
-import { Counter } from "../../../../ports/Counter";
+import { createActiveRequestsCounterMiddleware } from "./createActiveRequestsCounterMiddleware.js";
+import { Counter } from "../../../../ports/Counter.js";
 
 describe("createActiveRequestsCounterMiddleware", () => {
   let mockRequest: Partial<Request>;

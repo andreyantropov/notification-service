@@ -9,11 +9,11 @@ export const createTracedSender = (
 
   const send = async (recipient: Recipient, message: string): Promise<void> => {
     return tracingContextManager.startActiveSpan(
-      `${sender.constructor.name}.send`,
+      `${sender.type}.send`,
       {
         kind: "CLIENT",
         attributes: {
-          "sender.type": sender.constructor.name,
+          "sender.type": sender.type,
           "recipient.type": recipient.type,
           "recipient.value": recipient.value,
         },
@@ -27,7 +27,7 @@ export const createTracedSender = (
   const checkHealth = sender.checkHealth
     ? async (): Promise<void> => {
         return tracingContextManager.startActiveSpan(
-          `${sender.constructor.name}.checkHealth`,
+          `${sender.type}.checkHealth`,
           {
             kind: "CLIENT",
           },
@@ -39,6 +39,7 @@ export const createTracedSender = (
     : undefined;
 
   return {
+    type: sender.type,
     isSupports: sender.isSupports,
     send,
     checkHealth,
