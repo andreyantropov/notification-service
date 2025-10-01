@@ -1,3 +1,4 @@
+import { NodeSDK } from "@opentelemetry/sdk-node";
 import { Express } from "express";
 
 import { SendNotificationProcess } from "../../application/jobs/createSendNotificationProcess/index.js";
@@ -11,9 +12,10 @@ import { Counter } from "../../infrastructure/ports/Counter.js";
 import { Server } from "../../infrastructure/ports/Server.js";
 
 export type Container = {
-  app: Express;
-  loggerAdapter: LoggerAdapter;
+  telemetrySDK: NodeSDK;
   tracingContextManager: TracingContextManager;
+  loggerAdapter: LoggerAdapter;
+  app: Express;
   activeRequestsCounter: Counter;
   buffer: Buffer<Notification>;
   server: Server;
