@@ -1,4 +1,4 @@
-import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
+import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
 
 export const noopLoggerAdapter: LoggerAdapter = {
   debug: async () => {},

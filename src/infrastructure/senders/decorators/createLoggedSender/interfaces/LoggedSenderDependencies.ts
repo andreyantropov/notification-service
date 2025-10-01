@@ -1,5 +1,5 @@
-import { LoggerAdapter } from "../../../../../application/ports/LoggerAdapter.js";
 import { Sender } from "../../../../../domain/ports/Sender.js";
+import { LoggerAdapter } from "../../../../ports/LoggerAdapter.js";
 
 export interface LoggedSenderDependencies {
   sender: Sender;

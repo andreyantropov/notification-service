@@ -5,8 +5,8 @@ import { v4 } from "uuid";
 
 import { LoggerAdapterConfig } from "./interfaces/LoggerAdapterConfig.js";
 import { LoggerAdapterDependencies } from "./interfaces/LoggerAdapterDependencies.js";
-import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
-import { RawLog } from "../../../../application/types/RawLog.js";
+import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
+import { RawLog } from "../../../types/RawLog.js";
 import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
 import { Log } from "../../../types/Log.js";

@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { createLoggedBuffer } from "./createLoggedBuffer.js";
 import type { LoggedBufferDependencies } from "./interfaces/LoggedBufferDependencies.js";
 import type { Buffer } from "../../../../application/ports/Buffer.js";
-import type { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
 import { EventType } from "../../../../shared/enums/EventType.js";
+import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
 
 const mockLoggerAdapter = (): LoggerAdapter => ({
   debug: vi.fn(),

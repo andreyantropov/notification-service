@@ -8,7 +8,7 @@ import {
 } from "@opentelemetry/api";
 
 import { TracingContextManagerConfig } from "./interfaces/TracingContextManagerConfig.js";
-import { TracingContextManager } from "../../../../application/ports/TracingContextManager.js";
+import { TracingContextManager } from "../../../ports/TracingContextManager.js";
 
 export const createTracingContextManager = (
   config: TracingContextManagerConfig,
