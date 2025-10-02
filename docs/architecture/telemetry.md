@@ -40,7 +40,7 @@ interface Log {
 | `serviceVersion` | `string`                                            | Версия сервиса (например, `v1.2.3`) |
 | `trigger`        | `TriggerType` (`api`, `cron`, `manual`)             | Источник инициации события          |
 | `environment`    | `EnvironmentType` (`dev`, `stage`, `prod`)          | Окружение выполнения                |
-| `eventType`      | `EventType` (`bootstrap`, `shitdown` и т.д.)        | Тип бизнес-события                  |
+| `eventType`      | `EventType` (`bootstrap`, `shutdown` и т.д.)        | Тип бизнес-события                  |
 | `host`           | `string`                                            | Имя хоста или контейнера            |
 
 > 💡 Все поля в `tags` **индексируются** InfluxDB и предназначены для быстрой фильтрации и агрегации.
