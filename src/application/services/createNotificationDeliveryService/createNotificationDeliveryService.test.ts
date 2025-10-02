@@ -19,6 +19,7 @@ const createMockSender = (
   checkHealthImpl?: () => Promise<void>,
 ): Sender => {
   return {
+    type: "bitrix",
     isSupports,
     send: vi.fn(sendImpl),
     checkHealth: checkHealthImpl ? vi.fn(checkHealthImpl) : undefined,

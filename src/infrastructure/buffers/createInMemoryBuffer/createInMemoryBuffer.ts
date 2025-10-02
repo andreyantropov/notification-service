@@ -1,14 +1,13 @@
 import { Buffer } from "../../../application/ports/Buffer.js";
-import { Notification } from "../../../domain/types/Notification.js";
 
-export const createInMemoryBuffer = (): Buffer<Notification> => {
-  let buffer: Notification[] = [];
+export const createInMemoryBuffer = <T>(): Buffer<T> => {
+  let buffer: T[] = [];
 
-  const append = async (items: Notification[]): Promise<void> => {
+  const append = async (items: T[]): Promise<void> => {
     buffer.push(...items);
   };
 
-  const takeAll = async (): Promise<Notification[]> => {
+  const takeAll = async (): Promise<T[]> => {
     const result = [...buffer];
     buffer = [];
     return result;

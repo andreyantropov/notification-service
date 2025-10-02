@@ -6,10 +6,12 @@ import { Notification } from "../../../../../domain/types/Notification.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
 
 const createMockSender = (
+  type: Sender["type"],
   isSupports: (recipient: Recipient) => boolean,
   sendImpl: (recipient: Recipient, message: string) => Promise<void>,
 ): Sender => {
   return {
+    type,
     isSupports,
     send: vi.fn(sendImpl),
   };
@@ -23,6 +25,7 @@ describe("sendToAllAvailableStrategy", () => {
   it("should return error if no recipients are provided", async () => {
     const senders = [
       createMockSender(
+        "email",
         () => true,
         async () => {},
       ),
@@ -43,6 +46,7 @@ describe("sendToAllAvailableStrategy", () => {
   it("should return error if message is empty", async () => {
     const senders = [
       createMockSender(
+        "email",
         () => true,
         async () => {},
       ),
@@ -66,7 +70,11 @@ describe("sendToAllAvailableStrategy", () => {
   it("should send to all recipients with supported senders successfully", async () => {
     const sendSpy = vi.fn().mockResolvedValue(undefined);
 
-    const emailSender = createMockSender((r) => r.type === "email", sendSpy);
+    const emailSender = createMockSender(
+      "email",
+      (r) => r.type === "email",
+      sendSpy,
+    );
 
     const notification: Notification = {
       recipients: [emailRecipient],
@@ -83,7 +91,7 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.details).toEqual([
       {
         recipient: emailRecipient,
-        sender: "Object",
+        sender: "email",
       },
     ]);
     expect(sendSpy).toHaveBeenCalledWith(emailRecipient, message);
@@ -94,11 +102,13 @@ describe("sendToAllAvailableStrategy", () => {
     const bitrixSendSpy = vi.fn().mockResolvedValue(undefined);
 
     const emailSender = createMockSender(
+      "email",
       (r) => r.type === "email",
       emailSendSpy,
     );
 
     const bitrixSender = createMockSender(
+      "bitrix",
       (r) => r.type === "bitrix",
       bitrixSendSpy,
     );
@@ -119,11 +129,11 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.details).toEqual([
       {
         recipient: emailRecipient,
-        sender: "Object",
+        sender: "email",
       },
       {
         recipient: bitrixRecipient,
-        sender: "Object",
+        sender: "bitrix",
       },
     ]);
     expect(emailSendSpy).toHaveBeenCalledWith(emailRecipient, message);
@@ -159,11 +169,13 @@ describe("sendToAllAvailableStrategy", () => {
       .mockRejectedValue(new Error("Network error"));
 
     const workingSender = createMockSender(
+      "email",
       (r) => r.type === "email",
       workingSendSpy,
     );
 
     const failingSender = createMockSender(
+      "bitrix",
       (r) => r.type === "bitrix",
       failingSendSpy,
     );
@@ -182,15 +194,15 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал Object",
+      message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       recipient: bitrixRecipient,
-      sender: "Object",
+      sender: "bitrix",
     });
     expect(result.details).toEqual([
       {
         recipient: emailRecipient,
-        sender: "Object",
+        sender: "email",
       },
     ]);
     expect(workingSendSpy).toHaveBeenCalledWith(emailRecipient, message);
@@ -204,11 +216,13 @@ describe("sendToAllAvailableStrategy", () => {
       .mockRejectedValue(new Error("Bitrix API error"));
 
     const emailSender = createMockSender(
+      "email",
       (r) => r.type === "email",
       failingEmailSend,
     );
 
     const bitrixSender = createMockSender(
+      "bitrix",
       (r) => r.type === "bitrix",
       failingBitrixSend,
     );
@@ -227,16 +241,16 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(2);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал Object",
+      message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       recipient: emailRecipient,
-      sender: "Object",
+      sender: "email",
     });
     expect(result.warnings![1]).toEqual({
-      message: "Ошибка отправки через канал Object",
+      message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       recipient: bitrixRecipient,
-      sender: "Object",
+      sender: "bitrix",
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(
@@ -249,11 +263,13 @@ describe("sendToAllAvailableStrategy", () => {
     const failingSend = vi.fn().mockRejectedValue(new Error("Failed"));
 
     const senderForEmail = createMockSender(
+      "email",
       (r) => r.type === "email",
       successfulSend,
     );
 
     const senderForBitrix = createMockSender(
+      "bitrix",
       (r) => r.type === "bitrix",
       failingSend,
     );
@@ -272,15 +288,15 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал Object",
+      message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       recipient: bitrixRecipient,
-      sender: "Object",
+      sender: "bitrix",
     });
     expect(result.details).toEqual([
       {
         recipient: emailRecipient,
-        sender: "Object",
+        sender: "email",
       },
     ]);
     expect(successfulSend).toHaveBeenCalledWith(emailRecipient, message);
@@ -291,7 +307,11 @@ describe("sendToAllAvailableStrategy", () => {
     const originalError = new Error("Service unavailable");
     const failingSend = vi.fn().mockRejectedValue(originalError);
 
-    const sender = createMockSender((r) => r.type === "email", failingSend);
+    const sender = createMockSender(
+      "email",
+      (r) => r.type === "email",
+      failingSend,
+    );
 
     const notification: Notification = {
       recipients: [emailRecipient],
@@ -304,10 +324,10 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал Object",
+      message: "Ошибка отправки через канал email",
       details: originalError,
       recipient: emailRecipient,
-      sender: "Object",
+      sender: "email",
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(

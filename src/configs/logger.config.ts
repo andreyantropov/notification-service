@@ -5,14 +5,16 @@ import { EnvironmentType } from "../shared/enums/EnvironmentType.js";
 
 const loggerAdapterConfigSchema = z.object({
   measurement: z.string().min(1, "measurement не может быть пустым"),
-  currentService: z.string().min(1, "currentService не может быть пустым"),
+  serviceName: z.string().min(1, "serviceName не может быть пустым"),
+  serviceVersion: z.string().min(1, "serviceVersion не может быть пустым"),
   environment: z.nativeEnum(EnvironmentType),
 });
 
 export const loggerAdapterConfig: LoggerAdapterConfig =
   loggerAdapterConfigSchema.parse({
     measurement: process.env.MEASUREMENT,
-    currentService: process.env.CURRENT_SERVICE,
+    serviceName: process.env.SERVICE_NAME,
+    serviceVersion: process.env.SERVICE_VERSION,
     environment:
       process.env.NODE_ENV === "development"
         ? EnvironmentType.Development

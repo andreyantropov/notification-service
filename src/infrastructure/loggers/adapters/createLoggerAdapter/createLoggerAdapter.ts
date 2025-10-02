@@ -5,8 +5,9 @@ import { v4 } from "uuid";
 
 import { LoggerAdapterConfig } from "./interfaces/LoggerAdapterConfig.js";
 import { LoggerAdapterDependencies } from "./interfaces/LoggerAdapterDependencies.js";
-import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
-import { RawLog } from "../../../../application/types/RawLog.js";
+import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
+import { RawLog } from "../../../types/RawLog.js";
+import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
 import { Log } from "../../../types/Log.js";
 
@@ -14,18 +15,16 @@ export const createLoggerAdapter = (
   dependencies: LoggerAdapterDependencies,
   config: LoggerAdapterConfig,
 ): LoggerAdapter => {
-  const { logger } = dependencies;
-  const { measurement, currentService, environment } = config;
+  const { logger, tracingContextManager } = dependencies;
+  const { measurement, serviceName, serviceVersion, environment } = config;
 
-  const formatLog = ({
-    level,
-    eventType,
-    spanId,
-    message,
-    duration,
-    payload,
-    error,
-  }: RawLog): Log => {
+  const formatLog = (
+    level: LogLevel,
+    { eventType, message, duration, details, error }: RawLog,
+  ): Log => {
+    const activeCtx = tracingContextManager.active();
+    const traceCtx = tracingContextManager.getTraceContext(activeCtx);
+
     const safeStringify = (data: unknown): string | undefined => {
       try {
         return typeof data === "string" ? data : JSON.stringify(data);
@@ -42,27 +41,29 @@ export const createLoggerAdapter = (
       measurement: measurement,
       timestamp: Date.now() * 1_000_000,
       tags: {
-        level: level,
-        currentService,
+        level,
+        serviceName,
+        serviceVersion,
         trigger: TriggerType.Api,
         environment,
-        eventType: eventType,
+        eventType,
         host: os.hostname(),
-        spanId: spanId,
       },
       fields: {
         id: v4(),
-        message: message,
+        message,
         durationMs: duration || 0,
-        payload: safeStringify(payload),
+        traceId: traceCtx?.traceId,
+        spanId: traceCtx?.spanId,
+        details: safeStringify(details),
         error: processedError,
       },
     };
   };
 
-  const writeLog = async (rawLog: RawLog): Promise<void> => {
+  const writeLog = async (level: LogLevel, rawLog: RawLog): Promise<void> => {
     try {
-      const log = formatLog(rawLog);
+      const log = formatLog(level, rawLog);
       await logger.writeLog(log);
     } catch (error) {
       console.error("Не удалось записать лог в систему:", {
@@ -73,6 +74,10 @@ export const createLoggerAdapter = (
   };
 
   return {
-    writeLog,
+    debug: async (rawLog) => await writeLog(LogLevel.Debug, rawLog),
+    info: async (rawLog) => await writeLog(LogLevel.Info, rawLog),
+    warning: async (rawLog) => await writeLog(LogLevel.Warning, rawLog),
+    error: async (rawLog) => await writeLog(LogLevel.Error, rawLog),
+    critical: async (rawLog) => await writeLog(LogLevel.Critical, rawLog),
   };
 };

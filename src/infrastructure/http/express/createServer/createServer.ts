@@ -2,7 +2,6 @@ import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
 import { DEFAULT_LOGGER } from "../../../../shared/constants/defaults.js";
 import { EventType } from "../../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { noop } from "../../../../shared/utils/noop/noop.js";
 import { Server } from "../../../ports/Server.js";
 
@@ -21,40 +20,34 @@ export const createServer = (
     port,
     gracefulShutdownTimeout,
     onStartError = noop,
-    onStopError = noop,
+    onShutdownError = noop,
   } = config;
 
   let server: ReturnType<typeof app.listen> | null = null;
   let isStarting = false;
   let isStopping = false;
 
-  const start = () => {
+  const start = async (): Promise<void> => {
     if (isStarting) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      await loggerAdapter.warning({
         message: `Сервер уже запускается`,
-        eventType: EventType.ServerWarning,
-        spanId: `createServer`,
+        eventType: EventType.Bootstrap,
       });
       return;
     }
 
     if (server) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      await loggerAdapter.warning({
         message: `Сервер уже запущен`,
-        eventType: EventType.ServerWarning,
-        spanId: `createServer`,
+        eventType: EventType.Bootstrap,
       });
       return;
     }
 
     if (isStopping) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      await loggerAdapter.warning({
         message: `Нельзя запустить сервер во время остановки`,
-        eventType: EventType.ServerWarning,
-        spanId: `createServer`,
+        eventType: EventType.Bootstrap,
       });
       return;
     }
@@ -65,11 +58,9 @@ export const createServer = (
       server = app.listen(port, async () => {
         isStarting = false;
       });
-      loggerAdapter.writeLog({
-        level: LogLevel.Debug,
+      await loggerAdapter.debug({
         message: `Сервер успешно запущен`,
-        eventType: EventType.ServerSuccess,
-        spanId: `createServer`,
+        eventType: EventType.Bootstrap,
       });
     } catch (error) {
       onStartError(
@@ -77,11 +68,9 @@ export const createServer = (
           cause: error,
         }),
       );
-      loggerAdapter.writeLog({
-        level: LogLevel.Critical,
+      await loggerAdapter.critical({
         message: `Не удалось запустить сервер на порту ${port}`,
-        eventType: EventType.ServerError,
-        spanId: `createServer`,
+        eventType: EventType.Bootstrap,
         error: error,
       });
     } finally {
@@ -89,33 +78,27 @@ export const createServer = (
     }
   };
 
-  const stop = async (): Promise<void> => {
+  const shutdown = async (): Promise<void> => {
     if (isStopping) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      await loggerAdapter.warning({
         message: `Сервер уже останавливается`,
-        eventType: EventType.ServerWarning,
-        spanId: `createServer`,
+        eventType: EventType.Shutdown,
       });
       return;
     }
 
     if (isStarting) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      await loggerAdapter.warning({
         message: `Нельзя остановить сервер во время запуска`,
-        eventType: EventType.ServerWarning,
-        spanId: `createServer`,
+        eventType: EventType.Shutdown,
       });
       return;
     }
 
     if (!server) {
-      loggerAdapter.writeLog({
-        level: LogLevel.Warning,
+      await loggerAdapter.warning({
         message: `Сервер уже остановлен`,
-        eventType: EventType.ServerWarning,
-        spanId: `createServer`,
+        eventType: EventType.Shutdown,
       });
       return;
     }
@@ -156,23 +139,19 @@ export const createServer = (
 
       server = null;
 
-      loggerAdapter.writeLog({
-        level: LogLevel.Debug,
+      await loggerAdapter.debug({
         message: `Сервер успешно остановлен`,
-        eventType: EventType.ServerSuccess,
-        spanId: `createServer`,
+        eventType: EventType.Shutdown,
       });
     } catch (error) {
-      onStopError(
+      onShutdownError(
         new Error(`Не удалось корректно завершить работу сервера`, {
           cause: error,
         }),
       );
-      loggerAdapter.writeLog({
-        level: LogLevel.Critical,
+      await loggerAdapter.critical({
         message: `Не удалось корректно завершить работу сервера`,
-        eventType: EventType.ServerError,
-        spanId: `createServer`,
+        eventType: EventType.Shutdown,
         error: error,
       });
       throw error;
@@ -181,5 +160,5 @@ export const createServer = (
     }
   };
 
-  return { start, stop };
+  return { start, shutdown };
 };

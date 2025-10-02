@@ -82,7 +82,7 @@ describe("createServer", () => {
   describe("stop", () => {
     it("should do nothing if server is not running", async () => {
       const server = createServer(mockDependencies, mockConfig);
-      await server.stop();
+      await server.shutdown();
 
       expect(mockServer.close).not.toHaveBeenCalled();
     });
@@ -90,7 +90,7 @@ describe("createServer", () => {
     it("should close the server when no active requests", async () => {
       const server = createServer(mockDependencies, mockConfig);
       server.start();
-      await server.stop();
+      await server.shutdown();
 
       expect(mockServer.close).toHaveBeenCalled();
     });
@@ -114,19 +114,19 @@ describe("createServer", () => {
       );
       server.start();
 
-      const stopPromise = server.stop();
+      const shutdownPromise = server.shutdown();
 
       setTimeout(() => {
         counterWithPending.decrease();
       }, 50);
 
-      await stopPromise;
+      await shutdownPromise;
 
       expect(mockServer.close).toHaveBeenCalled();
     });
 
     it("should reject with timeout error if graceful shutdown exceeds timeout", async () => {
-      const onStopError = vi.fn();
+      const onShutdownError = vi.fn();
       mockActiveRequestsCounter = {
         value: 1,
         increase: vi.fn(),
@@ -135,29 +135,29 @@ describe("createServer", () => {
 
       const server = createServer(
         { app: mockApp, activeRequestsCounter: mockActiveRequestsCounter },
-        { ...mockConfig, gracefulShutdownTimeout: 50, onStopError },
+        { ...mockConfig, gracefulShutdownTimeout: 50, onShutdownError },
       );
       server.start();
 
-      await expect(server.stop()).rejects.toThrow(
+      await expect(server.shutdown()).rejects.toThrow(
         "Shutdown timeout after 50ms",
       );
-      expect(onStopError).toHaveBeenCalled();
+      expect(onShutdownError).toHaveBeenCalled();
     });
 
     it("should call onStopError when server fails to close", async () => {
       const error = new Error("Failed to close");
-      const onStopError = vi.fn();
+      const onShutdownError = vi.fn();
       mockServer.close = vi.fn((cb) => cb?.(error));
 
       const server = createServer(mockDependencies, {
         ...mockConfig,
-        onStopError,
+        onShutdownError,
       });
       server.start();
 
-      await expect(server.stop()).rejects.toThrow(error);
-      expect(onStopError).toHaveBeenCalledWith(
+      await expect(server.shutdown()).rejects.toThrow(error);
+      expect(onShutdownError).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "Не удалось корректно завершить работу сервера",
           cause: error,

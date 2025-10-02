@@ -2,6 +2,7 @@ import { EnvironmentType } from "../../../../../shared/enums/EnvironmentType.js"
 
 export interface LoggerAdapterConfig {
   measurement: string;
-  currentService: string;
+  serviceName: string;
+  serviceVersion: string;
   environment: EnvironmentType;
 }
