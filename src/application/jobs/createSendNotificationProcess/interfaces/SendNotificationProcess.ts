@@ -1,4 +1,4 @@
 export interface SendNotificationProcess {
   start: () => void;
-  stop: () => void;
+  shutdown: () => Promise<void>;
 }

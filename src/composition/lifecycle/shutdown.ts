@@ -7,7 +7,7 @@ export const shutdown = async () => {
   await server.shutdown();
 
   const sendNotificationProcess = container.resolve("sendNotificationProcess");
-  sendNotificationProcess.stop();
+  await sendNotificationProcess.shutdown();
 
   const telemetrySDK = await import("../telemetry/telemetry.js");
   await telemetrySDK.shutdown();
