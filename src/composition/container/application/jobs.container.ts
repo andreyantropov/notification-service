@@ -7,9 +7,12 @@ import { Container } from "../../types/Container.js";
 export const registerJobs = (container: AwilixContainer<Container>) => {
   container.register({
     sendNotificationProcess: asFunction(
-      ({ buffer, notificationDeliveryService, loggerAdapter }) =>
+      ({ buffer, notificationDeliveryService }) =>
         createSendNotificationProcess(
-          { buffer, notificationDeliveryService, loggerAdapter },
+          {
+            buffer,
+            notificationDeliveryService,
+          },
           processConfig,
         ),
     ).singleton(),

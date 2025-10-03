@@ -1,20 +1,24 @@
 export enum EventType {
-  BootstrapSuccess = "bootstrap_success",
-  BootstrapError = "bootstrap_error",
+  Bootstrap = "bootstrap",
+  Shutdown = "shutdown",
 
-  ServerSuccess = "server_success",
-  ServerWarning = "server_warning",
-  ServerError = "server_error",
+  Request = "request",
+  Command = "command",
+  Query = "query",
 
-  NotificationSuccess = "notification_success",
-  NotificationWarning = "notification_warning",
-  NotificationError = "notification_error",
+  ExternalCall = "external_call",
+  MessagePublish = "message_publish",
+  MessageConsume = "message_consume",
 
-  RequestSuccess = "request_success",
-  RequestWarning = "request_warning",
-  RequestError = "request_error",
+  HealthCheck = "health_check",
+  CronJob = "cron_job",
+  CacheOperation = "cache_operation",
 
-  HealthCheckSuccess = "health_check_success",
-  HealthCheckWarning = "health_check_warning",
-  HealthCheckError = "health_check_error",
+  AuthAttempt = "auth_attempt",
+  AccessDenied = "access_denied",
+
+  ConfigReload = "config_reload",
+  DependencyFailure = "dependency_failure",
+  RetryAttempt = "retry_attempt",
+  CircuitBreaker = "circuit_breaker",
 }

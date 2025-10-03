@@ -1,5 +1,9 @@
-import { LoggerAdapter } from "../../../../application/ports/LoggerAdapter.js";
+import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
 
 export const noopLoggerAdapter: LoggerAdapter = {
-  writeLog: async () => {},
+  debug: async () => {},
+  info: async () => {},
+  warning: async () => {},
+  error: async () => {},
+  critical: async () => {},
 };

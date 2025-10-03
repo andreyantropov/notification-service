@@ -62,8 +62,7 @@ describe("InfluxDB Client", () => {
     timestamp: Date.now(),
     tags: {
       level: LogLevel.Info,
-      currentService: "notification-service",
-      callerService: "firebird-queue",
+      serviceName: "notification-service",
       trigger: TriggerType.Manual,
       environment: EnvironmentType.Development,
       host: "localhost",
@@ -72,7 +71,7 @@ describe("InfluxDB Client", () => {
       id: "12345",
       message: "Test message",
       durationMs: 150,
-      payload: JSON.stringify({ test: "value" }),
+      details: JSON.stringify({ test: "value" }),
     },
   };
 
@@ -93,12 +92,8 @@ describe("InfluxDB Client", () => {
       mockLog.tags.level,
     );
     expect(mockPointInstance.tag).toHaveBeenCalledWith(
-      "current_service",
+      "service_name",
       "notification-service",
-    );
-    expect(mockPointInstance.tag).toHaveBeenCalledWith(
-      "caller_service",
-      "firebird-queue",
     );
     expect(mockPointInstance.tag).toHaveBeenCalledWith(
       "trigger",
@@ -130,8 +125,8 @@ describe("InfluxDB Client", () => {
       mockLog.fields.durationMs,
     );
     expect(mockPointInstance.stringField).toHaveBeenCalledWith(
-      "payload",
-      mockLog.fields.payload,
+      "details",
+      mockLog.fields.details,
     );
   });
 
@@ -149,7 +144,7 @@ describe("InfluxDB Client", () => {
       tags: {
         level: LogLevel.Debug,
         trigger: TriggerType.Manual,
-        currentService: "notification-service",
+        serviceName: "notification-service",
       },
       fields: {
         id: "12345",

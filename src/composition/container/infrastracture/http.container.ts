@@ -16,8 +16,6 @@ import {
   createNotFoundMiddleware,
   createInternalServerErrorMiddleware,
 } from "../../../infrastructure/http/express/middleware/index.js";
-import { EventType } from "../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { Container } from "../../types/Container.js";
 
 export const registerHttp = (container: AwilixContainer<Container>) => {
@@ -64,30 +62,12 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
       },
     ).singleton(),
 
-    server: asFunction(({ app, loggerAdapter, activeRequestsCounter }) =>
+    server: asFunction(({ app, activeRequestsCounter }) =>
       createServer(
         { app, activeRequestsCounter },
         {
           port: serverConfig.port,
           gracefulShutdownTimeout: serverConfig.gracefulShutdownTimeout,
-          onStartError: (error) => {
-            loggerAdapter.writeLog({
-              level: LogLevel.Error,
-              message: `Не удалось запустить сервер`,
-              eventType: EventType.ServerError,
-              spanId: "getServerInstance",
-              error,
-            });
-          },
-          onStopError: (error) => {
-            loggerAdapter.writeLog({
-              level: LogLevel.Error,
-              message: `Не удалось корректно завершить работу сервера`,
-              eventType: EventType.ServerError,
-              spanId: "getServerInstance",
-              error,
-            });
-          },
         },
       ),
     ).singleton(),

@@ -42,16 +42,16 @@ export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
           notification,
           details: {
             recipient,
-            sender: sender.constructor.name,
+            sender: sender.type,
           },
           warnings,
         };
       } catch (error) {
         warnings.push({
-          message: `Ошибка отправки через канал ${sender.constructor.name}`,
+          message: `Ошибка отправки через канал ${sender.type}`,
           details: error,
           recipient,
-          sender: sender.constructor.name,
+          sender: sender.type,
         });
       }
     }

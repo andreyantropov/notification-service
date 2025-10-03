@@ -1,4 +1,4 @@
 export interface Server {
-  start: () => void;
-  stop: () => Promise<void>;
+  start: () => Promise<void>;
+  shutdown: () => Promise<void>;
 }

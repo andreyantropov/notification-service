@@ -2,7 +2,6 @@ import { NextFunction, Request, Response, RequestHandler } from "express";
 
 import { RequestLoggerMiddlewareDependencies } from "./interfaces/RequestLoggerMiddlewareDependencies.js";
 import { EventType } from "../../../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
 
 export const createRequestLoggerMiddleware = (
   dependencies: RequestLoggerMiddlewareDependencies,
@@ -12,49 +11,54 @@ export const createRequestLoggerMiddleware = (
   return (req: Request, res: Response, next: NextFunction): void => {
     const start = Date.now();
 
-    res.on("finish", () => {
+    res.on("finish", async () => {
       const duration = Date.now() - start;
-      const isSuccess = res.statusCode >= 200 && res.statusCode < 300;
 
-      const logLevel = isSuccess ? LogLevel.Info : LogLevel.Error;
-      const eventType = isSuccess
-        ? EventType.RequestSuccess
-        : EventType.RequestError;
+      const isSuccess = res.statusCode >= 200 && res.statusCode < 500;
 
-      loggerAdapter.writeLog({
-        level: logLevel,
-        message: `${req.method} ${req.url}`,
-        eventType: eventType,
-        spanId: `${req.method} ${req.url}`,
-        payload: {
-          method: req.method,
-          url: req.url,
-          statusCode: res.statusCode,
-          durationMs: duration,
-          ip: req.ip,
-          userAgent: req.get("User-Agent") || null,
-          body: req.body,
-        },
-      });
-    });
-
-    res.on("close", () => {
-      if (!res.headersSent) {
-        const duration = Date.now() - start;
-
-        loggerAdapter.writeLog({
-          level: LogLevel.Warning,
-          message: `${req.method} ${req.url}`,
-          eventType: EventType.RequestWarning,
-          spanId: `${req.method} ${req.url}`,
-          payload: {
+      if (isSuccess) {
+        await loggerAdapter.info({
+          message: `Запрос ${req.method} ${req.url} обработан`,
+          eventType: EventType.Request,
+          duration,
+          details: {
             method: req.method,
             url: req.url,
             statusCode: res.statusCode,
-            durationMs: duration,
             ip: req.ip,
-            userAgent: req.get("User-Agent") || null,
-            body: req.body,
+            userAgent: req.get("User-Agent") || "-",
+          },
+        });
+      } else {
+        await loggerAdapter.error({
+          message: `Не удалось обработать запрос ${req.method} ${req.url}`,
+          eventType: EventType.Request,
+          duration,
+          details: {
+            method: req.method,
+            url: req.url,
+            statusCode: res.statusCode,
+            ip: req.ip,
+            userAgent: req.get("User-Agent") || "-",
+          },
+        });
+      }
+    });
+
+    res.on("close", async () => {
+      if (!res.headersSent) {
+        const duration = Date.now() - start;
+
+        await loggerAdapter.warning({
+          message: `Запрос ${req.method} ${req.url} был прерван клиентом до завершения обработки`,
+          eventType: EventType.Request,
+          duration,
+          details: {
+            method: req.method,
+            url: req.url,
+            statusCode: res.statusCode,
+            ip: req.ip,
+            userAgent: req.get("User-Agent") || "-",
           },
         });
       }

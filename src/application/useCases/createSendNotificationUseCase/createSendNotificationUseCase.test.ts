@@ -2,14 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createSendNotificationUseCase } from "./createSendNotificationUseCase.js";
 import { Notification } from "../../../domain/types/Notification.js";
-import { EventType } from "../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../shared/enums/LogLevel.js";
 import { Buffer } from "../../ports/Buffer.js";
-import { LoggerAdapter } from "../../ports/LoggerAdapter.js";
-import {
-  NotificationDeliveryService,
-  SendResult,
-} from "../../services/createNotificationDeliveryService/index.js";
+import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
 
 const mockNotification = (message: string, isUrgent = false): Notification => ({
   recipients: [{ type: "email", value: "user@com" }],
@@ -22,10 +16,6 @@ const mockBuffer = (): Buffer<Notification> => ({
   takeAll: vi.fn(),
 });
 
-const mockLoggerAdapter = (): LoggerAdapter => ({
-  writeLog: vi.fn(),
-});
-
 const mockDeliveryService = (): NotificationDeliveryService => ({
   send: vi.fn(),
   checkHealth: vi.fn(),
@@ -33,14 +23,11 @@ const mockDeliveryService = (): NotificationDeliveryService => ({
 
 describe("createSendNotificationUseCase", () => {
   let buffer: Buffer<Notification>;
-  let loggerAdapter: LoggerAdapter;
   let deliveryService: NotificationDeliveryService;
 
   beforeEach(() => {
     buffer = mockBuffer();
-    loggerAdapter = mockLoggerAdapter();
     deliveryService = mockDeliveryService();
-
     vi.clearAllMocks();
   });
 
@@ -49,17 +36,15 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await send([]);
 
       expect(buffer.append).not.toHaveBeenCalled();
       expect(deliveryService.send).not.toHaveBeenCalled();
-      expect(loggerAdapter.writeLog).not.toHaveBeenCalled();
     });
 
-    it("should buffer non-urgent notifications and log success", async () => {
+    it("should buffer non-urgent notifications", async () => {
       const notif1 = mockNotification("Non-urgent 1", false);
       const notif2 = mockNotification("Non-urgent 2", false);
       const notifications = [notif1, notif2];
@@ -67,48 +52,28 @@ describe("createSendNotificationUseCase", () => {
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await send(notifications);
 
-      expect(buffer.append).toHaveBeenCalledWith(notifications);
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Debug,
-        message: "2 несрочных уведомлений добавлено в буфер",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: notifications,
-      });
+      expect(buffer.append).toHaveBeenCalledWith([notif1, notif2]);
       expect(deliveryService.send).not.toHaveBeenCalled();
     });
 
-    it("should send urgent notifications immediately and log success", async () => {
+    it("should send urgent notifications immediately", async () => {
       const notif1 = mockNotification("Urgent 1", true);
       const notif2 = mockNotification("Urgent 2", true);
-      const results: SendResult[] = [
-        { success: true, notification: notif1 },
-        { success: true, notification: notif2 },
-      ];
 
-      deliveryService.send = vi.fn().mockResolvedValue(results);
+      deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await send([notif1, notif2]);
 
       expect(deliveryService.send).toHaveBeenCalledWith([notif1, notif2]);
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Info,
-        message: "Уведомление успешно отправлено",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: results,
-      });
       expect(buffer.append).not.toHaveBeenCalled();
     });
 
@@ -117,133 +82,55 @@ describe("createSendNotificationUseCase", () => {
       const nonUrgent = mockNotification("Non-urgent", false);
       const notifications = [urgent, nonUrgent];
 
-      const sendResults: SendResult[] = [
-        { success: true, notification: urgent },
-      ];
-
-      deliveryService.send = vi.fn().mockResolvedValue(sendResults);
+      deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await send(notifications);
 
       expect(buffer.append).toHaveBeenCalledWith([nonUrgent]);
       expect(deliveryService.send).toHaveBeenCalledWith([urgent]);
-
-      expect(loggerAdapter.writeLog).toHaveBeenNthCalledWith(1, {
-        level: LogLevel.Info,
-        message: "Уведомление успешно отправлено",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: sendResults,
-      });
-
-      expect(loggerAdapter.writeLog).toHaveBeenNthCalledWith(2, {
-        level: LogLevel.Debug,
-        message: "1 несрочных уведомлений добавлено в буфер",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: [nonUrgent],
-      });
     });
 
-    it("should log error if buffer.append throws", async () => {
+    it("should propagate error if buffer.append throws", async () => {
       const nonUrgent = mockNotification("Non-urgent", false);
       const error = new Error("Buffer failed");
 
-      buffer.append = vi.fn().mockImplementation(() => {
-        throw error;
-      });
+      buffer.append = vi.fn().mockRejectedValue(error);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
-      await send(nonUrgent);
-
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Error,
-        message: "Не удалось добавить уведомления в буфер",
-        eventType: EventType.NotificationError,
-        spanId: "createSendNotificationUseCase",
-        error,
-        payload: [nonUrgent],
-      });
+      await expect(send([nonUrgent])).rejects.toThrow("Buffer failed");
     });
 
-    it("should log error if urgent notification delivery fails", async () => {
+    it("should propagate error if urgent notification delivery fails", async () => {
       const urgent = mockNotification("Urgent", true);
       const error = new Error("Send failed");
-      const results: SendResult[] = [
-        { success: false, notification: urgent, error },
-      ];
 
-      deliveryService.send = vi.fn().mockResolvedValue(results);
+      deliveryService.send = vi.fn().mockRejectedValue(error);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
-      await send(urgent);
-
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Error,
-        message: "Не удалось отправить одно или несколько уведомлений",
-        eventType: EventType.NotificationError,
-        spanId: "createSendNotificationUseCase",
-        payload: results,
-      });
-    });
-
-    it("should log warning if urgent notification delivery has warnings", async () => {
-      const urgent = mockNotification("Urgent", true);
-      const results: SendResult[] = [
-        {
-          success: true,
-          notification: urgent,
-          warnings: [
-            { message: "Slow delivery", recipient: urgent.recipients[0] },
-          ],
-        },
-      ];
-
-      deliveryService.send = vi.fn().mockResolvedValue(results);
-
-      const { send } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-        loggerAdapter,
-      });
-
-      await send(urgent);
-
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Warning,
-        message: "Уведомление отправлено, но в ходе работы возникли ошибки",
-        eventType: EventType.NotificationWarning,
-        spanId: "createSendNotificationUseCase",
-        payload: results,
-      });
+      await expect(send([urgent])).rejects.toThrow("Send failed");
     });
 
     it("should handle single notification object", async () => {
       const notif = mockNotification("Single", true);
-      const results: SendResult[] = [{ success: true, notification: notif }];
 
-      deliveryService.send = vi.fn().mockResolvedValue(results);
+      deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await send(notif);
@@ -251,44 +138,78 @@ describe("createSendNotificationUseCase", () => {
       expect(deliveryService.send).toHaveBeenCalledWith([notif]);
     });
 
-    it("should do nothing if there are no urgent notifications", async () => {
+    it("should buffer non-urgent notifications and not send them", async () => {
       const nonUrgent = mockNotification("Non-urgent", false);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
-      await send(nonUrgent);
+      await send([nonUrgent]);
 
       expect(buffer.append).toHaveBeenCalledWith([nonUrgent]);
       expect(deliveryService.send).not.toHaveBeenCalled();
-      expect(loggerAdapter.writeLog).toHaveBeenCalledWith({
-        level: LogLevel.Debug,
-        message: "1 несрочных уведомлений добавлено в буфер",
-        eventType: EventType.NotificationSuccess,
-        spanId: "createSendNotificationUseCase",
-        payload: [nonUrgent],
-      });
     });
 
-    it("should do nothing if there are no non-urgent notifications", async () => {
+    it("should send urgent notifications and not buffer them", async () => {
       const urgent = mockNotification("Urgent", true);
-      const results: SendResult[] = [{ success: true, notification: urgent }];
 
-      deliveryService.send = vi.fn().mockResolvedValue(results);
+      deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
-      await send(urgent);
+      await send([urgent]);
 
       expect(buffer.append).not.toHaveBeenCalled();
       expect(deliveryService.send).toHaveBeenCalledWith([urgent]);
+    });
+
+    it("should handle empty array when filtering notifications", async () => {
+      const { send } = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+      });
+
+      await send([]);
+
+      expect(buffer.append).not.toHaveBeenCalled();
+      expect(deliveryService.send).not.toHaveBeenCalled();
+    });
+
+    it("should process only urgent notifications when no non-urgent present", async () => {
+      const urgent1 = mockNotification("Urgent 1", true);
+      const urgent2 = mockNotification("Urgent 2", true);
+
+      deliveryService.send = vi.fn().mockResolvedValue([]);
+
+      const { send } = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+      });
+
+      await send([urgent1, urgent2]);
+
+      expect(deliveryService.send).toHaveBeenCalledWith([urgent1, urgent2]);
+      expect(buffer.append).not.toHaveBeenCalled();
+    });
+
+    it("should process only non-urgent notifications when no urgent present", async () => {
+      const nonUrgent1 = mockNotification("Non-urgent 1", false);
+      const nonUrgent2 = mockNotification("Non-urgent 2", false);
+
+      const { send } = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+      });
+
+      await send([nonUrgent1, nonUrgent2]);
+
+      expect(buffer.append).toHaveBeenCalledWith([nonUrgent1, nonUrgent2]);
+      expect(deliveryService.send).not.toHaveBeenCalled();
     });
   });
 
@@ -301,17 +222,17 @@ describe("createSendNotificationUseCase", () => {
       const useCase = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryServiceWithoutHealth,
-        loggerAdapter,
       });
 
       expect(useCase.checkHealth).toBeUndefined();
     });
 
     it("should call deliveryService.checkHealth if available", async () => {
+      deliveryService.checkHealth = vi.fn().mockResolvedValue(undefined);
+
       const { checkHealth } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await checkHealth?.();
@@ -326,10 +247,49 @@ describe("createSendNotificationUseCase", () => {
       const { checkHealth } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-        loggerAdapter,
       });
 
       await expect(checkHealth?.()).rejects.toThrow(error);
+    });
+
+    it("should return void when health check succeeds", async () => {
+      deliveryService.checkHealth = vi.fn().mockResolvedValue(undefined);
+
+      const { checkHealth } = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+      });
+
+      const result = await checkHealth?.();
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe("returned interface", () => {
+    it("should always return send method", () => {
+      const useCase = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+      });
+
+      expect(useCase.send).toBeDefined();
+      expect(typeof useCase.send).toBe("function");
+    });
+
+    it("should conditionally return checkHealth method", () => {
+      const useCaseWithHealth = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+      });
+
+      const useCaseWithoutHealth = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: { send: vi.fn() },
+      });
+
+      expect(useCaseWithHealth.checkHealth).toBeDefined();
+      expect(useCaseWithoutHealth.checkHealth).toBeUndefined();
     });
   });
 });
