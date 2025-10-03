@@ -49,7 +49,7 @@ export const createSendNotificationProcess = (
     timer = setInterval(run, interval);
   };
 
-  const stop = async (): Promise<void> => {
+  const shutdown = async (): Promise<void> => {
     isShuttingDown = true;
 
     if (timer) {
@@ -68,6 +68,6 @@ export const createSendNotificationProcess = (
 
   return {
     start,
-    stop,
+    shutdown,
   };
 };

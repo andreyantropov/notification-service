@@ -56,7 +56,7 @@ describe("createSendNotificationProcess", () => {
   afterEach(async () => {
     vi.useRealTimers();
     if (process) {
-      await process.stop();
+      await process.shutdown();
     }
     vi.restoreAllMocks();
   });
@@ -90,7 +90,7 @@ describe("createSendNotificationProcess", () => {
   it("should stop the interval when stop is called", async () => {
     process.start();
     const timerId = setIntervalSpy.mock.results[0].value;
-    await process.stop();
+    await process.shutdown();
     expect(clearIntervalSpy).toHaveBeenCalledWith(timerId);
   });
 
@@ -226,7 +226,7 @@ describe("createSendNotificationProcess", () => {
       expect(err.cause).toBe(error);
     });
 
-    await processWithErrorHandler.stop();
+    await processWithErrorHandler.shutdown();
   });
 
   it("should call onError if notificationDeliveryService.send throws", async () => {
@@ -255,7 +255,7 @@ describe("createSendNotificationProcess", () => {
       expect(err.cause).toBe(error);
     });
 
-    await processWithErrorHandler.stop();
+    await processWithErrorHandler.shutdown();
   });
 
   it("should process remaining notifications during shutdown", async () => {
@@ -268,7 +268,7 @@ describe("createSendNotificationProcess", () => {
 
     process.start();
 
-    await process.stop();
+    await process.shutdown();
 
     expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
     expect(mockNotificationDeliveryService.send).toHaveBeenCalledWith(
@@ -280,7 +280,7 @@ describe("createSendNotificationProcess", () => {
     mockBuffer.takeAll.mockResolvedValue([]);
 
     process.start();
-    await process.stop();
+    await process.shutdown();
 
     const newProcess = createSendNotificationProcess({
       buffer: mockBuffer,
@@ -289,14 +289,14 @@ describe("createSendNotificationProcess", () => {
 
     newProcess.start();
     expect(setIntervalSpy).toHaveBeenCalledTimes(2);
-    await newProcess.stop();
+    await newProcess.shutdown();
   });
 
   it("should handle empty buffer during shutdown", async () => {
     mockBuffer.takeAll.mockResolvedValue([]);
 
     process.start();
-    await process.stop();
+    await process.shutdown();
 
     expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
     expect(mockNotificationDeliveryService.send).not.toHaveBeenCalled();
