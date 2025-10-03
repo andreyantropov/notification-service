@@ -6,6 +6,8 @@ import { Notification } from "../../../../../domain/types/Notification.js";
 import { Recipient } from "../../../../../domain/types/Recipient.js";
 
 class MockEmailSender implements Sender {
+  readonly type = "email";
+
   constructor(
     public isHealthy = true,
     public supports = true,
@@ -26,6 +28,8 @@ class MockEmailSender implements Sender {
 }
 
 class MockBitrixSender implements Sender {
+  readonly type = "bitrix";
+
   constructor(
     public isHealthy = true,
     public supports = true,
@@ -101,7 +105,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       recipient: emailRecipient,
-      sender: "MockEmailSender",
+      sender: "email",
     });
   });
 
@@ -121,7 +125,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       recipient: bitrixRecipient,
-      sender: "MockBitrixSender",
+      sender: "bitrix",
     });
   });
 
@@ -162,14 +166,14 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал MockEmailSender",
+      message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       recipient: emailRecipient,
-      sender: "MockEmailSender",
+      sender: "email",
     });
     expect(result.details).toEqual({
       recipient: bitrixRecipient,
-      sender: "MockBitrixSender",
+      sender: "bitrix",
     });
   });
 
@@ -188,16 +192,16 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(2);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал MockEmailSender",
+      message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       recipient: emailRecipient,
-      sender: "MockEmailSender",
+      sender: "email",
     });
     expect(result.warnings![1]).toEqual({
-      message: "Ошибка отправки через канал MockBitrixSender",
+      message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       recipient: bitrixRecipient,
-      sender: "MockBitrixSender",
+      sender: "bitrix",
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(
@@ -220,7 +224,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       recipient: emailRecipient,
-      sender: "MockEmailSender",
+      sender: "email",
     });
   });
 
@@ -240,7 +244,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       recipient: bitrixRecipient,
-      sender: "MockBitrixSender",
+      sender: "bitrix",
     });
   });
 
@@ -258,10 +262,10 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.notification).toBe(notification);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings![0]).toEqual({
-      message: "Ошибка отправки через канал MockEmailSender",
+      message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       recipient: emailRecipient,
-      sender: "MockEmailSender",
+      sender: "email",
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(

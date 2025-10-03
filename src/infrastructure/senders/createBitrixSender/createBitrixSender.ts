@@ -13,8 +13,10 @@ const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 export const createBitrixSender = (config: BitrixSenderConfig): Sender => {
   const { baseUrl, userId, authToken } = config;
 
+  const type = "bitrix";
+
   const isSupports = (recipient: Recipient): boolean => {
-    return recipient.type === "bitrix";
+    return recipient.type === type;
   };
 
   const send = async (recipient: Recipient, message: string): Promise<void> => {
@@ -68,6 +70,7 @@ export const createBitrixSender = (config: BitrixSenderConfig): Sender => {
   };
 
   return {
+    type,
     isSupports,
     send,
     checkHealth,

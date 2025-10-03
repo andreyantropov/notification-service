@@ -8,12 +8,14 @@ import { registerBuffer } from "./infrastracture/buffer.container.js";
 import { registerCounter } from "./infrastracture/counter.container.js";
 import { registerHttp } from "./infrastracture/http.container.js";
 import { registerLogger } from "./infrastracture/logger.container.js";
+import { registerTelemetry } from "./infrastracture/tracingManager.container.js";
 
 const container = createContainer<Container>({
   injectionMode: InjectionMode.PROXY,
 });
 
 registerLogger(container);
+registerTelemetry(container);
 registerCounter(container);
 registerBuffer(container);
 registerHttp(container);

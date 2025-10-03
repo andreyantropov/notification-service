@@ -27,8 +27,7 @@ describe("createFallbackLogger", () => {
     timestamp: Date.now() * 1_000_000,
     tags: {
       level: LogLevel.Info,
-      currentService: "notification-service",
-      callerService: "firebird",
+      serviceName: "notification-service",
       trigger: TriggerType.Manual,
     },
     fields: {

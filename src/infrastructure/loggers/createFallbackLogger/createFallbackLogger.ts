@@ -24,10 +24,9 @@ export const createFallbackLogger = (
       } catch (error) {
         onError(
           log,
-          new Error(
-            `Ошибка записи лога через логгер ${logger.constructor.name}`,
-            { cause: error },
-          ),
+          new Error(`Ошибка записи лога в цепочке Fallback`, {
+            cause: error,
+          }),
         );
       }
     }

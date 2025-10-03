@@ -1,4 +1,5 @@
 import { EnvironmentType } from "../../shared/enums/EnvironmentType.js";
+import { EventType } from "../../shared/enums/EventType.js";
 import { LogLevel } from "../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../shared/enums/TriggerType.js";
 
@@ -7,21 +8,20 @@ export interface Log {
   timestamp: number;
   tags: {
     level: LogLevel;
-    currentService: string;
-    callerService?: string;
-    trigger: TriggerType;
+    serviceName?: string;
+    serviceVersion?: string;
+    trigger?: TriggerType;
     environment?: EnvironmentType;
-    eventType?: string;
+    eventType?: EventType;
     host?: string;
-    traceId?: string;
-    correlationId?: string;
-    spanId?: string;
   };
   fields: {
     id: string;
     message: string;
-    durationMs: number;
-    payload?: string;
+    durationMs?: number;
+    traceId?: string;
+    spanId?: string;
+    details?: string;
     error?: string;
   };
 }

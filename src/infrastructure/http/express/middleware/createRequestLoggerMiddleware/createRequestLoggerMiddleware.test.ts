@@ -1,15 +1,16 @@
 import { Request, Response } from "express";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware.js";
 import { EventType } from "../../../../../shared/enums/EventType.js";
-import { LogLevel } from "../../../../../shared/enums/LogLevel.js";
 
 describe("RequestLoggerMiddleware", () => {
-  const mockWriteLog = vi.fn();
-
   const mockLogger = {
-    writeLog: mockWriteLog,
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    critical: vi.fn(),
   };
 
   const middleware = createRequestLoggerMiddleware({
@@ -18,21 +19,25 @@ describe("RequestLoggerMiddleware", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
-  it("should call next()", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should call next()", () => {
     const req = {
       method: "GET",
       url: "/test",
       ip: "127.0.0.1",
       get: vi.fn().mockReturnValue(null),
-      body: {},
     } as unknown as Request;
 
     const res = {
       statusCode: 200,
       on: vi.fn(),
-      get: req.get,
+      headersSent: false,
     } as unknown as Response;
 
     const next = vi.fn();
@@ -42,111 +47,306 @@ describe("RequestLoggerMiddleware", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("should log success request with correct fields", async () => {
+  it("should log success request with correct fields", () => {
+    const mockFinishCallback = vi.fn();
     const req = {
       method: "POST",
       url: "/api/test",
       ip: "192.168.1.1",
-      get: vi.fn((header) =>
+      get: vi.fn((header: string) =>
         header === "User-Agent" ? "TestAgent" : undefined,
       ),
-      body: { foo: "bar" },
     } as unknown as Request;
 
     const res = {
       statusCode: 201,
-      on: vi.fn((event, callback) => {
-        if (event === "finish") callback();
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
       }),
-      get: req.get,
+      headersSent: true,
     } as unknown as Response;
 
     const next = vi.fn();
 
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
     middleware(req, res, next);
 
-    expect(mockWriteLog).toHaveBeenCalledWith({
-      level: LogLevel.Info,
-      message: "POST /api/test",
-      eventType: EventType.RequestSuccess,
-      spanId: "POST /api/test",
-      payload: {
+    vi.setSystemTime(startTime + 150);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalledWith({
+      message: "Запрос POST /api/test обработан",
+      eventType: EventType.Request,
+      duration: 150,
+      details: {
         method: "POST",
         url: "/api/test",
         statusCode: 201,
-        durationMs: expect.any(Number),
         ip: "192.168.1.1",
         userAgent: "TestAgent",
-        body: { foo: "bar" },
       },
     });
   });
 
-  it("should log error request with correct fields", async () => {
+  it("should log error request with correct fields", () => {
+    const mockFinishCallback = vi.fn();
     const req = {
       method: "GET",
       url: "/api/fail",
       ip: "10.0.0.1",
       get: vi.fn().mockReturnValue("Mozilla"),
-      body: {},
     } as unknown as Request;
 
     const res = {
       statusCode: 500,
-      on: vi.fn((event, callback) => {
-        if (event === "finish") callback();
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
       }),
-      get: req.get,
+      headersSent: true,
     } as unknown as Response;
 
     const next = vi.fn();
 
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
     middleware(req, res, next);
 
-    expect(mockWriteLog).toHaveBeenCalledWith({
-      level: LogLevel.Error,
-      message: "GET /api/fail",
-      eventType: EventType.RequestError,
-      spanId: "GET /api/fail",
-      payload: {
+    vi.setSystemTime(startTime + 200);
+
+    mockFinishCallback();
+
+    expect(mockLogger.error).toHaveBeenCalledWith({
+      message: "Не удалось обработать запрос GET /api/fail",
+      eventType: EventType.Request,
+      duration: 200,
+      details: {
         method: "GET",
         url: "/api/fail",
         statusCode: 500,
-        durationMs: expect.any(Number),
         ip: "10.0.0.1",
         userAgent: "Mozilla",
-        body: {},
       },
     });
   });
 
-  it("should handle missing User-Agent header", async () => {
+  it("should log warning when connection is closed before response is sent", () => {
+    const mockCloseCallback = vi.fn();
     const req = {
       method: "GET",
       url: "/api/test",
       ip: "127.0.0.1",
       get: vi.fn().mockReturnValue(undefined),
-      body: {},
     } as unknown as Request;
 
     const res = {
       statusCode: 200,
-      on: vi.fn((event, callback) => {
-        if (event === "finish") callback();
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "close") {
+          mockCloseCallback.mockImplementation(callback);
+        }
       }),
-      get: req.get,
+      headersSent: false,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 100);
+
+    mockCloseCallback();
+
+    expect(mockLogger.warning).toHaveBeenCalledWith({
+      message:
+        "Запрос GET /api/test был прерван клиентом до завершения обработки",
+      eventType: EventType.Request,
+      duration: 100,
+      details: {
+        method: "GET",
+        url: "/api/test",
+        statusCode: 200,
+        ip: "127.0.0.1",
+        userAgent: "-",
+      },
+    });
+  });
+
+  it("should not log warning on close if headers were sent", () => {
+    const mockCloseCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/test",
+      ip: "127.0.0.1",
+      get: vi.fn().mockReturnValue(undefined),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 200,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "close") {
+          mockCloseCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
     } as unknown as Response;
 
     const next = vi.fn();
 
     middleware(req, res, next);
 
-    expect(mockWriteLog).toHaveBeenCalledWith(
+    mockCloseCallback();
+
+    expect(mockLogger.warning).not.toHaveBeenCalled();
+  });
+
+  it("should handle missing User-Agent header", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/test",
+      ip: "127.0.0.1",
+      get: vi.fn().mockReturnValue(undefined),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 200,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 50);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalledWith(
       expect.objectContaining({
-        payload: expect.objectContaining({
-          userAgent: null,
+        details: expect.objectContaining({
+          userAgent: "-",
         }),
       }),
     );
+  });
+
+  it("should log 400 status as success (since it's client error)", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "POST",
+      url: "/api/bad-request",
+      ip: "192.168.1.1",
+      get: vi.fn().mockReturnValue("TestAgent"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 400,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 75);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalled();
+    expect(mockLogger.error).not.toHaveBeenCalled();
+  });
+
+  it("should log 499 status as warning for closed connection", () => {
+    const mockCloseCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/test",
+      ip: "127.0.0.1",
+      get: vi.fn().mockReturnValue(undefined),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 499,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "close") {
+          mockCloseCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: false,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 80);
+
+    mockCloseCallback();
+
+    expect(mockLogger.warning).toHaveBeenCalled();
+  });
+
+  it("should log 300 status as success", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/redirect",
+      ip: "192.168.1.1",
+      get: vi.fn().mockReturnValue("TestAgent"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 301,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 60);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalled();
+    expect(mockLogger.error).not.toHaveBeenCalled();
   });
 });
