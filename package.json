@@ -10,10 +10,10 @@
     "dev": "cross-env NODE_ENV=development nodemon --watch src --ext ts --exec \"npx tsx -r dotenv/config src/index.ts dotenv_config_path=.env.dev\"",
     "prod": "npm run build && npm run start",
     "lint": "eslint --ext .ts,.tsx .",
-    "fix": "eslint --fix --ext .ts,.tsx .",
-    "format": "prettier . --write",
+    "lint:fix": "eslint --fix --ext .ts,.tsx .",
+    "lint:format": "prettier . --write",
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "notification-service",
