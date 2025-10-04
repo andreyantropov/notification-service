@@ -1,6 +1,6 @@
 {
   "name": "notification-service",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Сервис рассылки уведомлений через различные каналы связи (Bitrix24, Email).",
   "main": "index.js",
   "type": "module",
