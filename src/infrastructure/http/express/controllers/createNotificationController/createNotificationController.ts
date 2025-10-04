@@ -123,12 +123,12 @@ export const createNotificationController = (
         return;
       }
 
-      await sendNotificationUseCase.send(valid);
+      const result = await sendNotificationUseCase.send(valid);
 
-      const sendResult = formatSendResponse(valid, invalid);
+      const sendResult = formatSendResponse(result, invalid);
 
       if (invalid.length === 0) {
-        res.status(202).send();
+        res.status(202).json(sendResult);
       } else {
         res.status(207).json(sendResult);
       }
