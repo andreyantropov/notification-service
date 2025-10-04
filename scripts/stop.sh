@@ -1,10 +1,16 @@
 #!/bin/bash
 
-echo "🛑 Остановка и удаление контейнера..."
+if [ -f ../.env ]; then
+  export $(grep -v '^#' ../.env | xargs)
+fi
 
-if [ "$(docker ps -a -f "name=notification-service" --format "{{.Status}}")" ]; then
-  docker stop notification-service > /dev/null 2>&1 && echo "✅ Контейнер остановлен"
-  docker rm notification-service > /dev/null 2>&1 && echo "✅ Контейнер удалён"
+SERVICE_NAME=${SERVICE_NAME:-notification-service}
+
+echo "🛑 Остановка и удаление контейнера '$SERVICE_NAME'..."
+
+if [ "$(docker ps -a -f name="^/${SERVICE_NAME}$" --format '{{.Names}}')" ]; then
+  docker stop "$SERVICE_NAME" > /dev/null 2>&1 && echo "✅ Контейнер остановлен"
+  docker rm "$SERVICE_NAME" > /dev/null 2>&1 && echo "✅ Контейнер удалён"
 else
-  echo "ℹ️ Контейнер не найден."
+  echo "ℹ️ Контейнер '$SERVICE_NAME' не найден."
 fi

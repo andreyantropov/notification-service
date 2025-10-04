@@ -8,14 +8,15 @@ fi
 
 export $(grep -v '^#' ../.env | xargs)
 
-if [ -z "$PORT" ]; then
-  echo "❌ Переменная PORT не установлена в .env"
-  exit 1
-fi
+SERVICE_NAME=${SERVICE_NAME:-notification-service}
+SERVICE_VERSION=${SERVICE_VERSION:-latest}
+IMAGE_NAME="${SERVICE_NAME}:${SERVICE_VERSION}"
+PORT=${PORT:-3000}
 
-echo "🚀 Запуск контейнера..."
+echo "🚀 Запуск контейнера '$SERVICE_NAME' из образа '$IMAGE_NAME' на порту $PORT..."
+
 docker run -d \
-  --name notification-service \
+  --name "$SERVICE_NAME" \
   --env-file ../.env \
   -p "$PORT:$PORT" \
-  notification-service
+  "$IMAGE_NAME"
