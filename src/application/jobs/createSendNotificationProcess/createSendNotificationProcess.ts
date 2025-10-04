@@ -4,6 +4,7 @@ import { SendNotificationProcessDependencies } from "./interfaces/SendNotificati
 import { DEFAULT_CONFIG } from "../../../shared/constants/defaults.js";
 
 const DEFAULT_INTERVAL = 60_000;
+const CHECK_IS_PROCESSING_TIMEOUT = 100;
 
 export const createSendNotificationProcess = (
   dependencies: SendNotificationProcessDependencies,
@@ -14,12 +15,9 @@ export const createSendNotificationProcess = (
 
   let timer: ReturnType<typeof setInterval> | null = null;
   let isProcessing = false;
+  let isShuttingDown = false;
 
-  const run = async (): Promise<void> => {
-    if (isProcessing) return;
-
-    isProcessing = true;
-
+  const processBufferedNotifications = async (): Promise<void> => {
     try {
       const notifications = await buffer.takeAll();
       if (notifications.length === 0) return;
@@ -31,6 +29,16 @@ export const createSendNotificationProcess = (
           cause: error,
         }),
       );
+    }
+  };
+
+  const run = async (): Promise<void> => {
+    if (isProcessing || isShuttingDown) return;
+
+    isProcessing = true;
+
+    try {
+      await processBufferedNotifications();
     } finally {
       isProcessing = false;
     }
@@ -41,15 +49,25 @@ export const createSendNotificationProcess = (
     timer = setInterval(run, interval);
   };
 
-  const stop = (): void => {
+  const shutdown = async (): Promise<void> => {
+    isShuttingDown = true;
+
     if (timer) {
       clearInterval(timer);
       timer = null;
     }
+
+    while (isProcessing) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, CHECK_IS_PROCESSING_TIMEOUT),
+      );
+    }
+
+    await processBufferedNotifications();
   };
 
   return {
     start,
-    stop,
+    shutdown,
   };
 };
