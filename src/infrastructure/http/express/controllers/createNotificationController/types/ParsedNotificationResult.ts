@@ -1,6 +1,6 @@
-import { Notification } from "../../../../../../domain/types/Notification.js";
+import { RawNotification } from "../../../../../../application/types/RawNotification.js";
 
 export type ParsedNotificationResult = {
-  valid: Notification[];
+  valid: RawNotification[];
   invalid: { item: unknown; error: unknown }[];
 };
