@@ -5,11 +5,11 @@ import { v4 } from "uuid";
 
 import { LoggerAdapterConfig } from "./interfaces/LoggerAdapterConfig.js";
 import { LoggerAdapterDependencies } from "./interfaces/LoggerAdapterDependencies.js";
-import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
-import { RawLog } from "../../../types/RawLog.js";
 import { LogLevel } from "../../../../shared/enums/LogLevel.js";
 import { TriggerType } from "../../../../shared/enums/TriggerType.js";
+import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
 import { Log } from "../../../types/Log.js";
+import { RawLog } from "../../../types/RawLog.js";
 
 export const createLoggerAdapter = (
   dependencies: LoggerAdapterDependencies,
