@@ -4,9 +4,13 @@ import { createSendNotificationUseCase } from "./createSendNotificationUseCase.j
 import { Notification } from "../../../domain/types/Notification.js";
 import { Buffer } from "../../ports/Buffer.js";
 import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
+import { RawNotification } from "../../types/RawNotification.js";
 
-const mockNotification = (message: string, isUrgent = false): Notification => ({
-  recipients: [{ type: "email", value: "user@com" }],
+const createRawNotification = (
+  message: string,
+  isUrgent = false,
+): RawNotification => ({
+  recipients: [{ type: "email", value: "user@example.com" }],
   message,
   isUrgent,
 });
@@ -33,183 +37,185 @@ describe("createSendNotificationUseCase", () => {
 
   describe("send", () => {
     it("should do nothing when notifications array is empty", async () => {
+      const idGenerator = vi.fn();
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await send([]);
 
+      expect(idGenerator).not.toHaveBeenCalled();
       expect(buffer.append).not.toHaveBeenCalled();
       expect(deliveryService.send).not.toHaveBeenCalled();
     });
 
     it("should buffer non-urgent notifications", async () => {
-      const notif1 = mockNotification("Non-urgent 1", false);
-      const notif2 = mockNotification("Non-urgent 2", false);
-      const notifications = [notif1, notif2];
+      const notif1 = createRawNotification("Non-urgent 1", false);
+      const notif2 = createRawNotification("Non-urgent 2", false);
 
+      const idGenerator = vi.fn().mockReturnValue("test-id");
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
-      });
-
-      await send(notifications);
-
-      expect(buffer.append).toHaveBeenCalledWith([notif1, notif2]);
-      expect(deliveryService.send).not.toHaveBeenCalled();
-    });
-
-    it("should send urgent notifications immediately", async () => {
-      const notif1 = mockNotification("Urgent 1", true);
-      const notif2 = mockNotification("Urgent 2", true);
-
-      deliveryService.send = vi.fn().mockResolvedValue([]);
-
-      const { send } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await send([notif1, notif2]);
 
-      expect(deliveryService.send).toHaveBeenCalledWith([notif1, notif2]);
-      expect(buffer.append).not.toHaveBeenCalled();
+      expect(idGenerator).toHaveBeenCalledTimes(2);
+
+      expect(buffer.append).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ id: "test-id", ...notif1 }),
+          expect.objectContaining({ id: "test-id", ...notif2 }),
+        ]),
+      );
+      expect(deliveryService.send).not.toHaveBeenCalled();
     });
 
-    it("should handle mixed urgent and non-urgent notifications correctly", async () => {
-      const urgent = mockNotification("Urgent", true);
-      const nonUrgent = mockNotification("Non-urgent", false);
-      const notifications = [urgent, nonUrgent];
+    it("should send urgent notifications immediately", async () => {
+      const notif1 = createRawNotification("Urgent 1", true);
+      const notif2 = createRawNotification("Urgent 2", true);
+
+      const idGenerator = vi
+        .fn()
+        .mockReturnValueOnce("id1")
+        .mockReturnValueOnce("id2");
 
       deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
-      await send(notifications);
+      await send([notif1, notif2]);
 
-      expect(buffer.append).toHaveBeenCalledWith([nonUrgent]);
-      expect(deliveryService.send).toHaveBeenCalledWith([urgent]);
+      expect(deliveryService.send).toHaveBeenCalledWith([
+        { id: "id1", ...notif1 },
+        { id: "id2", ...notif2 },
+      ]);
+      expect(buffer.append).not.toHaveBeenCalled();
     });
 
-    it("should propagate error if buffer.append throws", async () => {
-      const nonUrgent = mockNotification("Non-urgent", false);
-      const error = new Error("Buffer failed");
+    it("should handle mixed urgent and non-urgent notifications correctly", async () => {
+      const urgent = createRawNotification("Urgent", true);
+      const nonUrgent = createRawNotification("Non-urgent", false);
 
-      buffer.append = vi.fn().mockRejectedValue(error);
+      const idGenerator = vi
+        .fn()
+        .mockReturnValueOnce("urgent-id")
+        .mockReturnValueOnce("nonurgent-id");
+
+      deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
+      });
+
+      await send([urgent, nonUrgent]);
+
+      expect(buffer.append).toHaveBeenCalledWith([
+        { id: "nonurgent-id", ...nonUrgent },
+      ]);
+      expect(deliveryService.send).toHaveBeenCalledWith([
+        { id: "urgent-id", ...urgent },
+      ]);
+    });
+
+    it("should propagate error if buffer.append throws", async () => {
+      const nonUrgent = createRawNotification("Non-urgent", false);
+      const error = new Error("Buffer failed");
+
+      buffer.append = vi.fn().mockRejectedValue(error);
+      const idGenerator = vi.fn().mockReturnValue("test-id");
+
+      const { send } = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await expect(send([nonUrgent])).rejects.toThrow("Buffer failed");
     });
 
     it("should propagate error if urgent notification delivery fails", async () => {
-      const urgent = mockNotification("Urgent", true);
+      const urgent = createRawNotification("Urgent", true);
       const error = new Error("Send failed");
 
       deliveryService.send = vi.fn().mockRejectedValue(error);
+      const idGenerator = vi.fn().mockReturnValue("test-id");
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await expect(send([urgent])).rejects.toThrow("Send failed");
     });
 
     it("should handle single notification object", async () => {
-      const notif = mockNotification("Single", true);
+      const notif = createRawNotification("Single", true);
 
+      const idGenerator = vi.fn().mockReturnValue("single-id");
       deliveryService.send = vi.fn().mockResolvedValue([]);
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await send(notif);
 
-      expect(deliveryService.send).toHaveBeenCalledWith([notif]);
-    });
-
-    it("should buffer non-urgent notifications and not send them", async () => {
-      const nonUrgent = mockNotification("Non-urgent", false);
-
-      const { send } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      await send([nonUrgent]);
-
-      expect(buffer.append).toHaveBeenCalledWith([nonUrgent]);
-      expect(deliveryService.send).not.toHaveBeenCalled();
-    });
-
-    it("should send urgent notifications and not buffer them", async () => {
-      const urgent = mockNotification("Urgent", true);
-
-      deliveryService.send = vi.fn().mockResolvedValue([]);
-
-      const { send } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      await send([urgent]);
-
-      expect(buffer.append).not.toHaveBeenCalled();
-      expect(deliveryService.send).toHaveBeenCalledWith([urgent]);
-    });
-
-    it("should handle empty array when filtering notifications", async () => {
-      const { send } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      await send([]);
-
-      expect(buffer.append).not.toHaveBeenCalled();
-      expect(deliveryService.send).not.toHaveBeenCalled();
-    });
-
-    it("should process only urgent notifications when no non-urgent present", async () => {
-      const urgent1 = mockNotification("Urgent 1", true);
-      const urgent2 = mockNotification("Urgent 2", true);
-
-      deliveryService.send = vi.fn().mockResolvedValue([]);
-
-      const { send } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      await send([urgent1, urgent2]);
-
-      expect(deliveryService.send).toHaveBeenCalledWith([urgent1, urgent2]);
-      expect(buffer.append).not.toHaveBeenCalled();
+      expect(deliveryService.send).toHaveBeenCalledWith([
+        { id: "single-id", ...notif },
+      ]);
     });
 
     it("should process only non-urgent notifications when no urgent present", async () => {
-      const nonUrgent1 = mockNotification("Non-urgent 1", false);
-      const nonUrgent2 = mockNotification("Non-urgent 2", false);
+      const nonUrgent1 = createRawNotification("Non-urgent 1", false);
+      const nonUrgent2 = createRawNotification("Non-urgent 2", false);
+
+      const idGenerator = vi
+        .fn()
+        .mockReturnValueOnce("id1")
+        .mockReturnValueOnce("id2");
 
       const { send } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await send([nonUrgent1, nonUrgent2]);
 
-      expect(buffer.append).toHaveBeenCalledWith([nonUrgent1, nonUrgent2]);
+      expect(buffer.append).toHaveBeenCalledWith([
+        { id: "id1", ...nonUrgent1 },
+        { id: "id2", ...nonUrgent2 },
+      ]);
       expect(deliveryService.send).not.toHaveBeenCalled();
+    });
+
+    it("should return generated notifications", async () => {
+      const notif = createRawNotification("Test", true);
+      const idGenerator = vi.fn().mockReturnValue("returned-id");
+
+      const { send } = createSendNotificationUseCase({
+        buffer,
+        notificationDeliveryService: deliveryService,
+        idGenerator,
+      });
+
+      const result = await send(notif);
+
+      expect(result).toEqual([{ id: "returned-id", ...notif }]);
     });
   });
 
@@ -222,6 +228,7 @@ describe("createSendNotificationUseCase", () => {
       const useCase = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryServiceWithoutHealth,
+        idGenerator: vi.fn(),
       });
 
       expect(useCase.checkHealth).toBeUndefined();
@@ -229,10 +236,12 @@ describe("createSendNotificationUseCase", () => {
 
     it("should call deliveryService.checkHealth if available", async () => {
       deliveryService.checkHealth = vi.fn().mockResolvedValue(undefined);
+      const idGenerator = vi.fn();
 
       const { checkHealth } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await checkHealth?.();
@@ -243,53 +252,15 @@ describe("createSendNotificationUseCase", () => {
     it("should propagate error from deliveryService.checkHealth", async () => {
       const error = new Error("Health check failed");
       deliveryService.checkHealth = vi.fn().mockRejectedValue(error);
+      const idGenerator = vi.fn();
 
       const { checkHealth } = createSendNotificationUseCase({
         buffer,
         notificationDeliveryService: deliveryService,
+        idGenerator,
       });
 
       await expect(checkHealth?.()).rejects.toThrow(error);
-    });
-
-    it("should return void when health check succeeds", async () => {
-      deliveryService.checkHealth = vi.fn().mockResolvedValue(undefined);
-
-      const { checkHealth } = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      const result = await checkHealth?.();
-
-      expect(result).toBeUndefined();
-    });
-  });
-
-  describe("returned interface", () => {
-    it("should always return send method", () => {
-      const useCase = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      expect(useCase.send).toBeDefined();
-      expect(typeof useCase.send).toBe("function");
-    });
-
-    it("should conditionally return checkHealth method", () => {
-      const useCaseWithHealth = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: deliveryService,
-      });
-
-      const useCaseWithoutHealth = createSendNotificationUseCase({
-        buffer,
-        notificationDeliveryService: { send: vi.fn() },
-      });
-
-      expect(useCaseWithHealth.checkHealth).toBeDefined();
-      expect(useCaseWithoutHealth.checkHealth).toBeUndefined();
     });
   });
 });

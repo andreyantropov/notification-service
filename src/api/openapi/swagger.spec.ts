@@ -104,6 +104,36 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
           ],
         },
 
+        NotificationResponse: {
+          type: "object",
+          description: "Уведомление с серверным ID (возвращается в ответе)",
+          required: ["id", "recipients", "message"],
+          properties: {
+            id: {
+              type: "string",
+              format: "uuid",
+              example: "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
+              description:
+                "Уникальный идентификатор уведомления, сгенерированный сервером",
+            },
+            recipients: {
+              type: "array",
+              minItems: 1,
+              items: {
+                $ref: "#/components/schemas/Recipient",
+              },
+            },
+            message: {
+              type: "string",
+              example: "Ваш заказ готов!",
+            },
+            isUrgent: {
+              type: "boolean",
+              example: true,
+            },
+          },
+        },
+
         SendResult: {
           type: "object",
           properties: {
@@ -115,7 +145,10 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
             },
             notification: {
               oneOf: [
-                { $ref: "#/components/schemas/Notification" },
+                {
+                  $ref: "#/components/schemas/NotificationResponse",
+                  description: "Валидное уведомление с серверным ID",
+                },
                 {
                   type: "object",
                   description:
@@ -125,16 +158,31 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
               ],
             },
             error: {
-              type: "object",
-              description: "Ошибки валидации (Zod) или другие причины отказа",
-              additionalProperties: true,
-              example: [
-                {
-                  code: "too_small",
-                  message: "List must contain at least 1 element(s)",
-                  path: ["recipients"],
+              type: "array",
+              description: "Ошибки валидации (Zod) при success: false",
+              items: {
+                type: "object",
+                properties: {
+                  code: {
+                    type: "string",
+                    example: "too_small",
+                  },
+                  message: {
+                    type: "string",
+                    example: "List must contain at least 1 element(s)",
+                  },
+                  path: {
+                    type: "array",
+                    items: {
+                      type: ["string", "number"],
+                    },
+                    example: ["recipients"],
+                  },
+                  expected: { type: "string" },
+                  received: { type: "string" },
                 },
-              ],
+                required: ["code", "message", "path"],
+              },
             },
           },
           required: ["success", "notification"],
@@ -152,16 +200,19 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
             totalCount: {
               type: "integer",
               example: 3,
+              minimum: 0,
               description: "Общее количество уведомлений в запросе",
             },
             validCount: {
               type: "integer",
               example: 2,
+              minimum: 0,
               description: "Количество уведомлений, прошедших валидацию",
             },
             invalidCount: {
               type: "integer",
               example: 1,
+              minimum: 0,
               description: "Количество уведомлений, не прошедших валидацию",
             },
             details: {
@@ -270,6 +321,49 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
             202: {
               description:
                 "Все уведомления приняты в обработку (включая буферизацию)",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/SendResponse",
+                  },
+                  example: {
+                    message: "Все уведомления приняты в обработку",
+                    totalCount: 2,
+                    validCount: 2,
+                    invalidCount: 0,
+                    details: [
+                      {
+                        success: true,
+                        notification: {
+                          id: "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
+                          recipients: [
+                            {
+                              type: "email",
+                              value: "user1@example.com",
+                            },
+                          ],
+                          message: "Ваш заказ готов",
+                          isUrgent: true,
+                        },
+                      },
+                      {
+                        success: true,
+                        notification: {
+                          id: "b2c3d4e5-f6g7-8901-h2i3-j4k5l6m7n8o9",
+                          recipients: [
+                            {
+                              type: "bitrix",
+                              value: 123456,
+                            },
+                          ],
+                          message: "Напоминание о встрече",
+                          isUrgent: false,
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
             },
             207: {
               description:
@@ -279,46 +373,54 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                   schema: {
                     $ref: "#/components/schemas/SendResponse",
                   },
-                  examples: {
-                    partialValidation: {
-                      summary: "Одно уведомление невалидно",
-                      value: {
-                        message:
-                          "Уведомления приняты частично: 2 принято, 1 отклонено",
-                        totalCount: 3,
-                        validCount: 2,
-                        invalidCount: 1,
-                        details: [
-                          {
-                            success: true,
-                            notification: {
-                              recipients: [
-                                {
-                                  type: "email",
-                                  value: "ok@ok.com",
-                                },
-                              ],
-                              message: "Hi",
+                  example: {
+                    message:
+                      "Уведомления приняты частично: 2 принято, 1 отклонено",
+                    totalCount: 3,
+                    validCount: 2,
+                    invalidCount: 1,
+                    details: [
+                      {
+                        success: true,
+                        notification: {
+                          id: "c3d4e5f6-g7h8-9012-i3j4-k5l6m7n8o9p0",
+                          recipients: [
+                            {
+                              type: "email",
+                              value: "ok@ok.com",
                             },
-                          },
+                          ],
+                          message: "Hi",
+                        },
+                      },
+                      {
+                        success: false,
+                        notification: {
+                          recipients: [],
+                          message: "",
+                        },
+                        error: [
                           {
-                            success: false,
-                            notification: {
-                              recipients: [],
-                              message: "",
-                            },
-                            error: [
-                              {
-                                code: "too_small",
-                                message:
-                                  "List must contain at least 1 element(s)",
-                                path: ["recipients"],
-                              },
-                            ],
+                            code: "too_small",
+                            message: "List must contain at least 1 element(s)",
+                            path: ["recipients"],
                           },
                         ],
                       },
-                    },
+                      {
+                        success: true,
+                        notification: {
+                          id: "d4e5f6g7-h8i9-0123-j4k5-l6m7n8o9p0q1",
+                          recipients: [
+                            {
+                              type: "email",
+                              value: "another@ok.com",
+                            },
+                          ],
+                          message: "Hello again",
+                        },
+                      },
+                    ],
                   },
                 },
               },
@@ -351,7 +453,6 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                             },
                             error: {
                               type: "array",
-                              description: "Ошибки валидации (Zod)",
                               items: {
                                 type: "object",
                                 properties: {
@@ -362,41 +463,53 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                                     items: { type: "string" },
                                   },
                                 },
+                                required: ["code", "message", "path"],
                               },
                             },
                           },
+                          required: ["item", "error"],
                         },
                       },
                     },
                     required: ["error", "message", "details"],
                   },
-                  examples: {
-                    allInvalid: {
-                      summary: "Все уведомления невалидны",
-                      value: {
-                        error: "HTTP 400 Bad Request",
-                        message: "Ни одно уведомление не прошло валидацию",
-                        details: [
+                  example: {
+                    error: "HTTP 400 Bad Request",
+                    message: "Ни одно уведомление не прошло валидацию",
+                    details: [
+                      {
+                        item: { recipients: [], message: "" },
+                        error: [
                           {
-                            item: { recipients: [], message: "" },
-                            error: [
-                              {
-                                code: "too_small",
-                                message:
-                                  "List must contain at least 1 element(s)",
-                                path: ["recipients"],
-                              },
-                            ],
+                            code: "too_small",
+                            message: "List must contain at least 1 element(s)",
+                            path: ["recipients"],
                           },
                         ],
                       },
-                    },
+                    ],
                   },
                 },
               },
             },
             500: {
               description: "Внутренняя ошибка сервера",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: { type: "string" },
+                      message: { type: "string" },
+                    },
+                    required: ["error", "message"],
+                  },
+                  example: {
+                    error: "HTTP 500 Internal Server Error",
+                    message: "Не удалось отправить уведомление",
+                  },
+                },
+              },
             },
           },
         },
