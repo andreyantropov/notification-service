@@ -1,10 +1,10 @@
+/* eslint-disable import/order */
 import { EventType } from "../../shared/enums/EventType.js";
+import { start as startTelemetry } from "../telemetry/telemetry.js";
+import { container } from "../container/container.js";
 
 export const start = async () => {
-  const telemetrySDK = await import("../telemetry/telemetry.js");
-  telemetrySDK.start();
-
-  const { container } = await import("../container/container.js");
+  startTelemetry();
 
   const sendNotificationProcess = container.resolve("sendNotificationProcess");
   sendNotificationProcess.start();

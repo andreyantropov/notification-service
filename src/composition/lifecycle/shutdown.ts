@@ -1,16 +1,16 @@
+/* eslint-disable import/order */
 import { EventType } from "../../shared/enums/EventType.js";
+import { shutdown as shutdownTelemetry } from "../telemetry/telemetry.js";
+import { container } from "../container/container.js";
 
 export const shutdown = async () => {
-  const { container } = await import("../container/container.js");
-
   const server = container.resolve("server");
   await server.shutdown();
 
   const sendNotificationProcess = container.resolve("sendNotificationProcess");
   await sendNotificationProcess.shutdown();
 
-  const telemetrySDK = await import("../telemetry/telemetry.js");
-  await telemetrySDK.shutdown();
+  await shutdownTelemetry();
 
   const loggerAdapter = container.resolve("loggerAdapter");
   await loggerAdapter.debug({
