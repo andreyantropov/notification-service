@@ -22,6 +22,7 @@
 
     "sourceMap": true,
     "incremental": true,
+    "composite": true,
     "isolatedModules": true,
     "removeComments": true
   },
