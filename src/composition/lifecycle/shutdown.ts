@@ -8,7 +8,7 @@ export const shutdown = async () => {
   await server.shutdown();
 
   const sendNotificationProcess = container.resolve("sendNotificationProcess");
-  sendNotificationProcess.stop();
+  await sendNotificationProcess.shutdown();
 
   await shutdownTelemetry();
 

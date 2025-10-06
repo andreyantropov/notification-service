@@ -53,9 +53,11 @@ describe("createSendNotificationProcess", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.useRealTimers();
-    process.stop();
+    if (process) {
+      await process.shutdown();
+    }
     vi.restoreAllMocks();
   });
 
@@ -85,32 +87,36 @@ describe("createSendNotificationProcess", () => {
     expect(setIntervalSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("should stop the interval when stop is called", () => {
+  it("should stop the interval when stop is called", async () => {
     process.start();
     const timerId = setIntervalSpy.mock.results[0].value;
-    process.stop();
+    await process.shutdown();
     expect(clearIntervalSpy).toHaveBeenCalledWith(timerId);
   });
 
   it("should not run if already processing", async () => {
+    let resolveSend: (value: unknown) => void;
+    const sendPromise = new Promise((resolve) => {
+      resolveSend = resolve;
+    });
+
     mockBuffer.takeAll.mockResolvedValue([mockNotification1]);
-    // Simulate hanging send
-    mockNotificationDeliveryService.send.mockImplementation(
-      () => new Promise(() => {}),
-    );
+    mockNotificationDeliveryService.send.mockImplementation(() => sendPromise);
 
     process.start();
     vi.runOnlyPendingTimers();
+
     await vi.waitFor(() => {
       expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
     });
 
-    // Trigger another tick — should not run again
     vi.runOnlyPendingTimers();
     await Promise.resolve();
 
     expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
     expect(mockNotificationDeliveryService.send).toHaveBeenCalledTimes(1);
+
+    resolveSend!([{ success: true, notification: mockNotification1 }]);
   });
 
   it("should take all notifications and send them in a single batch", async () => {
@@ -219,6 +225,8 @@ describe("createSendNotificationProcess", () => {
       );
       expect(err.cause).toBe(error);
     });
+
+    await processWithErrorHandler.shutdown();
   });
 
   it("should call onError if notificationDeliveryService.send throws", async () => {
@@ -246,5 +254,51 @@ describe("createSendNotificationProcess", () => {
       );
       expect(err.cause).toBe(error);
     });
+
+    await processWithErrorHandler.shutdown();
+  });
+
+  it("should process remaining notifications during shutdown", async () => {
+    const notifications = [mockNotification1, mockNotification2];
+    mockBuffer.takeAll.mockResolvedValue(notifications);
+    mockNotificationDeliveryService.send.mockResolvedValue([
+      { success: true, notification: mockNotification1 },
+      { success: true, notification: mockNotification2 },
+    ]);
+
+    process.start();
+
+    await process.shutdown();
+
+    expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
+    expect(mockNotificationDeliveryService.send).toHaveBeenCalledWith(
+      notifications,
+    );
+  });
+
+  it("should not start new processing during shutdown", async () => {
+    mockBuffer.takeAll.mockResolvedValue([]);
+
+    process.start();
+    await process.shutdown();
+
+    const newProcess = createSendNotificationProcess({
+      buffer: mockBuffer,
+      notificationDeliveryService: mockNotificationDeliveryService,
+    });
+
+    newProcess.start();
+    expect(setIntervalSpy).toHaveBeenCalledTimes(2);
+    await newProcess.shutdown();
+  });
+
+  it("should handle empty buffer during shutdown", async () => {
+    mockBuffer.takeAll.mockResolvedValue([]);
+
+    process.start();
+    await process.shutdown();
+
+    expect(mockBuffer.takeAll).toHaveBeenCalledTimes(1);
+    expect(mockNotificationDeliveryService.send).not.toHaveBeenCalled();
   });
 });
