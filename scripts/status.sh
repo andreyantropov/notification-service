@@ -5,6 +5,8 @@ if [ -f ../.env ]; then
 fi
 
 SERVICE_NAME=${SERVICE_NAME:-notification-service}
+SERVICE_VERSION=${SERVICE_VERSION:-latest}
+CONTAINER_NAME="${SERVICE_NAME}-${SERVICE_VERSION}"
 
-echo "🔍 Статус контейнера '$SERVICE_NAME':"
-docker ps -a --filter "name=^/${SERVICE_NAME}$"
+echo "🔍 Статус контейнера '$CONTAINER_NAME':"
+docker ps -a --filter "name=^/${CONTAINER_NAME}$"

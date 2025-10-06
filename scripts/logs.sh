@@ -6,6 +6,8 @@ if [ -f ../.env ]; then
 fi
 
 SERVICE_NAME=${SERVICE_NAME:-notification-service}
+SERVICE_VERSION=${SERVICE_VERSION:-latest}
+CONTAINER_NAME="${SERVICE_NAME}-${SERVICE_VERSION}"
 
-echo "📄 Логи контейнера '$SERVICE_NAME':"
-docker logs -f "$SERVICE_NAME"
+echo "📄 Логи контейнера '$CONTAINER_NAME':"
+docker logs -f "$CONTAINER_NAME"

@@ -11,12 +11,13 @@ export $(grep -v '^#' ../.env | xargs)
 SERVICE_NAME=${SERVICE_NAME:-notification-service}
 SERVICE_VERSION=${SERVICE_VERSION:-latest}
 IMAGE_NAME="${SERVICE_NAME}:${SERVICE_VERSION}"
+CONTAINER_NAME="${SERVICE_NAME}-${SERVICE_VERSION}"
 PORT=${PORT:-3000}
 
-echo "🚀 Запуск контейнера '$SERVICE_NAME' из образа '$IMAGE_NAME' на порту $PORT..."
+echo "🚀 Запуск контейнера '$CONTAINER_NAME' из образа '$IMAGE_NAME' на порту $PORT..."
 
 docker run -d \
-  --name "$SERVICE_NAME" \
+  --name "$CONTAINER_NAME" \
   --env-file ../.env \
   -p "$PORT:$PORT" \
   "$IMAGE_NAME"

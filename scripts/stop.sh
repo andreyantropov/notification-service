@@ -5,12 +5,14 @@ if [ -f ../.env ]; then
 fi
 
 SERVICE_NAME=${SERVICE_NAME:-notification-service}
+SERVICE_VERSION=${SERVICE_VERSION:-latest}
+CONTAINER_NAME="${SERVICE_NAME}-${SERVICE_VERSION}"
 
-echo "🛑 Остановка и удаление контейнера '$SERVICE_NAME'..."
+echo "🛑 Остановка и удаление контейнера '$CONTAINER_NAME'..."
 
-if [ "$(docker ps -a -f name="^/${SERVICE_NAME}$" --format '{{.Names}}')" ]; then
-  docker stop "$SERVICE_NAME" > /dev/null 2>&1 && echo "✅ Контейнер остановлен"
-  docker rm "$SERVICE_NAME" > /dev/null 2>&1 && echo "✅ Контейнер удалён"
+if [ "$(docker ps -a -f name="^/${CONTAINER_NAME}$" --format '{{.Names}}')" ]; then
+  docker stop "$CONTAINER_NAME" > /dev/null 2>&1 && echo "✅ Контейнер остановлен"
+  docker rm "$CONTAINER_NAME" > /dev/null 2>&1 && echo "✅ Контейнер удалён"
 else
-  echo "ℹ️ Контейнер '$SERVICE_NAME' не найден."
+  echo "ℹ️ Контейнер '$CONTAINER_NAME' не найден."
 fi
