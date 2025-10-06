@@ -1,6 +1,8 @@
+import { shutdown } from "../lifecycle/shutdown.js";
+import { start } from "../lifecycle/start.js";
+
 export const bootstrap = async () => {
   try {
-    const { start } = await import("../lifecycle/start.js");
     await start();
 
     const shutdownHandler = async () => {
@@ -8,7 +10,6 @@ export const bootstrap = async () => {
       process.removeAllListeners("SIGINT");
       process.removeAllListeners("SIGQUIT");
 
-      const { shutdown } = await import("../lifecycle/shutdown.js");
       await shutdown();
       process.exit(0);
     };
