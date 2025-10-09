@@ -1,17 +1,16 @@
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
-import { NotificationDeliveryServiceConfig } from "./interfaces/NotificationDeliveryServiceConfig.js";
 import { NotificationDeliveryServiceDependencies } from "./interfaces/NotificationDeliveryServiceDependencies.js";
 import { SendResult } from "./interfaces/SendResult.js";
-import { sendToFirstAvailableStrategy } from "./strategies/sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
+import {
+  DEFAULT_STRATEGY_KEY,
+  strategyRegistry,
+} from "./strategies/strategyRegistry.js";
 import { Notification } from "../../../domain/types/Notification.js";
-import { DEFAULT_CONFIG } from "../../../shared/constants/defaults.js";
 
 export const createNotificationDeliveryService = (
   dependencies: NotificationDeliveryServiceDependencies,
-  configs: NotificationDeliveryServiceConfig = DEFAULT_CONFIG,
 ): NotificationDeliveryService => {
   const { senders } = dependencies;
-  const { strategy = sendToFirstAvailableStrategy } = configs;
 
   if (!senders || senders.length === 0) {
     throw new Error("В сервис не передано ни одного сендера");
@@ -19,7 +18,12 @@ export const createNotificationDeliveryService = (
 
   const send = async (notifications: Notification[]): Promise<SendResult[]> => {
     const results = await Promise.allSettled(
-      notifications.map((notification) => strategy(notification, senders)),
+      notifications.map((notification) => {
+        const key = notification.strategy ?? DEFAULT_STRATEGY_KEY;
+        const strategy = strategyRegistry[key];
+
+        return strategy(notification, senders);
+      }),
     );
 
     return results.map((result, index): SendResult => {

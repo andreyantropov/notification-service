@@ -83,6 +83,12 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
               description:
                 "Если true — уведомление отправляется немедленно. Если false или отсутствует — попадает в буфер и отправляется пачкой.",
             },
+            strategy: {
+              type: "string",
+              enum: ["send_to_first_available", "send_to_all_available"],
+              description: "Стратегия доставки уведомления",
+              example: "send_to_first_available",
+            },
           },
         },
 
@@ -130,6 +136,12 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
             isUrgent: {
               type: "boolean",
               example: true,
+            },
+            strategy: {
+              type: "string",
+              enum: ["send_to_first_available", "send_to_all_available"],
+              description: "Стратегия доставки уведомления",
+              example: "send_to_first_available",
             },
           },
         },
