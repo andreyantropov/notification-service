@@ -1,3 +1,4 @@
+import { NotificationStrategyLiteral } from "./NotificationStrategyLiteral.js";
 import { Recipient } from "../types/Recipient.js";
 
 export interface Notification {
@@ -5,4 +6,5 @@ export interface Notification {
   recipients: Recipient[];
   message: string;
   isUrgent?: boolean;
+  strategy?: NotificationStrategyLiteral;
 }

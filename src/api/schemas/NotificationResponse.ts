@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { NotificationStrategySchema } from "./NotificationStrategySchema.js";
 import { Recipient } from "./Recipient.js";
 
 export const SuccessfulNotificationResponse = z.object({
@@ -7,6 +8,7 @@ export const SuccessfulNotificationResponse = z.object({
   recipients: z.array(Recipient),
   message: z.string(),
   isUrgent: z.boolean().optional(),
+  strategy: NotificationStrategySchema.optional(),
 });
 
 const ZodIssue = z.object({

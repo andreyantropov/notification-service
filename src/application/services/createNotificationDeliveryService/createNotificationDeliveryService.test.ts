@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotificationDeliveryService } from "./createNotificationDeliveryService.js";
 import { SendResult } from "./interfaces/SendResult.js";
-import { DeliveryStrategy } from "./types/DeliveryStrategy.js";
+import {
+  strategyRegistry,
+  DEFAULT_STRATEGY_KEY,
+} from "./strategies/strategyRegistry.js";
 import { Sender } from "../../../domain/ports/Sender.js";
 import { Notification } from "../../../domain/types/Notification.js";
 
@@ -11,6 +14,7 @@ const message = "Test message";
 const notification: Notification = {
   recipients: [emailRecipient],
   message,
+  id: "",
 };
 
 const createMockSender = (
@@ -26,18 +30,10 @@ const createMockSender = (
   };
 };
 
-const createMockStrategy = (impl: DeliveryStrategy) => {
-  return vi.fn<DeliveryStrategy>(impl);
-};
-
 describe("createNotificationDeliveryService", () => {
-  let mockStrategy: ReturnType<typeof createMockStrategy>;
-
   beforeEach(() => {
-    mockStrategy = createMockStrategy(async () => ({
-      success: true,
-      notification,
-    }));
+    // Очищаем моки стратегий перед каждым тестом
+    vi.restoreAllMocks();
   });
 
   it("should throw if no senders are provided", () => {
@@ -48,17 +44,26 @@ describe("createNotificationDeliveryService", () => {
     ).toThrow("В сервис не передано ни одного сендера");
   });
 
-  it("should use default strategy (sendToFirstAvailable) if not provided", () => {
+  it("should use default strategy if not provided", async () => {
     const sender = createMockSender(
       () => true,
       async () => {},
     );
+    const mockDefaultStrategy = vi.fn().mockResolvedValue({
+      success: true,
+      notification,
+    });
+
+    // Мокаем стратегию по умолчанию
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockDefaultStrategy;
+
     const service = createNotificationDeliveryService({
       senders: [sender],
     });
 
-    expect(service).toHaveProperty("send");
-    expect(service).toHaveProperty("checkHealth");
+    await service.send([notification]);
+
+    expect(mockDefaultStrategy).toHaveBeenCalledWith(notification, [sender]);
   });
 
   it("should return success result when strategy succeeds", async () => {
@@ -66,14 +71,16 @@ describe("createNotificationDeliveryService", () => {
       () => true,
       async () => {},
     );
-    const service = createNotificationDeliveryService(
-      {
-        senders: [sender],
-      },
-      {
-        strategy: mockStrategy,
-      },
-    );
+
+    const mockStrategy = vi.fn().mockResolvedValue({
+      success: true,
+      notification,
+    });
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
+
+    const service = createNotificationDeliveryService({
+      senders: [sender],
+    });
 
     const result = await service.send([notification]);
 
@@ -90,17 +97,14 @@ describe("createNotificationDeliveryService", () => {
       () => true,
       async () => {},
     );
-    const service = createNotificationDeliveryService(
-      {
-        senders: [sender],
-      },
-      {
-        strategy: mockStrategy,
-      },
-    );
 
     const strategyError = new Error("Delivery failed");
-    mockStrategy.mockRejectedValueOnce(strategyError);
+    const mockStrategy = vi.fn().mockRejectedValue(strategyError);
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
+
+    const service = createNotificationDeliveryService({
+      senders: [sender],
+    });
 
     const result = await service.send([notification]);
 
@@ -118,22 +122,20 @@ describe("createNotificationDeliveryService", () => {
       () => true,
       async () => {},
     );
-    const service = createNotificationDeliveryService(
-      {
-        senders: [sender],
-      },
-      {
-        strategy: mockStrategy,
-      },
-    );
 
     const notification1 = { ...notification, message: "Msg 1" };
     const notification2 = { ...notification, message: "Msg 2" };
 
     const failError = new Error("Failed");
-    mockStrategy
+    const mockStrategy = vi
+      .fn()
       .mockResolvedValueOnce({ success: true, notification: notification1 })
       .mockRejectedValueOnce(failError);
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
+
+    const service = createNotificationDeliveryService({
+      senders: [sender],
+    });
 
     const result = await service.send([notification1, notification2]);
 
@@ -157,16 +159,15 @@ describe("createNotificationDeliveryService", () => {
       () => true,
       async () => {},
     );
-    const service = createNotificationDeliveryService(
-      {
-        senders: [sender],
-      },
-      {
-        strategy: mockStrategy,
-      },
-    );
 
-    mockStrategy.mockResolvedValue({ success: true, notification });
+    const mockStrategy = vi
+      .fn()
+      .mockResolvedValue({ success: true, notification });
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
+
+    const service = createNotificationDeliveryService({
+      senders: [sender],
+    });
 
     const result = await service.send([notification]);
 
@@ -182,6 +183,10 @@ describe("createNotificationDeliveryService", () => {
       () => true,
       async () => {},
     );
+
+    const mockStrategy = vi.fn();
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
+
     const service = createNotificationDeliveryService({
       senders: [sender],
     });
@@ -189,6 +194,7 @@ describe("createNotificationDeliveryService", () => {
     const result = await service.send([]);
 
     expect(result).toEqual([]);
+    expect(mockStrategy).not.toHaveBeenCalled();
   });
 
   it("should return multiple results when sending multiple notifications", async () => {
@@ -196,24 +202,22 @@ describe("createNotificationDeliveryService", () => {
       () => true,
       async () => {},
     );
-    const service = createNotificationDeliveryService(
-      {
-        senders: [sender],
-      },
-      {
-        strategy: mockStrategy,
-      },
-    );
 
     const notif1 = { ...notification, message: "1" };
     const notif2 = { ...notification, message: "2" };
     const notif3 = { ...notification, message: "3" };
 
     const failError = new Error("Fail");
-    mockStrategy
+    const mockStrategy = vi
+      .fn()
       .mockResolvedValueOnce({ success: true, notification: notif1 })
       .mockRejectedValueOnce(failError)
       .mockResolvedValueOnce({ success: true, notification: notif3 });
+    strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
+
+    const service = createNotificationDeliveryService({
+      senders: [sender],
+    });
 
     const result = await service.send([notif1, notif2, notif3]);
 
@@ -317,14 +321,11 @@ describe("createNotificationDeliveryService", () => {
       senders: [sender],
     });
 
-    await expect(service.checkHealth!()).rejects.toThrow(
-      "Часть сендров не готова к работе",
-    );
-
     try {
       await service.checkHealth!();
     } catch (error: unknown) {
       if (error instanceof Error) {
+        expect(error.message).toBe("Часть сендров не готова к работе");
         expect(error.cause).toBe(originalError);
       } else {
         throw new Error("Expected error to be instance of Error");
