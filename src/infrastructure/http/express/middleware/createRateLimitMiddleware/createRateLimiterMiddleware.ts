@@ -23,7 +23,8 @@ export const createRateLimiterMiddleware = (
       next: NextFunction,
       options: Options,
     ) => {
-      return res.status(options.statusCode).json(options.message);
+      res.status(options.statusCode).json(options.message);
+      return;
     },
   });
 };

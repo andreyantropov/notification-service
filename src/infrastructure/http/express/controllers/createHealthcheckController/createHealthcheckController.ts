@@ -10,6 +10,7 @@ export const createHealthcheckController = (
 
   const live = async (req: Request, res: Response): Promise<void> => {
     res.status(200).send();
+    return;
   };
 
   const ready = async (req: Request, res: Response): Promise<void> => {
@@ -18,11 +19,13 @@ export const createHealthcheckController = (
         await sendNotificationUseCase.checkHealth();
       }
       res.status(200).send();
+      return;
     } catch {
       res.status(503).json({
         error: "HTTP 503 Service Unavailable",
         message: "Сервис недоступен",
       });
+      return;
     }
   };
 

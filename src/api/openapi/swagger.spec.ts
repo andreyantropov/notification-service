@@ -14,6 +14,14 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
       },
     ],
     components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "JWT-токен",
+        },
+      },
       schemas: {
         Recipient: {
           oneOf: [
@@ -142,6 +150,23 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
               enum: ["send_to_first_available", "send_to_all_available"],
               description: "Стратегия доставки уведомления",
               example: "send_to_first_available",
+            },
+            subject: {
+              type: "object",
+              properties: {
+                id: {
+                  type: "string",
+                  example: "user-123",
+                  description: "Идентификатор отправителя (обычно из JWT)",
+                },
+                name: {
+                  type: "string",
+                  example: "John Doe",
+                  description: "Имя отправителя (опционально)",
+                },
+              },
+              required: ["id"],
+              description: "Информация об отправителе уведомления",
             },
           },
         },
@@ -279,6 +304,11 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
             "- `400`: ни одно не прошло валидацию\n" +
             "- `500`: внутренняя ошибка",
           tags: ["Notifications"],
+          security: [
+            {
+              BearerAuth: [],
+            },
+          ],
           requestBody: {
             required: true,
             content: {
@@ -356,6 +386,10 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                           ],
                           message: "Ваш заказ готов",
                           isUrgent: true,
+                          subject: {
+                            id: "user-123",
+                            name: "John Doe",
+                          },
                         },
                       },
                       {
@@ -370,6 +404,9 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                           ],
                           message: "Напоминание о встрече",
                           isUrgent: false,
+                          subject: {
+                            id: "user-123",
+                          },
                         },
                       },
                     ],
@@ -403,6 +440,9 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                             },
                           ],
                           message: "Hi",
+                          subject: {
+                            id: "user-123",
+                          },
                         },
                       },
                       {
@@ -430,6 +470,10 @@ const getSwaggerSpec = (config: { baseUrl: string }) => {
                             },
                           ],
                           message: "Hello again",
+                          subject: {
+                            id: "user-123",
+                            name: "Jane Smith",
+                          },
                         },
                       },
                     ],

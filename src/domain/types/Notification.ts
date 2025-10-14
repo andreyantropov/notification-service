@@ -7,4 +7,8 @@ export interface Notification {
   message: string;
   isUrgent?: boolean;
   strategy?: NotificationStrategyLiteral;
+  subject?: {
+    id: string;
+    name?: string;
+  };
 }

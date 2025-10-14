@@ -6,5 +6,6 @@ export const createInternalServerErrorMiddleware = (): ErrorRequestHandler => {
       error: "HTTP 500 Internal Server Error",
       message: error.message || "Unknown error",
     });
+    return;
   };
 };

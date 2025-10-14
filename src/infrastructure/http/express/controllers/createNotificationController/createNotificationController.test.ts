@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotificationController } from "./createNotificationController.js";
@@ -25,10 +25,23 @@ const mockSendNotificationUseCase = {
   >(),
 };
 
+const mockAuthPayload = {
+  sub: "user-123",
+  preferred_username: "john.doe",
+  name: "John Doe",
+};
+
+interface AuthenticatedRequest extends Request {
+  auth?: {
+    payload: unknown;
+  };
+}
+
 describe("NotificationController", () => {
   let controller: ReturnType<typeof createNotificationController>;
-  let req: Partial<Request>;
+  let req: AuthenticatedRequest;
   let res: Partial<Response>;
+  let next: NextFunction;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -46,20 +59,32 @@ describe("NotificationController", () => {
       sendNotificationUseCase: mockSendNotificationUseCase,
     });
 
-    req = { body: null };
+    req = {
+      body: null,
+      auth: {
+        payload: mockAuthPayload,
+      },
+    } as AuthenticatedRequest;
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
     };
+    next = vi.fn();
   });
 
   it("should return 202 when all notifications are valid", async () => {
     req.body = validRawNotification;
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
     expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
-      validRawNotification,
+      {
+        ...validRawNotification,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
     ]);
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalledWith(
@@ -78,15 +103,22 @@ describe("NotificationController", () => {
         ]),
       }),
     );
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 207 when some notifications fail validation", async () => {
     req.body = [validRawNotification, invalidNotification];
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
     expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
-      validRawNotification,
+      {
+        ...validRawNotification,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
     ]);
     expect(res.status).toHaveBeenCalledWith(207);
     expect(res.json).toHaveBeenCalledWith(
@@ -111,12 +143,13 @@ describe("NotificationController", () => {
         ]),
       }),
     );
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 400 when no notifications are valid", async () => {
     req.body = [invalidNotification, { recipients: ["bad"], message: "" }];
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
     expect(mockSendNotificationUseCase.send).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
@@ -130,6 +163,57 @@ describe("NotificationController", () => {
         }),
       ]),
     });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("should call next with error when use case throws an unexpected error", async () => {
+    req.body = validRawNotification;
+
+    const testError = new Error("Unexpected error");
+    mockSendNotificationUseCase.send.mockRejectedValueOnce(testError);
+
+    await controller.send(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(testError);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should call next with error when req.auth is missing", async () => {
+    req.auth = undefined;
+    req.body = validRawNotification;
+
+    await controller.send(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message:
+          "Контроллер вызван без предварительной проверки аутентификации.",
+      }),
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should call next with error when token payload is invalid", async () => {
+    req.auth = {
+      payload: {
+        preferred_username: "john.doe",
+      },
+    };
+    req.body = validRawNotification;
+
+    await controller.send(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining(
+          "Не удалось извлечь данные об отправителе запроса",
+        ),
+      }),
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should return 207 with multiple invalid notifications", async () => {
@@ -145,9 +229,17 @@ describe("NotificationController", () => {
 
     req.body = [notif1, notif2, notif3];
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
-    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([notif1]);
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
+      {
+        ...notif1,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+    ]);
     expect(res.status).toHaveBeenCalledWith(207);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -165,18 +257,26 @@ describe("NotificationController", () => {
         ]),
       }),
     );
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("should handle single notification object", async () => {
     req.body = validRawNotification;
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
     expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
-      validRawNotification,
+      {
+        ...validRawNotification,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
     ]);
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("should handle array of notifications", async () => {
@@ -190,38 +290,81 @@ describe("NotificationController", () => {
     };
     req.body = [notif1, notif2];
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
     expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
-      notif1,
-      notif2,
+      {
+        ...notif1,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+      {
+        ...notif2,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
     ]);
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalled();
-  });
-
-  it("should return 500 when use case throws an unexpected error", async () => {
-    req.body = validRawNotification;
-
-    mockSendNotificationUseCase.send.mockRejectedValueOnce(
-      new Error("Unexpected error"),
-    );
-
-    await controller.send(req as Request, res as Response);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      error: "HTTP 500 Internal Server Error",
-      message: "Не удалось отправить уведомление",
-    });
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 202 when all notifications are valid (array)", async () => {
     req.body = [validRawNotification];
 
-    await controller.send(req as Request, res as Response);
+    await controller.send(req as Request, res as Response, next);
 
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("should use name fallback when preferred_username is missing", async () => {
+    req.auth = {
+      payload: {
+        sub: "user-456",
+        name: "Jane Smith",
+      },
+    };
+    req.body = validRawNotification;
+
+    await controller.send(req as Request, res as Response, next);
+
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
+      {
+        ...validRawNotification,
+        subject: {
+          id: "user-456",
+          name: "Jane Smith",
+        },
+      },
+    ]);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("should handle token with only sub field", async () => {
+    req.auth = {
+      payload: {
+        sub: "user-789",
+      },
+    };
+    req.body = validRawNotification;
+
+    await controller.send(req as Request, res as Response, next);
+
+    expect(mockSendNotificationUseCase.send).toHaveBeenCalledWith([
+      {
+        ...validRawNotification,
+        subject: {
+          id: "user-789",
+          name: undefined,
+        },
+      },
+    ]);
+    expect(next).not.toHaveBeenCalled();
   });
 });

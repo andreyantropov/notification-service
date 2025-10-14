@@ -6,5 +6,6 @@ export const createNotFoundMiddleware = (): RequestHandler => {
       error: "HTTP 404 Not Found",
       message: "Запрошенный ресурс не найден",
     });
+    return;
   };
 };

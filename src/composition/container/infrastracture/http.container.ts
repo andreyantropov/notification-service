@@ -3,6 +3,7 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 
 import { getSwaggerSpec } from "../../../api/openapi/swagger.spec.js";
+import { authConfig } from "../../../configs/index.js";
 import { serverConfig } from "../../../configs/server.config.js";
 import {
   createNotificationController,
@@ -15,6 +16,8 @@ import {
   createActiveRequestsCounterMiddleware,
   createNotFoundMiddleware,
   createInternalServerErrorMiddleware,
+  createAuthenticationMiddleware,
+  createAuthorizationMiddleware,
 } from "../../../infrastructure/http/express/middleware/index.js";
 import { Container } from "../../types/Container.js";
 
@@ -41,6 +44,17 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
           createActiveRequestsCounterMiddleware({ activeRequestsCounter });
         app.use(activeRequestsCounterMiddleware);
 
+        const authenticationMiddleware = createAuthenticationMiddleware({
+          issuer: authConfig.issuer,
+          jwksUri: authConfig.jwksUri,
+          audience: authConfig.audience,
+          tokenSigningAlg: authConfig.tokenSigningAlg,
+        });
+        const authorizationMiddleware = createAuthorizationMiddleware({
+          serviceClientId: authConfig.serviceClientId,
+          requiredRoles: authConfig.requiredRoles,
+        });
+
         const notificationController = createNotificationController({
           sendNotificationUseCase,
         });
@@ -48,7 +62,12 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
           sendNotificationUseCase,
         });
 
-        app.post("/api/v1/notifications", notificationController.send);
+        app.post(
+          "/api/v1/notifications",
+          authenticationMiddleware,
+          authorizationMiddleware,
+          notificationController.send,
+        );
         app.get("/api/health/live", healthcheckController.live);
         app.get("/api/health/ready", healthcheckController.ready);
 
