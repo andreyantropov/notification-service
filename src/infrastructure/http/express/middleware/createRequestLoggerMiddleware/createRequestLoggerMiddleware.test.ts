@@ -93,7 +93,183 @@ describe("RequestLoggerMiddleware", () => {
     });
   });
 
-  it("should log error request with correct fields", () => {
+  it("should log 401 as AuthAttempt with info level", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/protected",
+      ip: "192.168.1.1",
+      get: vi.fn().mockReturnValue("TestAgent"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 401,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 100);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalledWith({
+      message: "Требуется аутентификация: GET /api/protected",
+      eventType: EventType.AuthAttempt,
+      duration: 100,
+      details: {
+        method: "GET",
+        url: "/api/protected",
+        statusCode: 401,
+        ip: "192.168.1.1",
+        userAgent: "TestAgent",
+      },
+    });
+  });
+
+  it("should log 403 as AccessDenied with info level", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "POST",
+      url: "/api/admin",
+      ip: "192.168.1.1",
+      get: vi.fn().mockReturnValue("TestAgent"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 403,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 120);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalledWith({
+      message: "Доступ запрещен: POST /api/admin",
+      eventType: EventType.AccessDenied,
+      duration: 120,
+      details: {
+        method: "POST",
+        url: "/api/admin",
+        statusCode: 403,
+        ip: "192.168.1.1",
+        userAgent: "TestAgent",
+      },
+    });
+  });
+
+  it("should log 404 with custom message and info level", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/not-found",
+      ip: "192.168.1.1",
+      get: vi.fn().mockReturnValue("TestAgent"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 404,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 80);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalledWith({
+      message: "Ресурс не найден: GET /api/not-found",
+      eventType: EventType.Request,
+      duration: 80,
+      details: {
+        method: "GET",
+        url: "/api/not-found",
+        statusCode: 404,
+        ip: "192.168.1.1",
+        userAgent: "TestAgent",
+      },
+    });
+  });
+
+  it("should log 429 with custom message and info level", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "POST",
+      url: "/api/rate-limited",
+      ip: "192.168.1.1",
+      get: vi.fn().mockReturnValue("TestAgent"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 429,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 90);
+
+    mockFinishCallback();
+
+    expect(mockLogger.info).toHaveBeenCalledWith({
+      message: "Слишком много запросов: POST /api/rate-limited",
+      eventType: EventType.Request,
+      duration: 90,
+      details: {
+        method: "POST",
+        url: "/api/rate-limited",
+        statusCode: 429,
+        ip: "192.168.1.1",
+        userAgent: "TestAgent",
+      },
+    });
+  });
+
+  it("should log 500 as error with custom message", () => {
     const mockFinishCallback = vi.fn();
     const req = {
       method: "GET",
@@ -124,13 +300,57 @@ describe("RequestLoggerMiddleware", () => {
     mockFinishCallback();
 
     expect(mockLogger.error).toHaveBeenCalledWith({
-      message: "Не удалось обработать запрос GET /api/fail",
+      message: "Серверная ошибка: GET /api/fail",
       eventType: EventType.Request,
       duration: 200,
       details: {
         method: "GET",
         url: "/api/fail",
         statusCode: 500,
+        ip: "10.0.0.1",
+        userAgent: "Mozilla",
+      },
+    });
+  });
+
+  it("should log 502 as error with custom message", () => {
+    const mockFinishCallback = vi.fn();
+    const req = {
+      method: "GET",
+      url: "/api/gateway",
+      ip: "10.0.0.1",
+      get: vi.fn().mockReturnValue("Mozilla"),
+    } as unknown as Request;
+
+    const res = {
+      statusCode: 502,
+      on: vi.fn((event: string, callback: () => void) => {
+        if (event === "finish") {
+          mockFinishCallback.mockImplementation(callback);
+        }
+      }),
+      headersSent: true,
+    } as unknown as Response;
+
+    const next = vi.fn();
+
+    const startTime = Date.now();
+    vi.setSystemTime(startTime);
+
+    middleware(req, res, next);
+
+    vi.setSystemTime(startTime + 250);
+
+    mockFinishCallback();
+
+    expect(mockLogger.error).toHaveBeenCalledWith({
+      message: "Серверная ошибка: GET /api/gateway",
+      eventType: EventType.Request,
+      duration: 250,
+      details: {
+        method: "GET",
+        url: "/api/gateway",
+        statusCode: 502,
         ip: "10.0.0.1",
         userAgent: "Mozilla",
       },
@@ -175,7 +395,6 @@ describe("RequestLoggerMiddleware", () => {
       details: {
         method: "GET",
         url: "/api/test",
-        statusCode: 200,
         ip: "127.0.0.1",
         userAgent: "-",
       },
@@ -249,7 +468,7 @@ describe("RequestLoggerMiddleware", () => {
     );
   });
 
-  it("should log 400 status as success (since it's client error)", () => {
+  it("should log 400 status as info (client error)", () => {
     const mockFinishCallback = vi.fn();
     const req = {
       method: "POST",
@@ -283,40 +502,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.error).not.toHaveBeenCalled();
   });
 
-  it("should log 499 status as warning for closed connection", () => {
-    const mockCloseCallback = vi.fn();
-    const req = {
-      method: "GET",
-      url: "/api/test",
-      ip: "127.0.0.1",
-      get: vi.fn().mockReturnValue(undefined),
-    } as unknown as Request;
-
-    const res = {
-      statusCode: 499,
-      on: vi.fn((event: string, callback: () => void) => {
-        if (event === "close") {
-          mockCloseCallback.mockImplementation(callback);
-        }
-      }),
-      headersSent: false,
-    } as unknown as Response;
-
-    const next = vi.fn();
-
-    const startTime = Date.now();
-    vi.setSystemTime(startTime);
-
-    middleware(req, res, next);
-
-    vi.setSystemTime(startTime + 80);
-
-    mockCloseCallback();
-
-    expect(mockLogger.warning).toHaveBeenCalled();
-  });
-
-  it("should log 300 status as success", () => {
+  it("should log 300 status as info", () => {
     const mockFinishCallback = vi.fn();
     const req = {
       method: "GET",

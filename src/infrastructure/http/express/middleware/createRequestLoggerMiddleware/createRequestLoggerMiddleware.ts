@@ -13,35 +13,50 @@ export const createRequestLoggerMiddleware = (
 
     res.on("finish", async () => {
       const duration = Date.now() - start;
+      const statusCode = res.statusCode;
 
-      const isSuccess = res.statusCode >= 200 && res.statusCode < 500;
+      let eventType = EventType.Request;
+      let message = `Запрос ${req.method} ${req.url} обработан`;
 
-      if (isSuccess) {
-        await loggerAdapter.info({
-          message: `Запрос ${req.method} ${req.url} обработан`,
-          eventType: EventType.Request,
-          duration,
-          details: {
-            method: req.method,
-            url: req.url,
-            statusCode: res.statusCode,
-            ip: req.ip,
-            userAgent: req.get("User-Agent") || "-",
-          },
-        });
+      switch (statusCode) {
+        case 401:
+          eventType = EventType.AuthAttempt;
+          message = `Требуется аутентификация: ${req.method} ${req.url}`;
+          break;
+        case 403:
+          eventType = EventType.AccessDenied;
+          message = `Доступ запрещен: ${req.method} ${req.url}`;
+          break;
+        case 404:
+          message = `Ресурс не найден: ${req.method} ${req.url}`;
+          break;
+        case 429:
+          message = `Слишком много запросов: ${req.method} ${req.url}`;
+          break;
+        case 500:
+        case 502:
+        case 503:
+          message = `Серверная ошибка: ${req.method} ${req.url}`;
+          break;
+      }
+
+      const logData = {
+        message,
+        eventType,
+        duration,
+        details: {
+          method: req.method,
+          url: req.url,
+          statusCode,
+          ip: req.ip,
+          userAgent: req.get("User-Agent") || "-",
+        },
+      };
+
+      if (statusCode >= 200 && statusCode < 500) {
+        await loggerAdapter.info(logData);
       } else {
-        await loggerAdapter.error({
-          message: `Не удалось обработать запрос ${req.method} ${req.url}`,
-          eventType: EventType.Request,
-          duration,
-          details: {
-            method: req.method,
-            url: req.url,
-            statusCode: res.statusCode,
-            ip: req.ip,
-            userAgent: req.get("User-Agent") || "-",
-          },
-        });
+        await loggerAdapter.error(logData);
       }
     });
 
@@ -56,7 +71,6 @@ export const createRequestLoggerMiddleware = (
           details: {
             method: req.method,
             url: req.url,
-            statusCode: res.statusCode,
             ip: req.ip,
             userAgent: req.get("User-Agent") || "-",
           },

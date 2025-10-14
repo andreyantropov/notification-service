@@ -37,7 +37,6 @@
 - [`express`](https://expressjs.com/) — веб-фреймворк для построения API
 - [`axios`](https://axios-http.com/) — для HTTP-запросов к внешним API (Bitrix24 и др.)
 - [`nodemailer`](https://nodemailer.com/) — для отправки email через SMTP
-- [`influx`](https://www.npmjs.com/package/influx) — для интеграции с InfluxDB (опционально)
 - [`awilix`](https://github.com/jeffijoe/awilix) — контейнер зависимостей (DI/IoC) для управления жизненным циклом сервисов
 - [`opentelemetry`](https://opentelemetry.io/) — для сбора трейсов
 
@@ -65,6 +64,17 @@ PORT=3000
 ```env
 RATE_LIMIT_PERIOD=60000
 RATE_LIMIT_TRIES=100
+```
+
+### 🔐 Аутентификация и авторизация
+
+```env
+AUTH_ISSUER=https://keycloak.planarchel.ru/realms/internal
+AUTH_JWKS_URI=https://keycloak.planarchel.ru/realms/internal/protocol/openid-connect/certs
+AUTH_AUDIENCE=notification-service
+AUTH_TOKEN_SIGNING_ALG=RS256
+AUTH_SERVICE_CLIENT_ID=notification-service-client
+AUTH_REQUIRED_ROLES=notifications:sender
 ```
 
 ### ⚙️ Graceful Shutdown

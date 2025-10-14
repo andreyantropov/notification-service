@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import z from "zod";
 
 import { NotificationController } from "./interfaces/NotificationController.js";
@@ -6,11 +6,9 @@ import { NotificationControllerDependencies } from "./interfaces/NotificationCon
 import { SendResponse } from "./interfaces/SendResponse.js";
 import { ParsedNotificationResult } from "./types/ParsedNotificationResult.js";
 import { SendResult } from "./types/SendResult.js";
-import {
-  SingleNotification,
-  NotificationRequest,
-} from "../../../../../api/schemas/NotificationRequest.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
+import { SingleNotification, TokenPayload } from "../../../schemas/index.js";
+import { NotificationRequest } from "../../../schemas/NotificationRequest.js";
 
 export const createNotificationController = (
   dependencies: NotificationControllerDependencies,
@@ -68,6 +66,21 @@ export const createNotificationController = (
     return { valid, invalid };
   };
 
+  const extractSenderFromToken = (payload: unknown) => {
+    const parsed = TokenPayload.safeParse(payload);
+    if (!parsed.success) {
+      throw new Error(
+        `Не удалось извлечь данные об отправителе запроса: ${parsed.error.message}`,
+      );
+    }
+
+    const { sub, preferred_username, name } = parsed.data;
+    return {
+      id: sub,
+      name: preferred_username || name || undefined,
+    };
+  };
+
   const formatSendResponse = (
     valid: Notification[],
     invalid: { item: unknown; error: unknown }[],
@@ -110,7 +123,11 @@ export const createNotificationController = (
     };
   };
 
-  const send = async (req: Request, res: Response): Promise<void> => {
+  const send = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const { valid, invalid } = parseNotificationRequest(req.body);
 
@@ -123,20 +140,31 @@ export const createNotificationController = (
         return;
       }
 
-      const result = await sendNotificationUseCase.send(valid);
+      if (!req.auth) {
+        throw new Error(
+          `Контроллер вызван без предварительной проверки аутентификации.`,
+        );
+      }
+
+      const subject = extractSenderFromToken(req.auth.payload);
+      const notifications = valid.map((item) => ({
+        ...item,
+        subject,
+      }));
+
+      const result = await sendNotificationUseCase.send(notifications);
 
       const sendResult = formatSendResponse(result, invalid);
 
       if (invalid.length === 0) {
         res.status(202).json(sendResult);
+        return;
       } else {
         res.status(207).json(sendResult);
+        return;
       }
-    } catch {
-      res.status(500).json({
-        error: "HTTP 500 Internal Server Error",
-        message: "Не удалось отправить уведомление",
-      });
+    } catch (error) {
+      next(error);
     }
   };
 
