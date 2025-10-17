@@ -1,6 +1,6 @@
+import { DeliveryResult } from "./interfaces/DeliveryResult.js";
 import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
 import { NotificationDeliveryServiceDependencies } from "./interfaces/NotificationDeliveryServiceDependencies.js";
-import { SendResult } from "./interfaces/SendResult.js";
 import {
   DEFAULT_STRATEGY_KEY,
   strategyRegistry,
@@ -10,23 +10,25 @@ import { Notification } from "../../../domain/types/Notification.js";
 export const createNotificationDeliveryService = (
   dependencies: NotificationDeliveryServiceDependencies,
 ): NotificationDeliveryService => {
-  const { senders } = dependencies;
+  const { channels } = dependencies;
 
-  if (!senders || senders.length === 0) {
-    throw new Error("В сервис не передано ни одного сендера");
+  if (!channels || channels.length === 0) {
+    throw new Error("В сервис не передано ни одного канала");
   }
 
-  const send = async (notifications: Notification[]): Promise<SendResult[]> => {
+  const send = async (
+    notifications: Notification[],
+  ): Promise<DeliveryResult[]> => {
     const results = await Promise.allSettled(
       notifications.map((notification) => {
         const key = notification.strategy ?? DEFAULT_STRATEGY_KEY;
         const strategy = strategyRegistry[key];
 
-        return strategy(notification, senders);
+        return strategy(notification, channels);
       }),
     );
 
-    return results.map((result, index): SendResult => {
+    return results.map((result, index): DeliveryResult => {
       const currentNotification = notifications[index];
 
       if (result.status === "fulfilled") {
@@ -42,10 +44,10 @@ export const createNotificationDeliveryService = (
   };
 
   const checkHealth = async (): Promise<void> => {
-    const healthChecks = senders
-      .filter((sender) => sender.checkHealth)
-      .map(async (sender) => {
-        await sender.checkHealth!();
+    const healthChecks = channels
+      .filter((channel) => channel.checkHealth)
+      .map(async (channel) => {
+        await channel.checkHealth!();
       });
 
     if (healthChecks.length === 0) {

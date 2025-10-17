@@ -51,7 +51,7 @@ export const createSomething = (
   dependencies: SomethingDependencies,
   config: SomethingConfig = DEFAULT_CONFIG,
 ) => {
-  const { adapter, logger = DEFAULT_LOGGER } = dependencies;
+  const { adapter } = dependencies;
   const { timeout = 5000 } = config;
   // ...
 };
@@ -168,7 +168,7 @@ export const createSomething = (
   dependencies: SomethingDependencies,
   config: SomethingConfig = DEFAULT_CONFIG,
 ) => {
-  const { adapter, logger = DEFAULT_LOGGER } = dependencies;
+  const { adapter } = dependencies;
 
   const { timeout = 5000, onError = () => {} } = config;
 

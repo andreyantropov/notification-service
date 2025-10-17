@@ -1,8 +1,8 @@
-import { Sender } from "../../../../domain/ports/Sender.js";
+import { Channel } from "../../../../domain/ports/Channel.js";
 import { Notification } from "../../../../domain/types/Notification.js";
-import { SendResult } from "../interfaces/SendResult.js";
+import { DeliveryResult } from "../interfaces/DeliveryResult.js";
 
 export type DeliveryStrategy = (
   notification: Notification,
-  senders: Sender[],
-) => Promise<SendResult>;
+  channels: Channel[],
+) => Promise<DeliveryResult>;

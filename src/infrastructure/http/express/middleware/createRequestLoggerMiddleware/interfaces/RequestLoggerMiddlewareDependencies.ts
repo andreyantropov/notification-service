@@ -1,5 +1,5 @@
-import { LoggerAdapter } from "../../../../../ports/LoggerAdapter.js";
+import { Logger } from "../../../../../ports/Logger.js";
 
 export interface RequestLoggerMiddlewareDependencies {
-  loggerAdapter: LoggerAdapter;
+  logger: Logger;
 }

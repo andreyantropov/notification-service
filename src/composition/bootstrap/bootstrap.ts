@@ -1,5 +1,4 @@
-import { shutdown } from "../lifecycle/shutdown.js";
-import { start } from "../lifecycle/start.js";
+import { start, shutdown } from "../lifecycle/index.js";
 
 export const bootstrap = async () => {
   try {

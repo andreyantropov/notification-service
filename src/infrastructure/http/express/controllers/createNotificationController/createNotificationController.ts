@@ -1,39 +1,31 @@
 import { NextFunction, Request, Response } from "express";
-import z from "zod";
 
 import { NotificationController } from "./interfaces/NotificationController.js";
 import { NotificationControllerDependencies } from "./interfaces/NotificationControllerDependencies.js";
-import { SendResponse } from "./interfaces/SendResponse.js";
-import { ParsedNotificationResult } from "./types/ParsedNotificationResult.js";
-import { SendResult } from "./types/SendResult.js";
+import { ReceiptBatch } from "./interfaces/ReceiptBatch.js";
+import { Receipt } from "./types/Receipt.js";
+import { ValidationOutcome } from "./types/ValidationOutcome.js";
+import { IncomingNotification } from "../../../../../application/types/IncomingNotification.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
-import { SingleNotification, TokenPayload } from "../../../schemas/index.js";
-import { NotificationRequest } from "../../../schemas/NotificationRequest.js";
+import { Subject } from "../../../../../domain/types/Subject.js";
+import {
+  IncomingNotificationSchema,
+  SubjectSchema,
+} from "../../../schemas/index.js";
 
 export const createNotificationController = (
   dependencies: NotificationControllerDependencies,
 ): NotificationController => {
-  const { sendNotificationUseCase } = dependencies;
+  const { handleIncomingNotificationsUseCase } = dependencies;
 
-  const parseNotificationRequest = (
-    body: unknown,
-  ): ParsedNotificationResult => {
-    const valid: z.infer<typeof SingleNotification>[] = [];
+  const validateNotificationRequest = (body: unknown): ValidationOutcome => {
+    const valid: IncomingNotification[] = [];
     const invalid: { item: unknown; error: unknown }[] = [];
 
-    const result = NotificationRequest.safeParse(body);
-
-    if (result.success) {
-      const data = result.data;
-      valid.push(...(Array.isArray(data) ? data : [data]));
-      return { valid, invalid };
-    }
-
     let items: unknown[];
-
     if (Array.isArray(body)) {
       items = body;
-    } else if (body && typeof body === "object") {
+    } else if (body != null && typeof body === "object") {
       items = [body];
     } else {
       invalid.push({
@@ -52,13 +44,13 @@ export const createNotificationController = (
     }
 
     for (const item of items) {
-      const singleResult = SingleNotification.safeParse(item);
-      if (singleResult.success) {
-        valid.push(singleResult.data);
+      const result = IncomingNotificationSchema.safeParse(item);
+      if (result.success) {
+        valid.push(result.data);
       } else {
         invalid.push({
           item,
-          error: singleResult.error.errors,
+          error: result.error.errors,
         });
       }
     }
@@ -66,8 +58,8 @@ export const createNotificationController = (
     return { valid, invalid };
   };
 
-  const extractSenderFromToken = (payload: unknown) => {
-    const parsed = TokenPayload.safeParse(payload);
+  const extractSubjectFromToken = (payload: unknown): Subject => {
+    const parsed = SubjectSchema.safeParse(payload);
     if (!parsed.success) {
       throw new Error(
         `Не удалось извлечь данные об отправителе запроса: ${parsed.error.message}`,
@@ -77,36 +69,36 @@ export const createNotificationController = (
     const { sub, preferred_username, name } = parsed.data;
     return {
       id: sub,
-      name: preferred_username || name || undefined,
+      name: preferred_username || name,
     };
   };
 
-  const formatSendResponse = (
-    valid: Notification[],
-    invalid: { item: unknown; error: unknown }[],
-  ): SendResponse => {
-    const validCount = valid.length;
-    const invalidCount = invalid.length;
-    const totalCount = valid.length + invalid.length;
+  const buildReceiptBatch = (
+    accepted: Notification[],
+    rejected: { item: unknown; error: unknown }[],
+  ): ReceiptBatch => {
+    const acceptedCount = accepted.length;
+    const rejectedCount = rejected.length;
+    const totalCount = accepted.length + rejected.length;
 
     let message = "";
-    if (invalidCount === 0) {
+    if (rejectedCount === 0) {
       message = "Все уведомления приняты в обработку";
-    } else if (validCount === 0) {
+    } else if (acceptedCount === 0) {
       message = "Ни одно уведомление не прошло валидацию";
     } else {
-      message = `Уведомления приняты частично: ${validCount} принято, ${invalidCount} отклонено`;
+      message = `Уведомления приняты частично: ${acceptedCount} принято, ${rejectedCount} отклонено`;
     }
 
-    const details: SendResult[] = [
-      ...valid.map(
-        (elem): SendResult => ({
+    const details: Receipt[] = [
+      ...accepted.map(
+        (elem): Receipt => ({
           success: true,
           notification: elem,
         }),
       ),
-      ...invalid.map(
-        (elem): SendResult => ({
+      ...rejected.map(
+        (elem): Receipt => ({
           success: false,
           notification: elem.item,
           error: elem.error,
@@ -117,8 +109,8 @@ export const createNotificationController = (
     return {
       message,
       totalCount,
-      validCount,
-      invalidCount,
+      acceptedCount,
+      rejectedCount,
       details,
     };
   };
@@ -129,13 +121,14 @@ export const createNotificationController = (
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { valid, invalid } = parseNotificationRequest(req.body);
+      const { valid: accepted, invalid: rejected } =
+        validateNotificationRequest(req.body);
 
-      if (valid.length === 0) {
+      if (accepted.length === 0) {
         res.status(400).json({
           error: "HTTP 400 Bad Request",
           message: "Ни одно уведомление не прошло валидацию",
-          details: invalid,
+          details: rejected,
         });
         return;
       }
@@ -146,21 +139,22 @@ export const createNotificationController = (
         );
       }
 
-      const subject = extractSenderFromToken(req.auth.payload);
-      const notifications = valid.map((item) => ({
+      const subject = extractSubjectFromToken(req.auth.payload);
+      const notifications = accepted.map((item) => ({
         ...item,
         subject,
       }));
 
-      const result = await sendNotificationUseCase.send(notifications);
+      const result =
+        await handleIncomingNotificationsUseCase.handle(notifications);
 
-      const sendResult = formatSendResponse(result, invalid);
+      const receiptBatch = buildReceiptBatch(result, rejected);
 
-      if (invalid.length === 0) {
-        res.status(202).json(sendResult);
+      if (rejected.length === 0) {
+        res.status(202).json(receiptBatch);
         return;
       } else {
-        res.status(207).json(sendResult);
+        res.status(207).json(receiptBatch);
         return;
       }
     } catch (error) {

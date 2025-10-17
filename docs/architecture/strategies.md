@@ -14,7 +14,7 @@
 
 ```json
 {
-  "recipients": [{ "type": "email", "value": "user@example.com" }],
+  "contacts": [{ "type": "email", "value": "user@example.com" }],
   "message": "Привет!",
   "strategy": "send_to_all_available"
 }
@@ -27,14 +27,14 @@
 ```ts
 type DeliveryStrategy = (
   notification: Notification,
-  senders: Sender[],
+  channels: Channel[],
 ) => Promise<SendResult>;
 ```
 
 Где:
 
 - `notification` — уведомление с получателями, сообщением и метаданными,
-- `senders` — список доступных каналов доставки,
+- `channels` — список доступных каналов доставки,
 - `SendResult` — структурированный результат с флагом успеха, деталями и предупреждениями.
 
 Стратегии **не выбрасывают исключения**, а всегда возвращают `SendResult`, что позволяет:
@@ -60,7 +60,7 @@ type DeliveryStrategy = (
 ### 🔍 Как работает
 
 1. Для каждого получателя:
-   - Фильтруем каналы, которые поддерживают его тип (`isSupports(recipient)`)
+   - Фильтруем каналы, которые поддерживают его тип (`isSupports(contact)`)
    - Пытаемся отправить через каждый канал **по очереди**
    - При **успехе** — завершаем стратегию (уведомление считается доставленным)
 2. Если **ни одному** получателю не удалось доставить — выбрасываем ошибку
@@ -75,22 +75,22 @@ type DeliveryStrategy = (
 sequenceDiagram
     participant Service as NotificationService
     participant Strategy as sendToFirstAvailable
-    participant Sender1 as BitrixSender
-    participant Sender2 as SmtpSender
+    participant Channel1 as BitrixChannel
+    participant Channel2 as SmtpChannel
     participant User as Пользователь
 
-    Service->>Strategy: send(senders, { recipients, message })
-    Strategy->>Strategy: recipients[0] = { type: "bitrix", value: "123" }
+    Service->>Strategy: send(channels, { contacts, message })
+    Strategy->>Strategy: contacts[0] = { type: "bitrix", value: "123" }
 
-    Strategy->>Sender1: isSupports(recipient)?
-    Sender1-->>Strategy: true
-    Strategy->>Sender1: send(recipient, message)
-    Sender1-->>Strategy: Ошибка (404)
+    Strategy->>Channel1: isSupports(contact)?
+    Channel1-->>Strategy: true
+    Strategy->>Channel1: send(contact, message)
+    Channel1-->>Strategy: Ошибка (404)
 
-    Strategy->>Sender2: isSupports(recipient)?
-    Sender2-->>Strategy: true
-    Strategy->>Sender2: send(recipient, message)
-    Sender2-->>Strategy: Успех (200)
+    Strategy->>Channel2: isSupports(contact)?
+    Channel2-->>Strategy: true
+    Strategy->>Channel2: send(contact, message)
+    Channel2-->>Strategy: Успех (200)
 
     Strategy-->>Service: Успешно
     Service->>User: HTTP 201 Created
@@ -114,12 +114,12 @@ sequenceDiagram
 
 ```ts
 const service = createNotificationDeliveryService(
-  [bitrixSender, smtpSender],
+  [bitrixChannel, smtpChannel],
   sendToFirstAvailableStrategy,
 );
 
 await service.send({
-  recipients: [
+  contacts: [
     { type: "bitrix", value: "12345" },
     { type: "email", value: "user@company.com" },
   ],
@@ -160,13 +160,13 @@ await service.send({
 sequenceDiagram
     participant Service as NotificationService
     participant Strategy as sendToAllAvailable
-    participant Bitrix as BitrixSender
-    participant Smtp as SmtpSender
+    participant Bitrix as BitrixChannel
+    participant Smtp as SmtpChannel
     participant User as Пользователь
 
-    Service->>Strategy: send(senders, { recipients, message })
+    Service->>Strategy: send(channels, { contacts, message })
 
-    Strategy->>Strategy: Обработка recipients[0]
+    Strategy->>Strategy: Обработка contacts[0]
 
     Strategy->>Bitrix: isSupports()? → true
     Strategy->>Smtp: isSupports()? → true
@@ -199,12 +199,12 @@ sequenceDiagram
 
 ```ts
 const service = createNotificationDeliveryService(
-  [bitrixSender, smtpSender],
+  [bitrixChannel, smtpChannel],
   sendToAllAvailableStrategy,
 );
 
 await service.send({
-  recipients: [{ type: "bitrix", value: "12345" }],
+  contacts: [{ type: "bitrix", value: "12345" }],
   message: "Система перешла в режим обслуживания",
 });
 ```
@@ -238,14 +238,14 @@ const withRetry = async <T>(
 };
 
 export const sendWithRetryStrategy: DeliveryStrategy = async (
-  senders,
-  { recipients, message },
+  channels,
+  { contacts, message },
   onError,
 ) => {
-  for (const recipient of recipients) {
-    const supported = senders.filter((s) => s.isSupports(recipient));
+  for (const contact of contacts) {
+    const supported = channels.filter((s) => s.isSupports(contact));
     await withRetry(
-      () => sendToRecipient(recipient, message, supported, onError),
+      () => sendToContact(contact, message, supported, onError),
       3,
     );
   }

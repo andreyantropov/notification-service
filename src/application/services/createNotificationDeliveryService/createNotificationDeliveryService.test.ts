@@ -1,27 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotificationDeliveryService } from "./createNotificationDeliveryService.js";
-import { SendResult } from "./interfaces/SendResult.js";
+import { DeliveryResult } from "./interfaces/DeliveryResult.js";
 import {
   strategyRegistry,
   DEFAULT_STRATEGY_KEY,
 } from "./strategies/strategyRegistry.js";
-import { Sender } from "../../../domain/ports/Sender.js";
+import { Channel } from "../../../domain/ports/Channel.js";
 import { Notification } from "../../../domain/types/Notification.js";
 
-const emailRecipient = { type: "email", value: "test@example.com" } as const;
+const emailContact = { type: "email", value: "test@example.com" } as const;
 const message = "Test message";
 const notification: Notification = {
-  recipients: [emailRecipient],
+  contacts: [emailContact],
   message,
   id: "",
 };
 
-const createMockSender = (
-  isSupports: (recipient: unknown) => boolean,
+const createMockChannel = (
+  isSupports: (contact: unknown) => boolean,
   sendImpl: () => Promise<void>,
   checkHealthImpl?: () => Promise<void>,
-): Sender => {
+): Channel => {
   return {
     type: "bitrix",
     isSupports,
@@ -32,20 +32,19 @@ const createMockSender = (
 
 describe("createNotificationDeliveryService", () => {
   beforeEach(() => {
-    // Очищаем моки стратегий перед каждым тестом
     vi.restoreAllMocks();
   });
 
-  it("should throw if no senders are provided", () => {
+  it("should throw if no channels are provided", () => {
     expect(() =>
       createNotificationDeliveryService({
-        senders: [],
+        channels: [],
       }),
-    ).toThrow("В сервис не передано ни одного сендера");
+    ).toThrow("В сервис не передано ни одного канала");
   });
 
   it("should use default strategy if not provided", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -54,20 +53,19 @@ describe("createNotificationDeliveryService", () => {
       notification,
     });
 
-    // Мокаем стратегию по умолчанию
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockDefaultStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     await service.send([notification]);
 
-    expect(mockDefaultStrategy).toHaveBeenCalledWith(notification, [sender]);
+    expect(mockDefaultStrategy).toHaveBeenCalledWith(notification, [channel]);
   });
 
   it("should return success result when strategy succeeds", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -79,7 +77,7 @@ describe("createNotificationDeliveryService", () => {
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     const result = await service.send([notification]);
@@ -89,11 +87,11 @@ describe("createNotificationDeliveryService", () => {
       success: true,
       notification,
     });
-    expect(mockStrategy).toHaveBeenCalledWith(notification, [sender]);
+    expect(mockStrategy).toHaveBeenCalledWith(notification, [channel]);
   });
 
   it("should return error result when strategy fails", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -103,22 +101,22 @@ describe("createNotificationDeliveryService", () => {
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     const result = await service.send([notification]);
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual<SendResult>({
+    expect(result[0]).toEqual<DeliveryResult>({
       success: false,
       notification,
       error: strategyError,
     });
-    expect(mockStrategy).toHaveBeenCalledWith(notification, [sender]);
+    expect(mockStrategy).toHaveBeenCalledWith(notification, [channel]);
   });
 
   it("should handle array of notifications", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -134,28 +132,28 @@ describe("createNotificationDeliveryService", () => {
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     const result = await service.send([notification1, notification2]);
 
     expect(result).toHaveLength(2);
-    expect(result[0]).toEqual<SendResult>({
+    expect(result[0]).toEqual<DeliveryResult>({
       success: true,
       notification: notification1,
     });
-    expect(result[1]).toEqual<SendResult>({
+    expect(result[1]).toEqual<DeliveryResult>({
       success: false,
       notification: notification2,
       error: failError,
     });
 
-    expect(mockStrategy).toHaveBeenNthCalledWith(1, notification1, [sender]);
-    expect(mockStrategy).toHaveBeenNthCalledWith(2, notification2, [sender]);
+    expect(mockStrategy).toHaveBeenNthCalledWith(1, notification1, [channel]);
+    expect(mockStrategy).toHaveBeenNthCalledWith(2, notification2, [channel]);
   });
 
   it("should handle single notification (object)", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -166,20 +164,20 @@ describe("createNotificationDeliveryService", () => {
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     const result = await service.send([notification]);
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual<SendResult>({
+    expect(result[0]).toEqual<DeliveryResult>({
       success: true,
       notification,
     });
   });
 
   it("should return empty result array when empty input array is provided", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -188,7 +186,7 @@ describe("createNotificationDeliveryService", () => {
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     const result = await service.send([]);
@@ -198,7 +196,7 @@ describe("createNotificationDeliveryService", () => {
   });
 
   it("should return multiple results when sending multiple notifications", async () => {
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
     );
@@ -216,35 +214,35 @@ describe("createNotificationDeliveryService", () => {
     strategyRegistry[DEFAULT_STRATEGY_KEY] = mockStrategy;
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     const result = await service.send([notif1, notif2, notif3]);
 
     expect(result).toHaveLength(3);
-    expect(result[0]).toEqual<SendResult>({
+    expect(result[0]).toEqual<DeliveryResult>({
       success: true,
       notification: notif1,
     });
-    expect(result[1]).toEqual<SendResult>({
+    expect(result[1]).toEqual<DeliveryResult>({
       success: false,
       notification: notif2,
       error: failError,
     });
-    expect(result[2]).toEqual<SendResult>({
+    expect(result[2]).toEqual<DeliveryResult>({
       success: true,
       notification: notif3,
     });
   });
 
-  it("should call checkHealth on all senders that support it", async () => {
-    const healthySender = createMockSender(
+  it("should call checkHealth on all channels that support it", async () => {
+    const healthyChannel = createMockChannel(
       () => true,
       async () => {},
       async () => {},
     );
 
-    const unhealthySender = createMockSender(
+    const unhealthyChannel = createMockChannel(
       () => true,
       async () => {},
       async () => {
@@ -252,31 +250,31 @@ describe("createNotificationDeliveryService", () => {
       },
     );
 
-    const noHealthSender = createMockSender(
+    const noHealthChannel = createMockChannel(
       () => true,
       async () => {},
     );
 
     const service = createNotificationDeliveryService({
-      senders: [healthySender, unhealthySender, noHealthSender],
+      channels: [healthyChannel, unhealthyChannel, noHealthChannel],
     });
 
     await expect(service.checkHealth!()).rejects.toThrow(
       "Часть сендров не готова к работе",
     );
 
-    expect(healthySender.checkHealth).toHaveBeenCalled();
-    expect(unhealthySender.checkHealth).toHaveBeenCalled();
-    expect(noHealthSender.checkHealth).toBeUndefined();
+    expect(healthyChannel.checkHealth).toHaveBeenCalled();
+    expect(unhealthyChannel.checkHealth).toHaveBeenCalled();
+    expect(noHealthChannel.checkHealth).toBeUndefined();
   });
 
-  it("should throw if no sender has checkHealth method", async () => {
-    const senderWithoutHealth = createMockSender(
+  it("should throw if no channel has checkHealth method", async () => {
+    const channelWithoutHealth = createMockChannel(
       () => true,
       async () => {},
     );
     const service = createNotificationDeliveryService({
-      senders: [senderWithoutHealth],
+      channels: [channelWithoutHealth],
     });
 
     await expect(service.checkHealth!()).rejects.toThrow(
@@ -285,40 +283,40 @@ describe("createNotificationDeliveryService", () => {
   });
 
   it("should succeed checkHealth if all health checks pass", async () => {
-    const sender1 = createMockSender(
+    const channel1 = createMockChannel(
       () => true,
       async () => {},
       async () => {},
     );
 
-    const sender2 = createMockSender(
+    const channel2 = createMockChannel(
       () => true,
       async () => {},
       async () => {},
     );
 
     const service = createNotificationDeliveryService({
-      senders: [sender1, sender2],
+      channels: [channel1, channel2],
     });
 
     await expect(service.checkHealth!()).resolves.not.toThrow();
 
-    expect(sender1.checkHealth).toHaveBeenCalled();
-    expect(sender2.checkHealth).toHaveBeenCalled();
+    expect(channel1.checkHealth).toHaveBeenCalled();
+    expect(channel2.checkHealth).toHaveBeenCalled();
   });
 
   it("should propagate cause from failed health check", async () => {
     const originalError = new Error("Database unreachable");
     const failingHealthCheck = vi.fn().mockRejectedValue(originalError);
 
-    const sender = createMockSender(
+    const channel = createMockChannel(
       () => true,
       async () => {},
       failingHealthCheck,
     );
 
     const service = createNotificationDeliveryService({
-      senders: [sender],
+      channels: [channel],
     });
 
     try {

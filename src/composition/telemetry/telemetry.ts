@@ -10,7 +10,7 @@ import {
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
 
-import { loggerAdapterConfig } from "../../configs/index.js";
+import { telemetryConfig } from "../../configs/index.js";
 
 let instance: NodeSDK | null = null;
 
@@ -19,8 +19,8 @@ if (instance === null) {
 
   instance = new NodeSDK({
     resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: loggerAdapterConfig.serviceName,
-      [ATTR_SERVICE_VERSION]: loggerAdapterConfig.serviceVersion,
+      [ATTR_SERVICE_NAME]: telemetryConfig.serviceName,
+      [ATTR_SERVICE_VERSION]: telemetryConfig.serviceVersion,
     }),
     traceExporter: new ConsoleSpanExporter(),
     instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],

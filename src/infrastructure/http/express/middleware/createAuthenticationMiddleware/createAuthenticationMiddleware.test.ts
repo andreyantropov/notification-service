@@ -1,7 +1,7 @@
 import { auth } from "express-oauth2-jwt-bearer";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { createAuthenticationMiddleware } from "./createAuthenticationMiddleware";
+import { createAuthenticationMiddleware } from "./createAuthenticationMiddleware.js";
 
 vi.mock("express-oauth2-jwt-bearer", () => ({
   auth: vi.fn(),

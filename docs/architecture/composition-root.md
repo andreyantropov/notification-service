@@ -9,10 +9,10 @@
 ## Основные задачи Composition Root
 
 1. **Создание конкретных реализаций**  
-   Например: `BitrixSender`, `SmtpSender`, `InfluxDbLogger`, `InMemoryBuffer`.
+   Например: `BitrixChannel`, `SmtpChannel`, `InfluxDbLogger`, `InMemoryBuffer`.
 
 2. **Инъекция зависимостей**  
-   Передача реализованных сервисов в use cases, контроллеры и процессы (например, `sendNotificationUseCase` получает `buffer`, `logger`, `sender`).
+   Передача реализованных сервисов в use cases, контроллеры и процессы (например, `sendNotificationUseCase` получает `buffer`, `logger`, `channel`).
 
 3. **Настройка взаимодействия между слоями**  
    Например: подключение fallback-логгера, настройка рейт-лимита, выбор стратегии доставки.
@@ -42,7 +42,7 @@
 
 ```ts
 container.register({
-  loggerAdapter: asFunction(createLoggerAdapter).singleton(),
+  logger: asFunction(createLogger).singleton(),
   sendNotificationUseCase: asFunction(
     createSendNotificationUseCase,
   ).singleton(),
@@ -55,10 +55,10 @@ container.register({
 
 | Принцип                          | Объяснение                                                                                                                                              |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅ **Единственное место сборки** | Все зависимости создаются только здесь. Нигде в коде **не должно быть** `new BitrixSender()` или прямых вызовов фабрик без DI.                          |
+| ✅ **Единственное место сборки** | Все зависимости создаются только здесь. Нигде в коде **не должно быть** `new BitrixChannel()` или прямых вызовов фабрик без DI.                         |
 | ✅ **Инверсия управления (IoC)** | Высокоуровневые модули (use cases) не зависят от низкоуровневых реализаций — они получают их через параметры.                                           |
 | ✅ **Изоляция от домена**        | Composition Root не содержит логики вроде _"если задача просрочена, то..."_. Он только связывает готовые кирпичики.                                     |
-| ✅ **Тестируемость**             | Благодаря DI легко подменить зависимости при тестировании (например, использовать `MockSender` вместо `BitrixSender`).                                  |
+| ✅ **Тестируемость**             | Благодаря DI легко подменить зависимости при тестировании (например, использовать `MockChannel` вместо `BitrixChannel`).                                |
 | ✅ **Ленивая инициализация**     | Контейнер и зависимости загружаются **динамически** при запуске, что позволяет контролировать порядок инициализации (например, телеметрия → контейнер). |
 
 ---
@@ -123,11 +123,11 @@ export const start = async () => {
 // container/application/useCases.container.ts
 container.register({
   sendNotificationUseCase: asFunction(
-    ({ buffer, notificationDeliveryService, loggerAdapter }) =>
+    ({ buffer, notificationDeliveryService, logger }) =>
       createSendNotificationUseCase(
         buffer,
         notificationDeliveryService,
-        loggerAdapter,
+        logger,
       ),
   ).singleton(),
 });

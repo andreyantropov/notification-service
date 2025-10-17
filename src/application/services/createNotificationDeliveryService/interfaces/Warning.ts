@@ -1,8 +1,8 @@
-import { Recipient } from "../../../../domain/types/Recipient.js";
+import { Contact } from "../../../../domain/types/Contact.js";
 
 export interface Warning {
   message: string;
   details?: unknown;
-  recipient?: Recipient;
-  sender?: string;
+  contact?: Contact;
+  channel?: string;
 }

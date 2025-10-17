@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createTracedBuffer } from "./createTracedBuffer.js";
-import type { TracedBufferDependencies } from "./interfaces/TracedBufferDependencies.js";
-import type { Buffer } from "../../../../application/ports/Buffer.js";
-import type { TracingContextManager } from "../../../../application/ports/TracingContextManager.js";
+import { TracedBufferDependencies } from "./interfaces/TracedBufferDependencies.js";
+import { Buffer } from "../../../../application/ports/Buffer.js";
+import { TracingContextManager } from "../../../ports/TracingContextManager.js";
 
 describe("createTracedBuffer", () => {
   let mockBuffer: {

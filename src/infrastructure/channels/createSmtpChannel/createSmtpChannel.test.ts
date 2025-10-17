@@ -1,0 +1,173 @@
+import nodemailer from "nodemailer";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+import { createSmtpChannel } from "./createSmtpChannel.js";
+import { SmtpChannelConfig } from "./interfaces/SmtpChannelConfig.js";
+import { Channel } from "../../../domain/ports/Channel.js";
+import { Contact } from "../../../domain/types/Contact.js";
+import { noop } from "../../../shared/utils/noop/noop.js";
+
+vi.mock("nodemailer");
+
+describe("createSmtpChannel", () => {
+  const mockConfig: SmtpChannelConfig = {
+    host: "smtp.example.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "user@example.com",
+      pass: "password",
+    },
+    fromEmail: "no-reply@example.com",
+  };
+
+  let channel: Channel;
+  let transporter: { sendMail: ReturnType<typeof vi.fn> };
+
+  beforeEach(() => {
+    const mockTransporter = {
+      sendMail: vi.fn().mockResolvedValue({}),
+    };
+
+    (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+      mockTransporter,
+    );
+
+    channel = createSmtpChannel(mockConfig);
+    transporter = mockTransporter;
+  });
+
+  it("should return a channel with isSupports and send methods", () => {
+    expect(channel).toHaveProperty("isSupports");
+    expect(channel).toHaveProperty("send");
+    expect(typeof channel.isSupports).toBe("function");
+    expect(typeof channel.send).toBe("function");
+  });
+
+  describe("isSupports", () => {
+    it("should return true for an email contact", () => {
+      const contact: Contact = { type: "email", value: "test@example.com" };
+      expect(channel.isSupports(contact)).toBe(true);
+    });
+
+    it("should return false for a non-email contact", () => {
+      const contact: Contact = { type: "bitrix", value: 42 };
+      expect(channel.isSupports(contact)).toBe(false);
+    });
+  });
+
+  describe("send", () => {
+    const message = "Test message";
+    const contact: Contact = { type: "email", value: "test@example.com" };
+
+    it("should call sendMail with correct options", async () => {
+      await channel.send(contact, message);
+
+      expect(transporter.sendMail).toHaveBeenCalledWith({
+        from: `"ISPlanar" <${mockConfig.fromEmail}>`,
+        to: contact.value,
+        subject: "ISPlanar",
+        text: message,
+      });
+    });
+
+    it("should resolve if sendMail resolves", async () => {
+      await expect(channel.send(contact, message)).resolves.not.toThrow();
+    });
+
+    it("should throw error if contact is not email", async () => {
+      const invalidContact: Contact = { type: "bitrix", value: 42 };
+
+      await expect(channel.send(invalidContact, message)).rejects.toThrow(
+        `Неверный тип получателя: ожидается email, получено "bitrix"`,
+      );
+    });
+
+    it("should throw error if sendMail rejects", async () => {
+      const error = new Error("Send failed");
+      transporter.sendMail.mockRejectedValue(error);
+
+      await expect(channel.send(contact, message)).rejects.toThrow(
+        "Не удалось отправить email через SMTP",
+      );
+
+      expect(transporter.sendMail).toHaveBeenCalled();
+    });
+  });
+
+  describe("checkHealth", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should have checkHealth method", () => {
+      expect(channel.checkHealth).toBeDefined();
+      expect(typeof channel.checkHealth).toBe("function");
+    });
+
+    it("should resolve if transporter.verify succeeds", async () => {
+      const mockVerify = vi
+        .fn()
+        .mockImplementation((callback) => callback(null));
+      const mockTransporter = {
+        sendMail: vi.fn(),
+        verify: mockVerify,
+      };
+      (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockTransporter,
+      );
+
+      const newChannel = createSmtpChannel(mockConfig);
+
+      await expect(newChannel.checkHealth!()).resolves.not.toThrow();
+    });
+
+    it("should reject with 'SMTP сервер недоступен' if verify fails", async () => {
+      const mockError = new Error("Connection refused");
+      const mockVerify = vi
+        .fn()
+        .mockImplementation((callback) => callback(mockError));
+      const mockTransporter = {
+        sendMail: vi.fn(),
+        verify: mockVerify,
+      };
+      (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockTransporter,
+      );
+
+      const newChannel = createSmtpChannel(mockConfig);
+
+      await expect(newChannel.checkHealth!()).rejects.toThrow(
+        "SMTP сервер недоступен",
+      );
+    });
+
+    it("should reject with 'SMTP сервер недоступен' on timeout", async () => {
+      const pendingPromise = new Promise(noop);
+      const mockVerify = vi
+        .fn()
+        .mockImplementation((callback) => pendingPromise.then(callback));
+      const mockTransporter = {
+        sendMail: vi.fn(),
+        verify: mockVerify,
+      };
+      (nodemailer.createTransport as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockTransporter,
+      );
+
+      const newChannel = createSmtpChannel(mockConfig);
+
+      const checkHealthPromise = newChannel.checkHealth!();
+
+      vi.runOnlyPendingTimers();
+
+      await expect(checkHealthPromise).rejects.toThrow(
+        "SMTP сервер недоступен",
+      );
+    });
+  });
+});

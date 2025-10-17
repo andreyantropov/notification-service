@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response, RequestHandler } from "express";
 
 import { RequestLoggerMiddlewareDependencies } from "./interfaces/RequestLoggerMiddlewareDependencies.js";
-import { EventType } from "../../../../../shared/enums/EventType.js";
+import { EventType } from "../../../../telemetry/logging/enums/EventType.js";
 
 export const createRequestLoggerMiddleware = (
   dependencies: RequestLoggerMiddlewareDependencies,
 ): RequestHandler => {
-  const { loggerAdapter } = dependencies;
+  const { logger } = dependencies;
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const start = Date.now();
@@ -54,9 +54,9 @@ export const createRequestLoggerMiddleware = (
       };
 
       if (statusCode >= 200 && statusCode < 500) {
-        await loggerAdapter.info(logData);
+        logger.info(logData);
       } else {
-        await loggerAdapter.error(logData);
+        logger.error(logData);
       }
     });
 
@@ -64,7 +64,7 @@ export const createRequestLoggerMiddleware = (
       if (!res.headersSent) {
         const duration = Date.now() - start;
 
-        await loggerAdapter.warning({
+        logger.warning({
           message: `Запрос ${req.method} ${req.url} был прерван клиентом до завершения обработки`,
           eventType: EventType.Request,
           duration,
