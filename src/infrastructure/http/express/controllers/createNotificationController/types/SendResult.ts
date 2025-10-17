@@ -1,9 +1,0 @@
-import { Notification } from "../../../../../../domain/types/Notification.js";
-
-export type SendResult =
-  | { success: true; notification: Notification }
-  | {
-      success: false;
-      notification: unknown;
-      error: unknown;
-    };

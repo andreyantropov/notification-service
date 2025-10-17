@@ -4,10 +4,12 @@ import { createInMemoryBuffer } from "./createInMemoryBuffer.js";
 import { Notification } from "../../../domain/types/Notification.js";
 
 const mockNotification = (
+  id: string,
   message: string,
-  recipientEmail: string,
+  contactEmail: string,
 ): Notification => ({
-  recipients: [{ type: "email", value: recipientEmail }],
+  id: "1",
+  contacts: [{ type: "email", value: contactEmail }],
   message,
 });
 
@@ -20,8 +22,8 @@ describe("createInMemoryBuffer", () => {
 
   it("should append notifications and keep them in buffer", async () => {
     const buffer = createInMemoryBuffer();
-    const notif1 = mockNotification("Hello", "user1@com");
-    const notif2 = mockNotification("World", "user2@com");
+    const notif1 = mockNotification("1", "Hello", "user1@com");
+    const notif2 = mockNotification("1", "World", "user2@com");
 
     await buffer.append([notif1, notif2]);
 
@@ -33,11 +35,11 @@ describe("createInMemoryBuffer", () => {
 
   it("should return a copy of the buffer, not the original reference", async () => {
     const buffer = createInMemoryBuffer();
-    const notif = mockNotification("Test", "test@com");
+    const notif = mockNotification("1", "Test", "test@com");
     await buffer.append([notif]);
 
     const result = await buffer.takeAll();
-    result.push(mockNotification("Mutated", "evil@com"));
+    result.push(mockNotification("1", "Mutated", "evil@com"));
 
     const secondRead = await buffer.takeAll();
     expect(secondRead).toHaveLength(0);
@@ -46,7 +48,7 @@ describe("createInMemoryBuffer", () => {
 
   it("should clear the buffer after takeAll", async () => {
     const buffer = createInMemoryBuffer();
-    await buffer.append([mockNotification("Msg", "user@com")]);
+    await buffer.append([mockNotification("1", "Msg", "user@com")]);
 
     await buffer.takeAll();
     const secondResult = await buffer.takeAll();
@@ -56,10 +58,10 @@ describe("createInMemoryBuffer", () => {
 
   it("should handle multiple appends correctly", async () => {
     const buffer = createInMemoryBuffer();
-    await buffer.append([mockNotification("A", "a@com")]);
+    await buffer.append([mockNotification("1", "A", "a@com")]);
     await buffer.append([
-      mockNotification("B", "b@com"),
-      mockNotification("C", "c@com"),
+      mockNotification("1", "B", "b@com"),
+      mockNotification("1", "C", "c@com"),
     ]);
 
     const result = await buffer.takeAll();
@@ -80,7 +82,7 @@ describe("createInMemoryBuffer", () => {
     const buffer1 = createInMemoryBuffer();
     const buffer2 = createInMemoryBuffer();
 
-    const notif1 = mockNotification("Isolated", "user@com");
+    const notif1 = mockNotification("1", "Isolated", "user@com");
     await buffer1.append([notif1]);
 
     const result1 = await buffer1.takeAll();

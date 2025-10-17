@@ -74,7 +74,7 @@ AUTH_JWKS_URI=https://keycloak.planarchel.ru/realms/internal/protocol/openid-con
 AUTH_AUDIENCE=notification-service
 AUTH_TOKEN_SIGNING_ALG=RS256
 AUTH_SERVICE_CLIENT_ID=notification-service-client
-AUTH_REQUIRED_ROLES=notifications:sender
+AUTH_REQUIRED_ROLES=notifications:send
 ```
 
 ### ⚙️ Graceful Shutdown
@@ -114,13 +114,13 @@ INFLUXDB_URL=https://influxdb.example.com
 INFLUXDB_TOKEN=your_influxdb_token
 INFLUXDB_ORG=YourOrganization
 INFLUXDB_BUCKET=notifications
+INFLUX_DBMEASUREMENT=notification_service_logs
 ```
 
 ### 🗂️ Логирование
 
 ```env
 LOGS_DIR=logs
-MEASUREMENT=notification_service_logs
 SERVICE_NAME=notification-service
 SERVICE_VERSION=1.0.0
 ```

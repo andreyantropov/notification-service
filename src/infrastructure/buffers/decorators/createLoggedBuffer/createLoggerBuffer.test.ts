@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 
 import { createLoggedBuffer } from "./createLoggedBuffer.js";
-import type { LoggedBufferDependencies } from "./interfaces/LoggedBufferDependencies.js";
-import type { Buffer } from "../../../../application/ports/Buffer.js";
-import { EventType } from "../../../../shared/enums/EventType.js";
-import { LoggerAdapter } from "../../../ports/LoggerAdapter.js";
+import { LoggedBufferDependencies } from "./interfaces/LoggedBufferDependencies.js";
+import { Buffer } from "../../../../application/ports/Buffer.js";
+import { Logger } from "../../../ports/Logger.js";
+import { EventType } from "../../../telemetry/logging/enums/EventType.js";
 
-const mockLoggerAdapter = (): LoggerAdapter => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warning: vi.fn(),
-  error: vi.fn(),
-  critical: vi.fn(),
+const mockLoggerFn = (): Logger => ({
+  debug: vi.fn() as Mock,
+  info: vi.fn() as Mock,
+  warning: vi.fn() as Mock,
+  error: vi.fn() as Mock,
+  critical: vi.fn() as Mock,
 });
 
 describe("createLoggedBuffer", () => {
@@ -20,7 +20,7 @@ describe("createLoggedBuffer", () => {
     takeAll: Mock;
   };
 
-  let mockLogger: LoggerAdapter;
+  let mockLogger: Logger;
   let dependencies: LoggedBufferDependencies<number>;
   const testItems = [1, 2, 3, 4, 5];
 
@@ -30,10 +30,10 @@ describe("createLoggedBuffer", () => {
       takeAll: vi.fn(),
     };
 
-    mockLogger = mockLoggerAdapter();
+    mockLogger = mockLoggerFn();
     dependencies = {
       buffer: mockBuffer as Buffer<number>,
-      loggerAdapter: mockLogger,
+      logger: mockLogger,
     };
 
     vi.clearAllMocks();
@@ -42,28 +42,25 @@ describe("createLoggedBuffer", () => {
   describe("append method", () => {
     it("should call underlying buffer.append method", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
-
       await loggedBuffer.append(testItems);
-
       expect(mockBuffer.append).toHaveBeenCalledWith(testItems);
     });
 
-    it("should log debug with item count when append is successful", async () => {
+    it("should log debug with item count and duration when append is successful", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
-
       await loggedBuffer.append(testItems);
 
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "5 элементов добавлено в буфер",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: testItems,
       });
     });
 
-    it("should log error and rethrow when append fails", async () => {
+    it("should log error with duration and rethrow when append fails", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const testError = new Error("Append failed");
-
       mockBuffer.append.mockRejectedValue(testError);
 
       await expect(loggedBuffer.append(testItems)).rejects.toThrow(
@@ -73,6 +70,7 @@ describe("createLoggedBuffer", () => {
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Не удалось добавить элементы в буфер",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: testItems,
         error: testError,
       });
@@ -88,11 +86,12 @@ describe("createLoggedBuffer", () => {
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "0 элементов добавлено в буфер",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: emptyItems,
       });
     });
 
-    it("should include correct item details in success log", async () => {
+    it("should include correct item details in success log with duration", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const customItems = [10, 20, 30];
 
@@ -101,11 +100,12 @@ describe("createLoggedBuffer", () => {
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "3 элементов добавлено в буфер",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: customItems,
       });
     });
 
-    it("should include correct item details in error log", async () => {
+    it("should include correct item details in error log with duration", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const testError = new Error("Append failed");
       const customItems = [100, 200];
@@ -119,6 +119,7 @@ describe("createLoggedBuffer", () => {
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Не удалось добавить элементы в буфер",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: customItems,
         error: testError,
       });
@@ -128,9 +129,7 @@ describe("createLoggedBuffer", () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const originalError = new Error("Original append error");
       originalError.name = "BufferError";
-
       mockBuffer.append.mockRejectedValue(originalError);
-
       await expect(loggedBuffer.append(testItems)).rejects.toMatchObject({
         message: "Original append error",
         name: "BufferError",
@@ -142,41 +141,36 @@ describe("createLoggedBuffer", () => {
     it("should call underlying buffer.takeAll method", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const expectedResult = [1, 2, 3];
-
       mockBuffer.takeAll.mockResolvedValue(expectedResult);
-
       const result = await loggedBuffer.takeAll();
-
       expect(mockBuffer.takeAll).toHaveBeenCalled();
       expect(result).toBe(expectedResult);
     });
 
-    it("should log debug with item count when takeAll is successful", async () => {
+    it("should log debug with item count and duration when takeAll is successful", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const expectedResult = [10, 20, 30, 40];
-
       mockBuffer.takeAll.mockResolvedValue(expectedResult);
-
       await loggedBuffer.takeAll();
 
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "4 элементов извлечено из буфера",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: expectedResult,
       });
     });
 
-    it("should log error and rethrow when takeAll fails", async () => {
+    it("should log error with duration and rethrow when takeAll fails", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const testError = new Error("TakeAll failed");
-
       mockBuffer.takeAll.mockRejectedValue(testError);
-
       await expect(loggedBuffer.takeAll()).rejects.toThrow("TakeAll failed");
 
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Не удалось извлечь элементы из буфера",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         error: testError,
       });
     });
@@ -184,15 +178,13 @@ describe("createLoggedBuffer", () => {
     it("should handle empty result from takeAll", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const emptyResult: number[] = [];
-
       mockBuffer.takeAll.mockResolvedValue(emptyResult);
-
       const result = await loggedBuffer.takeAll();
-
       expect(result).toEqual(emptyResult);
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "0 элементов извлечено из буфера",
         eventType: EventType.CacheOperation,
+        duration: expect.any(Number),
         details: emptyResult,
       });
     });
@@ -200,11 +192,8 @@ describe("createLoggedBuffer", () => {
     it("should return the same result as underlying buffer", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const expectedResult = [100, 200, 300];
-
       mockBuffer.takeAll.mockResolvedValue(expectedResult);
-
       const result = await loggedBuffer.takeAll();
-
       expect(result).toBe(expectedResult);
     });
 
@@ -212,9 +201,7 @@ describe("createLoggedBuffer", () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       const originalError = new Error("Original takeAll error");
       originalError.name = "TakeAllError";
-
       mockBuffer.takeAll.mockRejectedValue(originalError);
-
       await expect(loggedBuffer.takeAll()).rejects.toMatchObject({
         message: "Original takeAll error",
         name: "TakeAllError",
@@ -229,7 +216,7 @@ describe("createLoggedBuffer", () => {
           append: vi.fn(),
           takeAll: vi.fn().mockResolvedValue(["a", "b", "c"]),
         } as Buffer<string>,
-        loggerAdapter: mockLogger,
+        logger: mockLogger,
       };
 
       const loggedBuffer = createLoggedBuffer(stringDependencies);
@@ -255,7 +242,7 @@ describe("createLoggedBuffer", () => {
           append: vi.fn(),
           takeAll: vi.fn().mockResolvedValue([{ id: 1, name: "test" }]),
         } as Buffer<TestObject>,
-        loggerAdapter: mockLogger,
+        logger: mockLogger,
       };
 
       const loggedBuffer = createLoggedBuffer(objectDependencies);
@@ -284,7 +271,7 @@ describe("createLoggedBuffer", () => {
           append: vi.fn(),
           takeAll: vi.fn().mockResolvedValue([]),
         } as Buffer<ComplexType>,
-        loggerAdapter: mockLogger,
+        logger: mockLogger,
       };
 
       const loggedBuffer = createLoggedBuffer(complexDependencies);
@@ -299,7 +286,6 @@ describe("createLoggedBuffer", () => {
       ];
 
       await loggedBuffer.append(complexItems);
-
       expect(complexDependencies.buffer.append).toHaveBeenCalledWith(
         complexItems,
       );
@@ -309,12 +295,11 @@ describe("createLoggedBuffer", () => {
   describe("event types", () => {
     it("should use CacheOperation event type for append", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
-
       await loggedBuffer.append(testItems);
-
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.CacheOperation,
+          duration: expect.any(Number),
         }),
       );
     });
@@ -322,12 +307,11 @@ describe("createLoggedBuffer", () => {
     it("should use CacheOperation event type for takeAll", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       mockBuffer.takeAll.mockResolvedValue(testItems);
-
       await loggedBuffer.takeAll();
-
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.CacheOperation,
+          duration: expect.any(Number),
         }),
       );
     });
@@ -335,12 +319,11 @@ describe("createLoggedBuffer", () => {
     it("should use CacheOperation event type for append errors", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       mockBuffer.append.mockRejectedValue(new Error("Failed"));
-
       await expect(loggedBuffer.append(testItems)).rejects.toThrow();
-
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.CacheOperation,
+          duration: expect.any(Number),
         }),
       );
     });
@@ -348,12 +331,11 @@ describe("createLoggedBuffer", () => {
     it("should use CacheOperation event type for takeAll errors", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
       mockBuffer.takeAll.mockRejectedValue(new Error("Failed"));
-
       await expect(loggedBuffer.takeAll()).rejects.toThrow();
-
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.CacheOperation,
+          duration: expect.any(Number),
         }),
       );
     });
@@ -362,7 +344,6 @@ describe("createLoggedBuffer", () => {
   describe("returned buffer interface", () => {
     it("should return an object with append and takeAll methods", () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
-
       expect(loggedBuffer).toHaveProperty("append");
       expect(loggedBuffer).toHaveProperty("takeAll");
       expect(typeof loggedBuffer.append).toBe("function");
@@ -371,7 +352,6 @@ describe("createLoggedBuffer", () => {
 
     it("should maintain method signatures", async () => {
       const loggedBuffer = createLoggedBuffer(dependencies);
-
       const appendResult = loggedBuffer.append(testItems);
       expect(appendResult).toBeInstanceOf(Promise);
 

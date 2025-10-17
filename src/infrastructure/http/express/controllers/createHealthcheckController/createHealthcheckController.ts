@@ -6,7 +6,7 @@ import { HealthCheckDependencies } from "./interfaces/HealthCheckControllerDepen
 export const createHealthcheckController = (
   dependencies: HealthCheckDependencies,
 ): HealthcheckController => {
-  const { sendNotificationUseCase } = dependencies;
+  const { checkNotificationServiceHealthUseCase } = dependencies;
 
   const live = async (req: Request, res: Response): Promise<void> => {
     res.status(200).send();
@@ -15,9 +15,7 @@ export const createHealthcheckController = (
 
   const ready = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (sendNotificationUseCase.checkHealth) {
-        await sendNotificationUseCase.checkHealth();
-      }
+      await checkNotificationServiceHealthUseCase.checkHealth();
       res.status(200).send();
       return;
     } catch {

@@ -1,5 +1,5 @@
-import { SendNotificationUseCase } from "../../../../../../application/useCases/createSendNotificationUseCase/index.js";
+import { CheckNotificationServiceHealthUseCase } from "../../../../../../application/useCases/createCheckNotificationServiceHealthUseCase/index.js";
 
 export interface HealthCheckDependencies {
-  sendNotificationUseCase: SendNotificationUseCase;
+  checkNotificationServiceHealthUseCase: CheckNotificationServiceHealthUseCase;
 }

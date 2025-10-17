@@ -1,7 +1,7 @@
 import { Buffer } from "../../../../../application/ports/Buffer.js";
-import { LoggerAdapter } from "../../../../ports/LoggerAdapter.js";
+import { Logger } from "../../../../ports/Logger.js";
 
 export interface LoggedBufferDependencies<T> {
   buffer: Buffer<T>;
-  loggerAdapter: LoggerAdapter;
+  logger: Logger;
 }

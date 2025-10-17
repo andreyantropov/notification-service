@@ -1,5 +1,5 @@
-import { Sender } from "../../../../domain/ports/Sender.js";
+import { Channel } from "../../../../domain/ports/Channel.js";
 
 export interface NotificationDeliveryServiceDependencies {
-  senders: Sender[];
+  channels: Channel[];
 }

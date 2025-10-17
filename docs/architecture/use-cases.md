@@ -21,7 +21,7 @@
 
 ```json
 {
-  "recipients": [
+  "contacts": [
     { "type": "bitrix", "value": 1001 },
     { "type": "email", "value": "sales1@company.com" }
   ],
@@ -50,7 +50,7 @@
 
 ```json
 {
-  "recipients": [
+  "contacts": [
     { "type": "email", "value": "prod-lead@company.com" },
     { "type": "bitrix", "value": 2005 }
   ],

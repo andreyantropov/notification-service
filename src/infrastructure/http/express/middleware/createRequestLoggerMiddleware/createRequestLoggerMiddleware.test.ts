@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware.js";
-import { EventType } from "../../../../../shared/enums/EventType.js";
+import { EventType } from "../../../../telemetry/logging/enums/EventType.js";
 
 describe("RequestLoggerMiddleware", () => {
   const mockLogger = {
@@ -14,7 +14,7 @@ describe("RequestLoggerMiddleware", () => {
   };
 
   const middleware = createRequestLoggerMiddleware({
-    loggerAdapter: mockLogger,
+    logger: mockLogger,
   });
 
   beforeEach(() => {

@@ -32,12 +32,12 @@
 
 Чтобы добавить новый канал (например, Telegram, SMS, Slack):
 
-1. Реализуйте интерфейс `NotificationSender`:
+1. Реализуйте интерфейс `NotificationChannel`:
 
    ```ts
-   interface NotificationSender {
-     isSupports(recipient: Recipient): boolean;
-     send(recipient: Recipient, message: string): Promise<void>;
+   interface NotificationChannel {
+     isSupports(contact: Contact): boolean;
+     send(contact: Contact, message: string): Promise<void>;
    }
    ```
 
@@ -46,9 +46,9 @@
 
 > ✅ Пример:
 >
-> - `BitrixSender` — для отправки в Bitrix24.
-> - `SmtpSender` — для email.
-> - `TelegramSender` — может быть добавлен аналогично.
+> - `BitrixChannel` — для отправки в Bitrix24.
+> - `SmtpChannel` — для email.
+> - `TelegramChannel` — может быть добавлен аналогично.
 
 ### 2. Поддержка новых стратегий доставки
 
@@ -70,7 +70,7 @@
 
 ```ts
 const service = createNotificationDeliveryService({
-  senders: [bitrixSender, smtpSender],
+  channels: [bitrixChannel, smtpChannel],
   strategy: customStrategy,
 });
 ```
@@ -127,7 +127,7 @@ const service = createNotificationDeliveryService({
 
 ## Рекомендации
 
-- ✅ При добавлении нового канала — реализуйте `NotificationSender` и протестируйте `isSupports()`.
+- ✅ При добавлении нового канала — реализуйте `NotificationChannel` и протестируйте `isSupports()`.
 - ✅ Новые стратегии должны быть **заменимыми** и **тестируемыми**.
 - ✅ Используйте DI-контейнер или фабрики для управления зависимостями.
 - 🛠 При росте нагрузки — рассмотрите внедрение очередей и worker-ов.

@@ -1,9 +1,7 @@
 import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
-import { DEFAULT_LOGGER } from "../../../../shared/constants/defaults.js";
-import { EventType } from "../../../../shared/enums/EventType.js";
 import { noop } from "../../../../shared/utils/noop/noop.js";
-import { Server } from "../../../ports/Server.js";
+import { Server } from "../../interfaces/Server.js";
 
 const CHECK_ACTIVE_REQUESTS_TIMEOUT = 100;
 
@@ -11,15 +9,16 @@ export const createServer = (
   dependencies: ServerDependencies,
   config: ServerConfig,
 ): Server => {
-  const {
-    app,
-    activeRequestsCounter,
-    loggerAdapter = DEFAULT_LOGGER,
-  } = dependencies;
+  const { app, activeRequestsCounter } = dependencies;
   const {
     port,
     gracefulShutdownTimeout,
+    onStart = noop,
+    onStartWarning = noop,
     onStartError = noop,
+    onRuntimeError = noop,
+    onShutdown = noop,
+    onShutdownWarning = noop,
     onShutdownError = noop,
   } = config;
 
@@ -27,79 +26,74 @@ export const createServer = (
   let isStarting = false;
   let isStopping = false;
 
-  const start = async (): Promise<void> => {
-    if (isStarting) {
-      await loggerAdapter.warning({
-        message: `Сервер уже запускается`,
-        eventType: EventType.Bootstrap,
-      });
-      return;
-    }
+  const start = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (isStarting) {
+        const warning = `Сервер уже запускается`;
+        onStartWarning(warning);
+        resolve();
+        return;
+      }
 
-    if (server) {
-      await loggerAdapter.warning({
-        message: `Сервер уже запущен`,
-        eventType: EventType.Bootstrap,
-      });
-      return;
-    }
+      if (isStopping) {
+        const warning = `Нельзя запустить сервер во время остановки`;
+        onStartWarning(warning);
+        resolve();
+        return;
+      }
 
-    if (isStopping) {
-      await loggerAdapter.warning({
-        message: `Нельзя запустить сервер во время остановки`,
-        eventType: EventType.Bootstrap,
-      });
-      return;
-    }
+      if (server) {
+        const warning = `Сервер уже запущен`;
+        onStartWarning(warning);
+        resolve();
+        return;
+      }
 
-    isStarting = true;
+      isStarting = true;
 
-    try {
-      server = app.listen(port, async () => {
+      server = app.listen(port, () => {
         isStarting = false;
+        onStart();
+        resolve();
       });
-      await loggerAdapter.debug({
-        message: `Сервер успешно запущен`,
-        eventType: EventType.Bootstrap,
+
+      server.on("error", (error) => {
+        if (isStarting) {
+          isStarting = false;
+          const wrappedError = new Error(
+            `Не удалось запустить сервер на порту ${port}`,
+            {
+              cause: error,
+            },
+          );
+
+          onStartError(wrappedError);
+          reject(wrappedError);
+        } else {
+          const wrappedError = new Error(
+            `Критическая ошибка сервера во время работы`,
+            { cause: error },
+          );
+
+          onRuntimeError(wrappedError);
+        }
       });
-    } catch (error) {
-      onStartError(
-        new Error(`Не удалось запустить сервер на порту ${port}`, {
-          cause: error,
-        }),
-      );
-      await loggerAdapter.critical({
-        message: `Не удалось запустить сервер на порту ${port}`,
-        eventType: EventType.Bootstrap,
-        error: error,
-      });
-    } finally {
-      isStarting = false;
-    }
+    });
   };
 
   const shutdown = async (): Promise<void> => {
-    if (isStopping) {
-      await loggerAdapter.warning({
-        message: `Сервер уже останавливается`,
-        eventType: EventType.Shutdown,
-      });
+    if (isStarting) {
+      onShutdownWarning(`Нельзя остановить сервер во время запуска`);
       return;
     }
 
-    if (isStarting) {
-      await loggerAdapter.warning({
-        message: `Нельзя остановить сервер во время запуска`,
-        eventType: EventType.Shutdown,
-      });
+    if (isStopping) {
+      onShutdownWarning(`Сервер уже останавливается`);
       return;
     }
 
     if (!server) {
-      await loggerAdapter.warning({
-        message: `Сервер уже остановлен`,
-        eventType: EventType.Shutdown,
-      });
+      onShutdownWarning(`Сервер уже остановлен`);
       return;
     }
 
@@ -138,23 +132,16 @@ export const createServer = (
       ]);
 
       server = null;
-
-      await loggerAdapter.debug({
-        message: `Сервер успешно остановлен`,
-        eventType: EventType.Shutdown,
-      });
+      onShutdown();
     } catch (error) {
-      onShutdownError(
-        new Error(`Не удалось корректно завершить работу сервера`, {
+      const wrappedError = new Error(
+        `Не удалось корректно завершить работу сервера`,
+        {
           cause: error,
-        }),
+        },
       );
-      await loggerAdapter.critical({
-        message: `Не удалось корректно завершить работу сервера`,
-        eventType: EventType.Shutdown,
-        error: error,
-      });
-      throw error;
+      onShutdownError(wrappedError);
+      throw wrappedError;
     } finally {
       isStopping = false;
     }

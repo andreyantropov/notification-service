@@ -1,14 +1,15 @@
-import { NotificationStrategyLiteral } from "./NotificationStrategyLiteral.js";
-import { Recipient } from "../types/Recipient.js";
+import { Contact } from "./Contact.js";
+import { Subject } from "./Subject.js";
+
+type NotificationStrategyLiteral =
+  | "send_to_first_available"
+  | "send_to_all_available";
 
 export interface Notification {
   id: string;
-  recipients: Recipient[];
+  contacts: Contact[];
   message: string;
-  isUrgent?: boolean;
+  isImmediate?: boolean;
   strategy?: NotificationStrategyLiteral;
-  subject?: {
-    id: string;
-    name?: string;
-  };
+  subject?: Subject;
 }

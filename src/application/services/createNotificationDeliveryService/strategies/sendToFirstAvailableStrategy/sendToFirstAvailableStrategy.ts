@@ -1,15 +1,15 @@
-import { Sender } from "../../../../../domain/ports/Sender.js";
+import { Channel } from "../../../../../domain/ports/Channel.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
-import { SendResult } from "../../interfaces/SendResult.js";
+import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
 import { Warning } from "../../interfaces/Warning.js";
 import { DeliveryStrategy } from "../../types/DeliveryStrategy.js";
 import { validateNotification } from "../utils/validateNotification/validateNotification.js";
 
 export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
   notification: Notification,
-  senders: Sender[],
-): Promise<SendResult> => {
-  const { recipients, message } = notification;
+  channels: Channel[],
+): Promise<DeliveryResult> => {
+  const { contacts, message } = notification;
 
   const warnings: Warning[] = [];
 
@@ -21,37 +21,37 @@ export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
     };
   }
 
-  for (const recipient of recipients) {
-    const supportedSenders = senders.filter((sender) =>
-      sender.isSupports(recipient),
+  for (const contact of contacts) {
+    const supportedChannels = channels.filter((channel) =>
+      channel.isSupports(contact),
     );
 
-    if (!supportedSenders || supportedSenders.length === 0) {
+    if (!supportedChannels || supportedChannels.length === 0) {
       warnings.push({
-        message: `Для адресата ${JSON.stringify(recipient)} не указано ни одного доступного канала`,
-        recipient,
+        message: `Для адресата ${JSON.stringify(contact)} не указано ни одного доступного канала`,
+        contact,
       });
       continue;
     }
 
-    for (const sender of supportedSenders) {
+    for (const channel of supportedChannels) {
       try {
-        await sender.send(recipient, message);
+        await channel.send(contact, message);
         return {
           success: true,
           notification,
           details: {
-            recipient,
-            sender: sender.type,
+            contact,
+            channel: channel.type,
           },
           warnings,
         };
       } catch (error) {
         warnings.push({
-          message: `Ошибка отправки через канал ${sender.type}`,
+          message: `Ошибка отправки через канал ${channel.type}`,
           details: error,
-          recipient,
-          sender: sender.type,
+          contact,
+          channel: channel.type,
         });
       }
     }
