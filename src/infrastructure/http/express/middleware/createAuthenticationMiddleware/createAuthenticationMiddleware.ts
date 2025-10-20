@@ -27,8 +27,8 @@ export const createAuthenticationMiddleware = (
   });
 
   return (req: Request, res: Response, next: NextFunction) => {
-    jwtAuth(req, res, (err: unknown) => {
-      if (err) {
+    jwtAuth(req, res, (error: unknown) => {
+      if (error) {
         res.status(401).json({
           error: "HTTP 401 Unauthorized",
           message: "Запрос не был авторизован",

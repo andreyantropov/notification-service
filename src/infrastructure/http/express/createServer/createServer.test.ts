@@ -7,7 +7,7 @@ import { ServerDependencies } from "./interfaces/ServerDependencies.js";
 import { Counter } from "../../../ports/Counter.js";
 
 type MockServer = {
-  close: (cb?: (err?: Error) => void) => void;
+  close: (cb?: (error?: Error) => void) => void;
   on: (event: string, listener: (...args: unknown[]) => void) => void;
 };
 
