@@ -1,5 +1,5 @@
 import { Express } from "express";
-import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createServer } from "./createServer.js";
 import { ServerConfig } from "./interfaces/ServerConfig.js";
@@ -28,7 +28,9 @@ describe("createServer", () => {
 
     mockApp = {
       listen: vi.fn((port, cb) => {
-        cb?.();
+        if (cb) {
+          setImmediate(cb);
+        }
         return mockServer;
       }),
     } as unknown as Express;
@@ -41,7 +43,6 @@ describe("createServer", () => {
 
     mockConfig = {
       port: 3000,
-      gracefulShutdownTimeout: 1000,
     };
 
     mockDependencies = {
@@ -61,88 +62,7 @@ describe("createServer", () => {
       );
     });
 
-    it("should call onStart when server starts successfully", async () => {
-      const onStart = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onStart,
-      });
-      await server.start();
-
-      expect(onStart).toHaveBeenCalled();
-    });
-
-    it("should call onStartError and reject when server emits an 'error' event during startup", async () => {
-      const onStartError = vi.fn();
-      const error = new Error("EADDRINUSE");
-
-      const mockAppWithError = {
-        listen: vi.fn(() => {
-          return mockServer;
-        }),
-      } as unknown as Express;
-
-      const server = createServer(
-        {
-          ...mockDependencies,
-          app: mockAppWithError,
-        },
-        {
-          ...mockConfig,
-          onStartError,
-        },
-      );
-
-      const startPromise = server.start();
-
-      const errorListener = (mockServer.on as Mock).mock.calls.find(
-        (call) => call[0] === "error",
-      )?.[1];
-      if (errorListener) {
-        errorListener(error);
-      }
-
-      await expect(startPromise).rejects.toThrow(
-        `Не удалось запустить сервер на порту ${mockConfig.port}`,
-      );
-
-      expect(onStartError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: `Не удалось запустить сервер на порту ${mockConfig.port}`,
-          cause: error,
-        }),
-      );
-    });
-
-    it("should call onRuntimeError when server emits an 'error' after successful start", async () => {
-      const onRuntimeError = vi.fn();
-      const error = new Error("Socket error during operation");
-
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onRuntimeError,
-      });
-
-      await server.start();
-
-      const errorListener = (mockServer.on as Mock).mock.calls.find(
-        (call) => call[0] === "error",
-      )?.[1];
-      if (errorListener) {
-        errorListener(error);
-      }
-
-      expect(onRuntimeError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Критическая ошибка сервера во время работы",
-          cause: error,
-        }),
-      );
-    });
-
-    it("should not start if already starting", async () => {
-      const onStartWarning = vi.fn();
-
+    it("should not start multiple times if already starting", async () => {
       let listenCallback: (() => void) | undefined;
       const delayedApp = {
         listen: vi.fn((port: number, cb?: () => void) => {
@@ -153,11 +73,10 @@ describe("createServer", () => {
 
       const server = createServer(
         { ...mockDependencies, app: delayedApp },
-        { ...mockConfig, onStartWarning },
+        mockConfig,
       );
 
       const firstStart = server.start();
-
       await new Promise(setImmediate);
 
       await server.start();
@@ -165,66 +84,64 @@ describe("createServer", () => {
       listenCallback?.();
       await firstStart;
 
-      expect(onStartWarning).toHaveBeenCalledWith("Сервер уже запускается");
       expect(delayedApp.listen).toHaveBeenCalledTimes(1);
     });
 
-    it("should not start if already running", async () => {
-      const onStartWarning = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onStartWarning,
-      });
+    it("should not start multiple times if already running", async () => {
+      const server = createServer(mockDependencies, mockConfig);
 
       await server.start();
       await server.start();
 
-      expect(onStartWarning).toHaveBeenCalledWith("Сервер уже запущен");
       expect(mockApp.listen).toHaveBeenCalledTimes(1);
     });
 
-    it("should not start if stopping", async () => {
-      const onStartWarning = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onStartWarning,
-      });
+    it("should not start if shutdown is in progress", async () => {
+      let counterValue = 1;
+      const counterWithPending: Counter = {
+        get value() {
+          return counterValue;
+        },
+        increase: vi.fn(() => counterValue++),
+        decrease: vi.fn(() => counterValue--),
+      };
+
+      const server = createServer(
+        {
+          ...mockDependencies,
+          activeRequestsCounter: counterWithPending,
+        },
+        mockConfig,
+      );
 
       await server.start();
       const shutdownPromise = server.shutdown();
+
+      await new Promise(setImmediate);
+
       await server.start();
 
-      expect(onStartWarning).toHaveBeenCalledWith(
-        "Нельзя запустить сервер во время остановки",
-      );
+      counterValue = 0;
       await shutdownPromise;
+
+      expect(mockApp.listen).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("shutdown", () => {
     it("should do nothing if server is not running", async () => {
-      const onShutdownWarning = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onShutdownWarning,
-      });
+      const server = createServer(mockDependencies, mockConfig);
       await server.shutdown();
 
-      expect(onShutdownWarning).toHaveBeenCalledWith("Сервер уже остановлен");
       expect(mockServer.close).not.toHaveBeenCalled();
     });
 
     it("should close the server when no active requests", async () => {
-      const onShutdown = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onShutdown,
-      });
+      const server = createServer(mockDependencies, mockConfig);
       await server.start();
       await server.shutdown();
 
       expect(mockServer.close).toHaveBeenCalled();
-      expect(onShutdown).toHaveBeenCalled();
     });
 
     it("should wait for active requests to complete before closing", async () => {
@@ -257,83 +174,18 @@ describe("createServer", () => {
       expect(mockServer.close).toHaveBeenCalled();
     });
 
-    it("should trigger onShutdownError on timeout during graceful shutdown", async () => {
-      const onShutdownError = vi.fn();
-      const slowCounter: Counter = {
-        value: 1,
-        increase: vi.fn(),
-        decrease: vi.fn(),
-      };
-
-      const server = createServer(
-        { app: mockApp, activeRequestsCounter: slowCounter },
-        { ...mockConfig, gracefulShutdownTimeout: 50, onShutdownError },
-      );
-      await server.start();
-
-      try {
-        await server.shutdown();
-      } catch {
-        /* empty */
-      }
-
-      expect(onShutdownError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Не удалось корректно завершить работу сервера",
-          cause: expect.objectContaining({
-            message: "Shutdown timeout after 50ms",
-          }),
-        }),
-      );
-    });
-
-    it("should call onShutdownError when server.close reports an error", async () => {
-      const error = new Error("Close failed");
-      mockServer.close = vi.fn((cb) => cb?.(error));
-
-      const onShutdownError = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onShutdownError,
-      });
-      await server.start();
-
-      try {
-        await server.shutdown();
-      } catch {
-        /* empty */
-      }
-
-      expect(onShutdownError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Не удалось корректно завершить работу сервера",
-          cause: error,
-        }),
-      );
-    });
-
-    it("should not shut down if already stopping", async () => {
-      const onShutdownWarning = vi.fn();
-      const server = createServer(mockDependencies, {
-        ...mockConfig,
-        onShutdownWarning,
-      });
+    it("should not shut down multiple times if already stopping", async () => {
+      const server = createServer(mockDependencies, mockConfig);
       await server.start();
 
       const shutdown1 = server.shutdown();
       await server.shutdown();
 
-      expect(onShutdownWarning).toHaveBeenCalledWith(
-        "Сервер уже останавливается",
-      );
       expect(mockServer.close).toHaveBeenCalledTimes(1);
-
       await shutdown1;
     });
 
-    it("should not shut down if starting", async () => {
-      const onShutdownWarning = vi.fn();
-
+    it("should not shut down if start is in progress", async () => {
       let listenCallback: (() => void) | undefined;
       const delayedApp = {
         listen: vi.fn((port: number, cb?: () => void) => {
@@ -344,21 +196,85 @@ describe("createServer", () => {
 
       const server = createServer(
         { ...mockDependencies, app: delayedApp },
-        { ...mockConfig, onShutdownWarning },
+        mockConfig,
       );
 
       const startPromise = server.start();
-
       await new Promise(setImmediate);
-
       await server.shutdown();
 
-      expect(onShutdownWarning).toHaveBeenCalledWith(
-        "Нельзя остановить сервер во время запуска",
-      );
+      expect(mockServer.close).not.toHaveBeenCalled();
 
       listenCallback?.();
       await startPromise;
     });
+  });
+
+  it("should reject if server emits an 'error' event during startup", async () => {
+    const originalError = new Error("EADDRINUSE");
+
+    const errorMockServer: MockServer = {
+      close: vi.fn(),
+      on: vi.fn(),
+    };
+
+    const errorEmittingApp = {
+      listen: vi.fn(() => {
+        setImmediate(() => {
+          const errorListener = (
+            errorMockServer.on as ReturnType<typeof vi.fn>
+          ).mock.calls
+            .find(([event]) => event === "error")
+            ?.at(1);
+
+          if (typeof errorListener === "function") {
+            errorListener(originalError);
+          }
+        });
+
+        return errorMockServer;
+      }),
+    } as unknown as Express;
+
+    const server = createServer(
+      { ...mockDependencies, app: errorEmittingApp },
+      mockConfig,
+    );
+
+    await expect(server.start()).rejects.toBe(originalError);
+  });
+
+  it("should reject if server.close reports an error", async () => {
+    const closeError = new Error("Close failed");
+
+    const faultyMockServer: MockServer = {
+      close: vi.fn((cb) => {
+        if (cb) setImmediate(() => cb(closeError));
+      }),
+      on: vi.fn(),
+    };
+
+    const appWithFaultyServer = {
+      listen: vi.fn((port: number, callback?: () => void) => {
+        if (callback) setImmediate(callback);
+        return faultyMockServer;
+      }),
+    } as unknown as Express;
+
+    const server = createServer(
+      {
+        app: appWithFaultyServer,
+        activeRequestsCounter: {
+          value: 0,
+          increase: vi.fn(),
+          decrease: vi.fn(),
+        },
+      },
+      mockConfig,
+    );
+
+    await server.start();
+
+    await expect(server.shutdown()).rejects.toBe(closeError);
   });
 });

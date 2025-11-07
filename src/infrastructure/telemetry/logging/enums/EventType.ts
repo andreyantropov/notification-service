@@ -21,4 +21,5 @@ export enum EventType {
   DependencyFailure = "dependency_failure",
   RetryAttempt = "retry_attempt",
   CircuitBreaker = "circuit_breaker",
+  InfrastructureFailure = "infrastructure_failure",
 }

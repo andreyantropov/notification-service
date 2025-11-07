@@ -15,7 +15,6 @@ import {
   createInternalServerErrorMiddleware,
   createServer,
 } from "../../../infrastructure/http/express/index.js";
-import { EventType } from "../../../infrastructure/telemetry/logging/index.js";
 import { getSwagger } from "../../../ui/openapi/swagger.js";
 import { Container } from "../../types/Container.js";
 
@@ -84,50 +83,11 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
       },
     ).singleton(),
 
-    server: asFunction(({ app, activeRequestsCounter, logger }) =>
+    server: asFunction(({ app, activeRequestsCounter }) =>
       createServer(
         { app, activeRequestsCounter },
         {
           port: serverConfig.port,
-          gracefulShutdownTimeout: serverConfig.gracefulShutdownTimeout,
-          onStart: () =>
-            logger.debug({
-              message: `Сервер успешно запущен`,
-              eventType: EventType.Bootstrap,
-            }),
-          onStartWarning: (message: string) =>
-            logger.warning({
-              message,
-              eventType: EventType.Bootstrap,
-            }),
-          onStartError: (error) =>
-            logger.critical({
-              message: `Не удалось запустить сервер на порту ${serverConfig.port}`,
-              eventType: EventType.Bootstrap,
-              error,
-            }),
-          onRuntimeError: (error) =>
-            logger.critical({
-              message: `Критическая ошибка в работе сервера`,
-              eventType: EventType.Shutdown,
-              error,
-            }),
-          onShutdown: () =>
-            logger.debug({
-              message: `Сервер успешно остановлен`,
-              eventType: EventType.Shutdown,
-            }),
-          onShutdownWarning: (message: string) =>
-            logger.warning({
-              message,
-              eventType: EventType.Shutdown,
-            }),
-          onShutdownError: (error) =>
-            logger.critical({
-              message: `Не удалось корректно завершить работу сервера`,
-              eventType: EventType.Shutdown,
-              error,
-            }),
         },
       ),
     ).singleton(),

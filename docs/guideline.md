@@ -181,7 +181,9 @@ export const createSomething = (
   let isProcessing = false;
 
   const doWork = async (input: string) => {
-    if (isProcessing) return;
+    if (isProcessing) {
+      return;
+    }
     isProcessing = true;
 
     try {
