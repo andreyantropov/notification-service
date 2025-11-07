@@ -10,7 +10,6 @@ const serverConfigSchema = z.object({
   port: z.coerce.number().int().positive().default(3000),
   rateLimitTime: z.coerce.number().int().positive().default(60_000),
   rateLimitTries: z.coerce.number().int().positive().default(100),
-  gracefulShutdownTimeout: z.coerce.number().int().positive().default(30_000),
 });
 
 export const serverConfig = serverConfigSchema.parse({
@@ -18,5 +17,4 @@ export const serverConfig = serverConfigSchema.parse({
   port: process.env.PORT,
   rateLimitTime: process.env.RATE_LIMIT_PERIOD,
   rateLimitTries: process.env.RATE_LIMIT_TRIES,
-  gracefulShutdownTimeout: process.env.GRACEFUL_SHUTDOWN_TIMEOUT,
 });

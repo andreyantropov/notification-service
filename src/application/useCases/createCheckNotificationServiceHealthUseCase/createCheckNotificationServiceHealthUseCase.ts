@@ -4,13 +4,33 @@ import { CheckNotificationServiceHealthUseCaseDependencies } from "./interfaces/
 export const createCheckNotificationServiceHealthUseCase = (
   dependencies: CheckNotificationServiceHealthUseCaseDependencies,
 ): CheckNotificationServiceHealthUseCase => {
-  const { notificationDeliveryService } = dependencies;
+  const {
+    notificationDeliveryService,
+    producer,
+    batchConsumer,
+    retryConsumer,
+  } = dependencies;
 
   const checkHealth = async (): Promise<void> => {
-    if (!notificationDeliveryService.checkHealth) {
-      return;
+    const promises: Promise<void>[] = [];
+
+    if (notificationDeliveryService.checkHealth) {
+      promises.push(notificationDeliveryService.checkHealth());
     }
-    await notificationDeliveryService.checkHealth();
+
+    if (producer.checkHealth) {
+      promises.push(producer.checkHealth());
+    }
+
+    if (batchConsumer.checkHealth) {
+      promises.push(batchConsumer.checkHealth());
+    }
+
+    if (retryConsumer.checkHealth) {
+      promises.push(retryConsumer.checkHealth());
+    }
+
+    await Promise.all(promises);
   };
 
   return {

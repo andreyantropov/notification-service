@@ -46,7 +46,9 @@ export const createTracingContextManager = (
   } | null => {
     const span = trace.getSpan(ctx);
     const spanContext = span?.spanContext();
-    if (!spanContext) return null;
+    if (!spanContext) {
+      return null;
+    }
     return {
       traceId: spanContext.traceId,
       spanId: spanContext.spanId,

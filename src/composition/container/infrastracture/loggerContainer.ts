@@ -1,13 +1,13 @@
 import { asFunction, AwilixContainer } from "awilix";
 
 import {
-  influxDbLoggerConfig,
+  influxDBConfig,
   localFileConfig,
   telemetryConfig,
 } from "../../../configs/index.js";
 import { createLogger } from "../../../infrastructure/loggers/createLogger/createLogger.js";
 import {
-  createInfluxDbLogger,
+  createInfluxDBLogger,
   createFileLogger,
   createConsoleLogger,
   createFallbackLogger,
@@ -18,13 +18,13 @@ import { Container } from "../../types/Container.js";
 export const registerLogger = (container: AwilixContainer<Container>) => {
   container.register({
     logger: asFunction(({ tracingContextManager }) => {
-      const influxDbLogger = createInfluxDbLogger(influxDbLoggerConfig);
+      const influxDBLogger = createInfluxDBLogger(influxDBConfig);
       const localFileLogger = createFileLogger(localFileConfig);
       const consoleLogger = createConsoleLogger();
 
       const fallbackLogger = createFallbackLogger(
         {
-          loggers: [influxDbLogger, localFileLogger, consoleLogger],
+          loggers: [influxDBLogger, localFileLogger, consoleLogger],
         },
         {
           onError: (details: Log, error: Error) => console.warn(details, error),

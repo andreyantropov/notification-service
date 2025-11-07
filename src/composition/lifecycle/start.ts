@@ -4,10 +4,16 @@ import { start as startTelemetry } from "../telemetry/telemetry.js";
 import { container } from "../container/container.js";
 
 export const start = async () => {
-  startTelemetry();
+  await startTelemetry();
 
-  const taskManager = container.resolve("taskManager");
-  taskManager.start();
+  const producer = container.resolve("producer");
+  await producer.start();
+
+  const batchConsumer = container.resolve("batchConsumer");
+  await batchConsumer.start();
+
+  const retryConsumer = container.resolve("retryConsumer");
+  await retryConsumer.start();
 
   const server = container.resolve("server");
   await server.start();

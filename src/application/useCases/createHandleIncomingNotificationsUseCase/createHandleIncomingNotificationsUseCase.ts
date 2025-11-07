@@ -6,7 +6,7 @@ import { IncomingNotification } from "../../types/IncomingNotification.js";
 export const createHandleIncomingNotificationsUseCase = (
   dependencies: HandleIncomingNotificationsUseCaseDependencies,
 ): HandleIncomingNotificationsUseCase => {
-  const { buffer, notificationDeliveryService, idGenerator } = dependencies;
+  const { producer, notificationDeliveryService, idGenerator } = dependencies;
 
   const handle = async (
     incomingNotifications: IncomingNotification[],
@@ -16,15 +16,31 @@ export const createHandleIncomingNotificationsUseCase = (
       ...incomingNotification,
     }));
 
-    const urgentNotifications = notifications.filter((n) => n.isImmediate);
-    const unurgentNotifications = notifications.filter((n) => !n.isImmediate);
+    const urgentNotifications: Notification[] = [];
+    const unurgentNotifications: Notification[] = [];
 
-    if (urgentNotifications.length > 0) {
-      await notificationDeliveryService.send(urgentNotifications);
+    for (const n of notifications) {
+      if (n.isImmediate) {
+        urgentNotifications.push(n);
+      } else {
+        unurgentNotifications.push(n);
+      }
     }
 
     if (unurgentNotifications.length > 0) {
-      await buffer.append(unurgentNotifications);
+      await producer.publish(unurgentNotifications);
+    }
+
+    if (urgentNotifications.length > 0) {
+      const deliveryResults =
+        await notificationDeliveryService.send(urgentNotifications);
+      const notificationsToRetry = deliveryResults
+        .filter((result) => !result.success)
+        .map((result) => result.notification);
+
+      if (notificationsToRetry.length > 0) {
+        await producer.publish(notificationsToRetry);
+      }
     }
 
     return notifications;
