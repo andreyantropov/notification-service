@@ -27,11 +27,11 @@ describe("sendToAllAvailableStrategy", () => {
       createMockChannel(
         "email",
         () => true,
-        async () => {},
+        async () => { },
       ),
     ];
 
-    const notification = { id: "1", contacts: [], message };
+    const notification = { id: "1", createdAt: "2025-01-01T00:00:00.000Z", contacts: [], message };
 
     const result = await sendToAllAvailableStrategy(notification, channels);
 
@@ -48,12 +48,13 @@ describe("sendToAllAvailableStrategy", () => {
       createMockChannel(
         "email",
         () => true,
-        async () => {},
+        async () => { },
       ),
     ];
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message: "",
     };
@@ -79,6 +80,7 @@ describe("sendToAllAvailableStrategy", () => {
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message,
     };
@@ -117,6 +119,7 @@ describe("sendToAllAvailableStrategy", () => {
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -147,6 +150,7 @@ describe("sendToAllAvailableStrategy", () => {
     const emptyChannels: Channel[] = [];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message,
     };
@@ -189,6 +193,7 @@ describe("sendToAllAvailableStrategy", () => {
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -237,6 +242,7 @@ describe("sendToAllAvailableStrategy", () => {
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -285,6 +291,7 @@ describe("sendToAllAvailableStrategy", () => {
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -325,6 +332,7 @@ describe("sendToAllAvailableStrategy", () => {
 
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message,
     };

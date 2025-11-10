@@ -29,6 +29,13 @@ const mockDeliveryService = (): NotificationDeliveryService => ({
   checkHealth: vi.fn(),
 });
 
+const expectNotification = (id: string, incoming: IncomingNotification) =>
+  expect.objectContaining({
+    id,
+    createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/),
+    ...incoming,
+  });
+
 describe("createHandleIncomingNotificationsUseCase", () => {
   let producer: Producer<Notification>;
   let deliveryService: NotificationDeliveryService;
@@ -55,7 +62,7 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       expect(deliveryService.send).not.toHaveBeenCalled();
     });
 
-    it("should batcher non-urgent notifications", async () => {
+    it("should batch non-urgent notifications", async () => {
       const notif1 = createIncomingNotification("Non-urgent 1", false);
       const notif2 = createIncomingNotification("Non-urgent 2", false);
 
@@ -70,13 +77,13 @@ describe("createHandleIncomingNotificationsUseCase", () => {
 
       expect(producer.publish).toHaveBeenCalledTimes(1);
       expect(producer.publish).toHaveBeenCalledWith([
-        expect.objectContaining({ id: "test-id", ...notif1 }),
-        expect.objectContaining({ id: "test-id", ...notif2 }),
+        expectNotification("test-id", notif1),
+        expectNotification("test-id", notif2),
       ]);
       expect(deliveryService.send).not.toHaveBeenCalled();
     });
 
-    it("should not batcher urgent notifications when all are delivered successfully", async () => {
+    it("should not batch urgent notifications when all are delivered successfully", async () => {
       const notif1 = createIncomingNotification("Urgent 1", true);
       const notif2 = createIncomingNotification("Urgent 2", true);
 
@@ -86,8 +93,8 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("id2");
 
       const deliveryResults: DeliveryResult[] = [
-        { success: true, notification: { id: "id1", ...notif1 } },
-        { success: true, notification: { id: "id2", ...notif2 } },
+        { success: true, notification: { id: "id1", createdAt: "2025-01-01T00:00:00.000Z", ...notif1 } },
+        { success: true, notification: { id: "id2", createdAt: "2025-01-01T00:00:00.000Z", ...notif2 } },
       ];
 
       deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
@@ -101,13 +108,13 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       await handle([notif1, notif2]);
 
       expect(deliveryService.send).toHaveBeenCalledWith([
-        { id: "id1", ...notif1 },
-        { id: "id2", ...notif2 },
+        expectNotification("id1", notif1),
+        expectNotification("id2", notif2),
       ]);
       expect(producer.publish).not.toHaveBeenCalled();
     });
 
-    it("should batcher failed urgent notifications for retry", async () => {
+    it("should batch failed urgent notifications for retry", async () => {
       const urgent1 = createIncomingNotification("Urgent 1", true);
       const urgent2 = createIncomingNotification("Urgent 2", true);
 
@@ -117,8 +124,8 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("id2");
 
       const deliveryResults: DeliveryResult[] = [
-        { success: true, notification: { id: "id1", ...urgent1 } },
-        { success: false, notification: { id: "id2", ...urgent2 } },
+        { success: true, notification: { id: "id1", createdAt: "2025-01-01T00:00:00.000Z", ...urgent1 } },
+        { success: false, notification: { id: "id2", createdAt: "2025-01-01T00:00:00.000Z", ...urgent2 } },
       ];
 
       deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
@@ -133,7 +140,7 @@ describe("createHandleIncomingNotificationsUseCase", () => {
 
       expect(producer.publish).toHaveBeenCalledTimes(1);
       expect(producer.publish).toHaveBeenCalledWith([
-        { id: "id2", ...urgent2 },
+        expectNotification("id2", urgent2),
       ]);
     });
 
@@ -147,7 +154,7 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("nonurgent-id");
 
       const deliveryResults: DeliveryResult[] = [
-        { success: true, notification: { id: "urgent-id", ...urgent } },
+        { success: true, notification: { id: "urgent-id", createdAt: "2025-01-01T00:00:00.000Z", ...urgent } },
       ];
 
       deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
@@ -162,10 +169,10 @@ describe("createHandleIncomingNotificationsUseCase", () => {
 
       expect(producer.publish).toHaveBeenCalledTimes(1);
       expect(producer.publish).toHaveBeenCalledWith([
-        { id: "nonurgent-id", ...nonUrgent },
+        expectNotification("nonurgent-id", nonUrgent),
       ]);
       expect(deliveryService.send).toHaveBeenCalledWith([
-        { id: "urgent-id", ...urgent },
+        expectNotification("urgent-id", urgent),
       ]);
     });
 
@@ -205,11 +212,11 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const notif = createIncomingNotification("Test", true);
       const idGenerator = vi.fn().mockReturnValue("returned-id");
 
-      deliveryService.send = vi
-        .fn()
-        .mockResolvedValue([
-          { success: true, notification: { id: "returned-id", ...notif } },
-        ]);
+      deliveryService.send = vi.fn().mockImplementation((notifications) =>
+        Promise.resolve(
+          notifications.map((n: Notification) => ({ success: true, notification: n }))
+        )
+      );
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
@@ -219,7 +226,16 @@ describe("createHandleIncomingNotificationsUseCase", () => {
 
       const result = await handle([notif]);
 
-      expect(result).toEqual([{ id: "returned-id", ...notif }]);
+      expect(result).toHaveLength(1);
+      const [generated] = result;
+      expect(generated).toEqual(
+        expect.objectContaining({
+          id: "returned-id",
+          message: "Test",
+          isImmediate: true,
+          createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/),
+        })
+      );
     });
   });
 });

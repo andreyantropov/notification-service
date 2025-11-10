@@ -54,6 +54,7 @@ describe("NotificationController", () => {
         const rawList = Array.isArray(input) ? input : [input];
         const notifications: Notification[] = rawList.map((raw, i) => ({
           id: `generated-id-${i}`,
+          createdAt: "2025-01-01T00:00:00.000Z",
           ...raw,
         }));
         return Promise.resolve(notifications);

@@ -15,6 +15,7 @@ const notification: Notification = {
   contacts: [emailContact],
   message,
   id: "",
+  createdAt: "2025-01-01T00:00:00.000Z",
 };
 
 const createMockChannel = (
@@ -46,7 +47,7 @@ describe("createNotificationDeliveryService", () => {
   it("should use default strategy if not provided", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
     const mockDefaultStrategy = vi.fn().mockResolvedValue({
       success: true,
@@ -67,7 +68,7 @@ describe("createNotificationDeliveryService", () => {
   it("should return success result when strategy succeeds", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const mockStrategy = vi.fn().mockResolvedValue({
@@ -93,7 +94,7 @@ describe("createNotificationDeliveryService", () => {
   it("should return error result when strategy fails", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const strategyError = new Error("Delivery failed");
@@ -118,7 +119,7 @@ describe("createNotificationDeliveryService", () => {
   it("should handle array of notifications", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const notification1 = { ...notification, message: "Msg 1" };
@@ -155,7 +156,7 @@ describe("createNotificationDeliveryService", () => {
   it("should handle single notification (object)", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const mockStrategy = vi
@@ -179,7 +180,7 @@ describe("createNotificationDeliveryService", () => {
   it("should return empty result array when empty input array is provided", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const mockStrategy = vi.fn();
@@ -198,7 +199,7 @@ describe("createNotificationDeliveryService", () => {
   it("should return multiple results when sending multiple notifications", async () => {
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const notif1 = { ...notification, message: "1" };
@@ -238,13 +239,13 @@ describe("createNotificationDeliveryService", () => {
   it("should call checkHealth on all channels that support it", async () => {
     const healthyChannel = createMockChannel(
       () => true,
-      async () => {},
-      async () => {},
+      async () => { },
+      async () => { },
     );
 
     const unhealthyChannel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
       async () => {
         throw new Error("Service down");
       },
@@ -252,7 +253,7 @@ describe("createNotificationDeliveryService", () => {
 
     const noHealthChannel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
 
     const service = createNotificationDeliveryService({
@@ -271,7 +272,7 @@ describe("createNotificationDeliveryService", () => {
   it("should throw if no channel has checkHealth method", async () => {
     const channelWithoutHealth = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
     );
     const service = createNotificationDeliveryService({
       channels: [channelWithoutHealth],
@@ -285,14 +286,14 @@ describe("createNotificationDeliveryService", () => {
   it("should succeed checkHealth if all health checks pass", async () => {
     const channel1 = createMockChannel(
       () => true,
-      async () => {},
-      async () => {},
+      async () => { },
+      async () => { },
     );
 
     const channel2 = createMockChannel(
       () => true,
-      async () => {},
-      async () => {},
+      async () => { },
+      async () => { },
     );
 
     const service = createNotificationDeliveryService({
@@ -311,7 +312,7 @@ describe("createNotificationDeliveryService", () => {
 
     const channel = createMockChannel(
       () => true,
-      async () => {},
+      async () => { },
       failingHealthCheck,
     );
 

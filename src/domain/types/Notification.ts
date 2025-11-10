@@ -7,6 +7,7 @@ type NotificationStrategyLiteral =
 
 export interface Notification {
   id: string;
+  createdAt: string;
   contacts: Contact[];
   message: string;
   isImmediate?: boolean;
