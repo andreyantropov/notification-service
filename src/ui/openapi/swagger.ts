@@ -120,8 +120,8 @@ const getSwagger = (config: { baseUrl: string }) => {
 
         NotificationResponse: {
           type: "object",
-          description: "Уведомление с серверным ID (возвращается в ответе)",
-          required: ["id", "contacts", "message"],
+          description: "Уведомление с серверным ID и временной меткой создания (возвращается в ответе)",
+          required: ["id", "createdAt", "contacts", "message"],
           properties: {
             id: {
               type: "string",
@@ -129,6 +129,12 @@ const getSwagger = (config: { baseUrl: string }) => {
               example: "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
               description:
                 "Уникальный идентификатор уведомления, сгенерированный сервером",
+            },
+            createdAt: {
+              type: "string",
+              format: "date-time",
+              example: "2025-11-09T12:57:25.938Z",
+              description: "Время создания уведомления в формате ISO 8601",
             },
             contacts: {
               type: "array",
@@ -379,6 +385,7 @@ const getSwagger = (config: { baseUrl: string }) => {
                         success: true,
                         notification: {
                           id: "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
+                          createdAt: "2025-11-09T12:57:25.938Z",
                           contacts: [
                             {
                               type: "email",
@@ -434,6 +441,7 @@ const getSwagger = (config: { baseUrl: string }) => {
                         success: true,
                         notification: {
                           id: "c3d4e5f6-g7h8-9012-i3j4-k5l6m7n8o9p0",
+                          createdAt: "2025-11-09T12:57:25.938Z",
                           contacts: [
                             {
                               type: "email",

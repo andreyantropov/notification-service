@@ -11,7 +11,7 @@ class MockEmailChannel implements Channel {
   constructor(
     public isHealthy = true,
     public supports = true,
-  ) {}
+  ) { }
 
   isSupports(contact: Contact): boolean {
     return this.supports && contact.type === "email";
@@ -33,7 +33,7 @@ class MockBitrixChannel implements Channel {
   constructor(
     public isHealthy = true,
     public supports = true,
-  ) {}
+  ) { }
 
   isSupports(contact: Contact): boolean {
     return this.supports && contact.type === "bitrix";
@@ -60,7 +60,7 @@ describe("sendToFirstAvailableStrategy", () => {
 
   it("should return error if no contacts are provided", async () => {
     const channels: Channel[] = [new MockEmailChannel()];
-    const notification = { id: "1", contacts: [], message };
+    const notification = { id: "1", createdAt: "2025-01-01T00:00:00.000Z", contacts: [], message };
 
     const result = await sendToFirstAvailableStrategy(notification, channels);
 
@@ -76,6 +76,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [new MockEmailChannel(true, true)];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [{ type: "email", value: "test@example.com" }],
       message: "",
     };
@@ -96,6 +97,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [emailChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message,
     };
@@ -117,6 +119,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [unsupportedEmailChannel, bitrixChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [bitrixContact],
       message,
     };
@@ -136,6 +139,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message,
     };
@@ -161,6 +165,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [failingEmailChannel, workingBitrixChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -188,6 +193,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [failingEmailChannel, failingBitrixChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -220,6 +226,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [successfulChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact, bitrixContact],
       message,
     };
@@ -241,6 +248,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [bitrixChannel, emailChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [bitrixContact, emailContact],
       message,
     };
@@ -261,6 +269,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const channels: Channel[] = [failingChannel];
     const notification: Notification = {
       id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
       contacts: [emailContact],
       message,
     };

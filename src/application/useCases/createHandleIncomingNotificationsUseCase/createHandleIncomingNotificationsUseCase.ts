@@ -13,6 +13,7 @@ export const createHandleIncomingNotificationsUseCase = (
   ): Promise<Notification[]> => {
     const notifications = incomingNotifications.map((incomingNotification) => ({
       id: idGenerator(),
+      createdAt: new Date().toISOString(),
       ...incomingNotification,
     }));
 
