@@ -27,11 +27,16 @@ describe("sendToAllAvailableStrategy", () => {
       createMockChannel(
         "email",
         () => true,
-        async () => { },
+        async () => {},
       ),
     ];
 
-    const notification = { id: "1", createdAt: "2025-01-01T00:00:00.000Z", contacts: [], message };
+    const notification = {
+      id: "1",
+      createdAt: "2025-01-01T00:00:00.000Z",
+      contacts: [],
+      message,
+    };
 
     const result = await sendToAllAvailableStrategy(notification, channels);
 
@@ -48,7 +53,7 @@ describe("sendToAllAvailableStrategy", () => {
       createMockChannel(
         "email",
         () => true,
-        async () => { },
+        async () => {},
       ),
     ];
 
@@ -165,7 +170,7 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings![0]).toEqual({
       message: `Для адресата ${JSON.stringify(emailContact)} не указано ни одного доступного канала`,
-      contact: emailContact,
+      contact: emailContact.type,
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(
@@ -209,7 +214,7 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.warnings![0]).toEqual({
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
-      contact: bitrixContact,
+      contact: bitrixContact.type,
       channel: "bitrix",
     });
     expect(result.details).toEqual([
@@ -258,13 +263,13 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.warnings![0]).toEqual({
       message: "Ошибка отправки через канал email",
       details: expect.any(Error),
-      contact: emailContact,
+      contact: emailContact.type,
       channel: "email",
     });
     expect(result.warnings![1]).toEqual({
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
-      contact: bitrixContact,
+      contact: bitrixContact.type,
       channel: "bitrix",
     });
     expect(result.error).toBeInstanceOf(Error);
@@ -307,7 +312,7 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.warnings![0]).toEqual({
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
-      contact: bitrixContact,
+      contact: bitrixContact.type,
       channel: "bitrix",
     });
     expect(result.details).toEqual([
@@ -345,7 +350,7 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.warnings![0]).toEqual({
       message: "Ошибка отправки через канал email",
       details: originalError,
-      contact: emailContact,
+      contact: emailContact.type,
       channel: "email",
     });
     expect(result.error).toBeInstanceOf(Error);

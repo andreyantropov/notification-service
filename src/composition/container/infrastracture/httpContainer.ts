@@ -15,6 +15,7 @@ import {
   createInternalServerErrorMiddleware,
   createServer,
 } from "../../../infrastructure/http/express/index.js";
+import { createLoggedServer } from "../../../infrastructure/http/index.js";
 import { getSwagger } from "../../../ui/openapi/swagger.js";
 import { Container } from "../../types/Container.js";
 
@@ -83,13 +84,16 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
       },
     ).singleton(),
 
-    server: asFunction(({ app, activeRequestsCounter }) =>
-      createServer(
+    server: asFunction(({ app, activeRequestsCounter, logger }) => {
+      const server = createServer(
         { app, activeRequestsCounter },
         {
           port: serverConfig.port,
         },
-      ),
-    ).singleton(),
+      );
+      const loggerServer = createLoggedServer({ server, logger });
+
+      return loggerServer;
+    }).singleton(),
   });
 };

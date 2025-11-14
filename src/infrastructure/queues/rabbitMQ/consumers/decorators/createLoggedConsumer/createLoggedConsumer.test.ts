@@ -3,9 +3,9 @@ import { Mock } from "vitest";
 
 import { createLoggedConsumer } from "./createLoggedConsumer.js";
 import { LoggedConsumerDependencies } from "./interfaces/LoggedConsumerDependencies.js";
+import { EventType } from "../../../../../../application/enums/index.js";
 import { Consumer } from "../../../../../../application/ports/Consumer.js";
-import { Logger } from "../../../../../ports/Logger.js";
-import { EventType } from "../../../../../telemetry/logging/enums/EventType.js";
+import { Logger } from "../../../../../../application/ports/Logger.js";
 
 type MockLogger = {
   readonly [K in keyof Logger]: Mock<

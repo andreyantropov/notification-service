@@ -29,7 +29,7 @@ export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
     if (!supportedChannels || supportedChannels.length === 0) {
       warnings.push({
         message: `Для адресата ${JSON.stringify(contact)} не указано ни одного доступного канала`,
-        contact,
+        contact: contact.type,
       });
       continue;
     }
@@ -50,7 +50,7 @@ export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
         warnings.push({
           message: `Ошибка отправки через канал ${channel.type}`,
           details: error,
-          contact,
+          contact: contact.type,
           channel: channel.type,
         });
       }

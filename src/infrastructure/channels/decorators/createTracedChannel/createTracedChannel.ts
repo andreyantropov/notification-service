@@ -5,17 +5,16 @@ import { Contact } from "../../../../domain/types/Contact.js";
 export const createTracedChannel = (
   dependencies: TrasedChannelDependencies,
 ): Channel => {
-  const { channel, tracingContextManager } = dependencies;
+  const { channel, tracer } = dependencies;
 
   const send = async (contact: Contact, message: string): Promise<void> => {
-    return tracingContextManager.startActiveSpan(
+    return tracer.startActiveSpan(
       `${channel.type}.send`,
       {
         kind: "CLIENT",
         attributes: {
           "channel.type": channel.type,
           "contact.type": contact.type,
-          "contact.value": contact.value,
         },
       },
       async () => {
@@ -26,7 +25,7 @@ export const createTracedChannel = (
 
   const checkHealth = channel.checkHealth
     ? async (): Promise<void> => {
-        return tracingContextManager.startActiveSpan(
+        return tracer.startActiveSpan(
           `${channel.type}.checkHealth`,
           {
             kind: "CLIENT",

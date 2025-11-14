@@ -1,15 +1,8 @@
 /* eslint-disable import/order */
-import { EventType } from "../../infrastructure/telemetry/logging/enums/EventType.js";
-import { shutdown as shutdownTelemetry } from "../telemetry/telemetry.js";
+import { shutdown as shutdownSDK } from "../telemetry/sdk/index.js";
 import { container } from "../container/container.js";
 
 export const shutdown = async () => {
-  const logger = container.resolve("logger");
-  logger.debug({
-    message: "Приложение корректно завершило работу",
-    eventType: EventType.Shutdown,
-  });
-
   const server = container.resolve("server");
   await server.shutdown();
 
@@ -22,5 +15,5 @@ export const shutdown = async () => {
   const producer = container.resolve("producer");
   await producer.shutdown();
 
-  await shutdownTelemetry();
+  shutdownSDK();
 };

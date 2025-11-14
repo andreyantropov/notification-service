@@ -1,5 +1,6 @@
 import { asFunction, AwilixContainer } from "awilix";
 
+import { EventType } from "../../../application/enums/index.js";
 import {
   batchConsumerConfig,
   retryConsumerConfig,
@@ -10,7 +11,6 @@ import {
   createLoggedConsumer,
   createRetryConsumer,
 } from "../../../infrastructure/queues/rabbitMQ/consumers/index.js";
-import { EventType } from "../../../infrastructure/telemetry/logging/index.js";
 import { Container } from "../../types/Container.js";
 
 export const registerConsumer = (container: AwilixContainer<Container>) => {

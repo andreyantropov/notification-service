@@ -1,8 +1,6 @@
-import { Contact } from "../../../../domain/types/Contact.js";
-
 export interface Warning {
   message: string;
   details?: unknown;
-  contact?: Contact;
+  contact?: string;
   channel?: string;
 }

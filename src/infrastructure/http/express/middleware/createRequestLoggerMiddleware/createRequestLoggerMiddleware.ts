@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, RequestHandler } from "express";
 
 import { RequestLoggerMiddlewareDependencies } from "./interfaces/RequestLoggerMiddlewareDependencies.js";
-import { EventType } from "../../../../telemetry/logging/enums/EventType.js";
+import { EventType } from "../../../../../application/enums/index.js";
 
 export const createRequestLoggerMiddleware = (
   dependencies: RequestLoggerMiddlewareDependencies,

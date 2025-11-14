@@ -1,6 +1,6 @@
 import { LoggedProducerDependencies } from "./interfaces/LoggedProducerDependencies.js";
+import { EventType } from "../../../../../../application/enums/index.js";
 import { Producer } from "../../../../../../application/ports/Producer.js";
-import { EventType } from "../../../../../telemetry/logging/index.js";
 
 export const createLoggedProducer = <T>(
   dependencies: LoggedProducerDependencies<T>,
@@ -40,7 +40,6 @@ export const createLoggedProducer = <T>(
         duration,
         details: {
           count: items.length,
-          items,
         },
       });
     } catch (error) {
@@ -49,7 +48,7 @@ export const createLoggedProducer = <T>(
         message: "Не удалось опубликовать сообщения",
         eventType: EventType.MessagePublish,
         duration,
-        details: { count: items.length, items },
+        details: { count: items.length },
         error,
       });
       throw error;
@@ -80,26 +79,26 @@ export const createLoggedProducer = <T>(
 
   const checkHealth = producer.checkHealth
     ? async (): Promise<void> => {
-      const startTs = Date.now();
-      try {
-        await producer.checkHealth!();
-        const duration = Date.now() - startTs;
-        logger.debug({
-          message: "Producer готов к работе",
-          eventType: EventType.HealthCheck,
-          duration,
-        });
-      } catch (error) {
-        const duration = Date.now() - startTs;
-        logger.error({
-          message: "Producer недоступен",
-          eventType: EventType.HealthCheck,
-          duration,
-          error,
-        });
-        throw error;
+        const startTs = Date.now();
+        try {
+          await producer.checkHealth!();
+          const duration = Date.now() - startTs;
+          logger.debug({
+            message: "Producer готов к работе",
+            eventType: EventType.HealthCheck,
+            duration,
+          });
+        } catch (error) {
+          const duration = Date.now() - startTs;
+          logger.error({
+            message: "Producer недоступен",
+            eventType: EventType.HealthCheck,
+            duration,
+            error,
+          });
+          throw error;
+        }
       }
-    }
     : undefined;
 
   return { start, publish, shutdown, checkHealth };

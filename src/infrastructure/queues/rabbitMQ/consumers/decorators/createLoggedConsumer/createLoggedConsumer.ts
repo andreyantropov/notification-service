@@ -1,6 +1,6 @@
 import { LoggedConsumerDependencies } from "./interfaces/LoggedConsumerDependencies.js";
+import { EventType } from "../../../../../../application/enums/index.js";
 import { Consumer } from "../../../../../../application/ports/Consumer.js";
-import { EventType } from "../../../../../telemetry/logging/enums/EventType.js";
 
 export const createLoggedConsumer = (
   dependencies: LoggedConsumerDependencies,
