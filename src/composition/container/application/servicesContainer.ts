@@ -1,6 +1,7 @@
 import { asFunction, AwilixContainer } from "awilix";
 
-import { createNotificationDeliveryService } from "../../../application/services/createNotificationDeliveryService/createNotificationDeliveryService.js";
+import { createNotificationDeliveryService } from "../../../application/services/createNotificationDeliveryService/index.js";
+import { createLoggedNotificationDeliveryService } from "../../../application/services/createNotificationDeliveryService/index.js";
 import { bitrixConfig, smtpConfig } from "../../../configs/index.js";
 import {
   createBitrixChannel,
@@ -12,33 +13,35 @@ import { Container } from "../../types/Container.js";
 
 export const registerServices = (container: AwilixContainer<Container>) => {
   container.register({
-    notificationDeliveryService: asFunction(
-      ({ tracingContextManager, logger }) => {
-        const bitrixChannel = createBitrixChannel(bitrixConfig);
-        const smtpChannel = createSmtpChannel(smtpConfig);
+    notificationDeliveryService: asFunction(({ tracer, logger }) => {
+      const bitrixChannel = createBitrixChannel(bitrixConfig);
+      const smtpChannel = createSmtpChannel(smtpConfig);
 
-        const tracedBitrixChannel = createTracedChannel({
-          channel: bitrixChannel,
-          tracingContextManager,
-        });
-        const tracedSmtpChannel = createTracedChannel({
-          channel: smtpChannel,
-          tracingContextManager,
-        });
+      const tracedSmtpChannel = createTracedChannel({
+        channel: smtpChannel,
+        tracer,
+      });
 
-        const loggedTracedBitrixChannel = createLoggedChannel({
-          channel: tracedBitrixChannel,
+      const loggedBitrixChannel = createLoggedChannel({
+        channel: bitrixChannel,
+        logger,
+      });
+      const loggedTracedSmtpChannel = createLoggedChannel({
+        channel: tracedSmtpChannel,
+        logger,
+      });
+
+      const notificationDeliveryService = createNotificationDeliveryService({
+        channels: [loggedBitrixChannel, loggedTracedSmtpChannel],
+      });
+
+      const loggedNotificationDeliveryService =
+        createLoggedNotificationDeliveryService({
+          notificationDeliveryService,
           logger,
         });
-        const loggedTracedSmtpChannel = createLoggedChannel({
-          channel: tracedSmtpChannel,
-          logger,
-        });
 
-        return createNotificationDeliveryService({
-          channels: [loggedTracedBitrixChannel, loggedTracedSmtpChannel],
-        });
-      },
-    ).singleton(),
+      return loggedNotificationDeliveryService;
+    }).singleton(),
   });
 };

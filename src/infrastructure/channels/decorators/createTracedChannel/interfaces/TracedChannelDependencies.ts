@@ -1,7 +1,7 @@
 import { Channel } from "../../../../../domain/ports/Channel.js";
-import { TracingContextManager } from "../../../../ports/TracingContextManager.js";
+import { Tracer } from "../../../../ports/Tracer.js";
 
 export interface TrasedChannelDependencies {
   channel: Channel;
-  tracingContextManager: TracingContextManager;
+  tracer: Tracer;
 }

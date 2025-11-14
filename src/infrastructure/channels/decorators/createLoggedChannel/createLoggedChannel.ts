@@ -1,7 +1,7 @@
 import { LoggedChannelDependencies } from "./interfaces/LoggedChannelDependencies.js";
+import { EventType } from "../../../../application/enums/index.js";
 import { Channel } from "../../../../domain/ports/Channel.js";
 import { Contact } from "../../../../domain/types/Contact.js";
-import { EventType } from "../../../telemetry/logging/enums/EventType.js";
 
 export const createLoggedChannel = (
   dependencies: LoggedChannelDependencies,
@@ -17,7 +17,7 @@ export const createLoggedChannel = (
         message: `Уведомление успешно отправлено по каналу ${channel.type}`,
         eventType: EventType.MessagePublish,
         duration,
-        details: { contact, message },
+        details: { channelType: channel.type, contactType: contact.type },
       });
     } catch (error) {
       const duration = Date.now() - start;
@@ -25,7 +25,7 @@ export const createLoggedChannel = (
         message: `Не удалось отправить уведомление по каналу ${channel.type}`,
         eventType: EventType.MessagePublish,
         duration,
-        details: { contact, message },
+        details: { channelType: channel.type, contactType: contact.type },
         error,
       });
       throw error;
@@ -42,6 +42,7 @@ export const createLoggedChannel = (
             message: `Канал ${channel.type} готов к работе`,
             eventType: EventType.HealthCheck,
             duration,
+            details: { channelType: channel.type },
           });
         } catch (error) {
           const duration = Date.now() - start;
@@ -49,6 +50,7 @@ export const createLoggedChannel = (
             message: `Канал ${channel.type} не отвечает`,
             eventType: EventType.HealthCheck,
             duration,
+            details: { channelType: channel.type },
             error,
           });
           throw error;

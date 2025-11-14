@@ -19,15 +19,14 @@
 
 Для корректной работы сервиса необходимы следующие зависимости:
 
-| Компонент     | Версия / Требование                         |
-| ------------- | ------------------------------------------- |
-| Node.js       | v23.x или выше                              |
-| npm           | v10.x или выше                              |
-| Bitrix24      | Активный портал с настроенным webhook       |
-| SMTP          | Настроенный SMTP-сервер для рассылки email  |
-| RabbitMQ      | v3.10 или выше, доступный по AMQP-протоколу |
-| InfluxDB      | Для централизованного логирования           |
-| OpenTelemetry | Для сбора трейсов                           |
+| Компонент      | Версия / Требование                         |
+| -------------- | ------------------------------------------- |
+| Node.js        | v23.x или выше                              |
+| npm            | v10.x или выше                              |
+| Bitrix24       | Активный портал с настроенным webhook       |
+| SMTP           | Настроенный SMTP-сервер для рассылки email  |
+| RabbitMQ       | v3.10 или выше, доступный по AMQP-протоколу |
+| OTel Collector | Для сбора телеметрии                        |
 
 ---
 
@@ -40,7 +39,8 @@
 - [`nodemailer`](https://nodemailer.com/) — для отправки email через SMTP
 - [`@cloudamqp/amqp-client`](https://www.npmjs.com/package/@cloudamqp/amqp-client) — клиент для работы с RabbitMQ
 - [`awilix`](https://github.com/jeffijoe/awilix) — контейнер зависимостей (DI/IoC) для управления жизненным циклом сервисов
-- [`opentelemetry`](https://opentelemetry.io/) — для сбора трейсов
+- [`winston`](https://opentelemetry.io/) — библиотека для логгирования
+- [`@opentelemetry/*`](https://opentelemetry.io/) — для сбора телеметрии
 
 ### 🛠️ Инструменты разработки:
 
@@ -59,6 +59,8 @@
 ```env
 URL=http://localhost:3000/api
 PORT=3000
+GRACEFUL_SHUTDOWN_TIMEOUT=30000
+PROCESS_BATCHING_INTERVAL=60000
 ```
 
 ### ⚙️ Rate Limiting
@@ -107,22 +109,13 @@ SMTP_PASSWORD=masterkey
 SMTP_EMAIL=isp-noreply@planarchel.ru
 ```
 
-### 📊 Логирование (InfluxDB - опционально)
+### 📊 Телеметрия
 
 ```env
-INFLUXDB_URL=https://influxdb.example.com
-INFLUXDB_TOKEN=your_influxdb_token
-INFLUXDB_ORG=YourOrganization
-INFLUXDB_BUCKET=notifications
-INFLUX_DBMEASUREMENT=notification_service_logs
-```
-
-### 🗂️ Локальное логирование
-
-```env
-LOGS_DIR=logs
+OTEL_TRACES_URL=http://otel-collector:4318/v1/traces
+OTEL_LOGS_URL=http://otel-collector:4318/v1/logs
 SERVICE_NAME=notification-service
-SERVICE_VERSION=1.0.0
+SERVICE_VERSION=1.5.0
 ```
 
 ---

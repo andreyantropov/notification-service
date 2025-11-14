@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedChannel } from "./createLoggedChannel.js";
 import { LoggedChannelDependencies } from "./interfaces/LoggedChannelDependencies.js";
+import { EventType } from "../../../../application/enums/index.js";
+import { Logger } from "../../../../application/ports/Logger.js";
 import { Channel } from "../../../../domain/ports/Channel.js";
 import { Contact } from "../../../../domain/types/Contact.js";
-import { Logger } from "../../../ports/Logger.js";
-import { EventType } from "../../../telemetry/logging/enums/EventType.js";
 
 const mockLoggerFn = (): Logger => ({
   debug: vi.fn() as Mock,
@@ -65,7 +65,7 @@ describe("createLoggedChannel", () => {
         message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { contact, message },
+        details: { channelType: "bitrix", contactType: "email" },
       });
     });
 
@@ -82,7 +82,7 @@ describe("createLoggedChannel", () => {
         message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { contact, message },
+        details: { channelType: "bitrix", contactType: "email" },
         error: testError,
       });
     });
@@ -98,7 +98,7 @@ describe("createLoggedChannel", () => {
         message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { contact: customContact, message: customMessage },
+        details: { channelType: "bitrix", contactType: "bitrix" },
       });
     });
 
@@ -118,7 +118,7 @@ describe("createLoggedChannel", () => {
         message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { contact: customContact, message: customMessage },
+        details: { channelType: "bitrix", contactType: "bitrix" },
         error: testError,
       });
     });
@@ -154,6 +154,7 @@ describe("createLoggedChannel", () => {
         message: "Канал bitrix готов к работе",
         eventType: EventType.HealthCheck,
         duration: expect.any(Number),
+        details: { channelType: "bitrix" },
       });
     });
 
@@ -170,6 +171,7 @@ describe("createLoggedChannel", () => {
         message: "Канал bitrix не отвечает",
         eventType: EventType.HealthCheck,
         duration: expect.any(Number),
+        details: { channelType: "bitrix" },
         error: testError,
       });
     });

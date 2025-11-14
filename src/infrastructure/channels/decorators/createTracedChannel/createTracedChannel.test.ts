@@ -4,11 +4,11 @@ import { createTracedChannel } from "./createTracedChannel.js";
 import { TrasedChannelDependencies } from "./interfaces/TracedChannelDependencies.js";
 import { Channel } from "../../../../domain/ports/Channel.js";
 import { Contact } from "../../../../domain/types/Contact.js";
-import { TracingContextManager } from "../../../ports/TracingContextManager.js";
+import { Tracer } from "../../../ports/Tracer.js";
 
 describe("createTracedChannel", () => {
   let mockChannel: Mocked<Channel>;
-  let mockTracingContextManager: Mocked<TracingContextManager>;
+  let tracer: Mocked<Tracer>;
   let dependencies: TrasedChannelDependencies;
   let contact: Contact;
   const message = "test message";
@@ -21,16 +21,16 @@ describe("createTracedChannel", () => {
       checkHealth: vi.fn(),
     } as unknown as Mocked<Channel>;
 
-    mockTracingContextManager = {
+    tracer = {
       startActiveSpan: vi.fn(),
       active: vi.fn(),
       with: vi.fn(),
       getTraceContext: vi.fn(),
-    } as Mocked<TracingContextManager>;
+    } as Mocked<Tracer>;
 
     dependencies = {
       channel: mockChannel,
-      tracingContextManager: mockTracingContextManager,
+      tracer: tracer,
     };
 
     contact = {
@@ -45,25 +45,22 @@ describe("createTracedChannel", () => {
     it("should wrap channel.send call with tracing span", async () => {
       const tracedChannel = createTracedChannel(dependencies);
 
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return fn({
-            recordException: vi.fn(),
-            setStatus: vi.fn(),
-          });
-        },
-      );
+      tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
+        return fn({
+          recordException: vi.fn(),
+          setStatus: vi.fn(),
+        });
+      });
 
       await tracedChannel.send(contact, message);
 
-      expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
+      expect(tracer.startActiveSpan).toHaveBeenCalledWith(
         "email.send",
         {
           kind: "CLIENT",
           attributes: {
             "channel.type": "email",
             "contact.type": "email",
-            "contact.value": "test@example.com",
           },
         },
         expect.any(Function),
@@ -76,14 +73,12 @@ describe("createTracedChannel", () => {
       const tracedChannel = createTracedChannel(dependencies);
       const expectedResult = undefined;
 
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return fn({
-            recordException: vi.fn(),
-            setStatus: vi.fn(),
-          });
-        },
-      );
+      tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
+        return fn({
+          recordException: vi.fn(),
+          setStatus: vi.fn(),
+        });
+      });
 
       const result = await tracedChannel.send(contact, message);
 
@@ -96,14 +91,12 @@ describe("createTracedChannel", () => {
 
       mockChannel.send.mockRejectedValue(testError);
 
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return await fn({
-            recordException: vi.fn().mockImplementation(() => {}),
-            setStatus: vi.fn().mockImplementation(() => {}),
-          });
-        },
-      );
+      tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
+        return await fn({
+          recordException: vi.fn().mockImplementation(() => {}),
+          setStatus: vi.fn().mockImplementation(() => {}),
+        });
+      });
 
       await expect(tracedChannel.send(contact, message)).rejects.toThrow(
         "Send failed",
@@ -115,14 +108,12 @@ describe("createTracedChannel", () => {
     it("should include contact attributes in span", async () => {
       const tracedChannel = createTracedChannel(dependencies);
 
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return fn({
-            recordException: vi.fn(),
-            setStatus: vi.fn(),
-          });
-        },
-      );
+      tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
+        return fn({
+          recordException: vi.fn(),
+          setStatus: vi.fn(),
+        });
+      });
 
       const customContact: Contact = {
         type: "bitrix",
@@ -131,12 +122,11 @@ describe("createTracedChannel", () => {
 
       await tracedChannel.send(customContact, message);
 
-      expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
+      expect(tracer.startActiveSpan).toHaveBeenCalledWith(
         "email.send",
         expect.objectContaining({
           attributes: expect.objectContaining({
             "contact.type": "bitrix",
-            "contact.value": 99999,
           }),
         }),
         expect.any(Function),
@@ -148,18 +138,16 @@ describe("createTracedChannel", () => {
     it("should wrap channel.checkHealth call with tracing span when checkHealth exists", async () => {
       const tracedChannel = createTracedChannel(dependencies);
 
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return fn({
-            recordException: vi.fn(),
-            setStatus: vi.fn(),
-          });
-        },
-      );
+      tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
+        return fn({
+          recordException: vi.fn(),
+          setStatus: vi.fn(),
+        });
+      });
 
       await tracedChannel.checkHealth!();
 
-      expect(mockTracingContextManager.startActiveSpan).toHaveBeenCalledWith(
+      expect(tracer.startActiveSpan).toHaveBeenCalledWith(
         "email.checkHealth",
         {
           kind: "CLIENT",
@@ -189,14 +177,12 @@ describe("createTracedChannel", () => {
     it("should propagate checkHealth result through tracing span", async () => {
       const tracedChannel = createTracedChannel(dependencies);
 
-      mockTracingContextManager.startActiveSpan.mockImplementation(
-        async (name, options, fn) => {
-          return fn({
-            recordException: vi.fn(),
-            setStatus: vi.fn(),
-          });
-        },
-      );
+      tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
+        return fn({
+          recordException: vi.fn(),
+          setStatus: vi.fn(),
+        });
+      });
 
       const result = await tracedChannel.checkHealth!();
 
@@ -232,7 +218,7 @@ describe("createTracedChannel", () => {
 
       tracedChannel.isSupports(testContact);
 
-      expect(mockTracingContextManager.startActiveSpan).not.toHaveBeenCalled();
+      expect(tracer.startActiveSpan).not.toHaveBeenCalled();
       expect(mockChannel.isSupports).toHaveBeenCalledWith(testContact);
     });
   });

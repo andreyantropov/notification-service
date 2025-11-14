@@ -3,10 +3,9 @@ import { Mock } from "vitest";
 
 import { createLoggedProducer } from "./createLoggedProducer.js";
 import { LoggedProducerDependencies } from "./interfaces/LoggedProducerDependencies.js";
+import { EventType } from "../../../../../../application/enums/index.js";
+import { Logger } from "../../../../../../application/ports/Logger.js";
 import { Producer } from "../../../../../../application/ports/Producer.js";
-import { Logger } from "../../../../../ports/Logger.js";
-import { EventType } from "../../../../../telemetry/logging/enums/EventType.js";
-import { Log } from "../../../../../types/Log.js";
 
 type MockLogger = {
   readonly [K in keyof Logger]: Mock<
@@ -56,7 +55,7 @@ describe("createLoggedProducer", () => {
       expect(mockProducer.publish).toHaveBeenCalledWith(testItems);
     });
 
-    it("should log debug with item count, items, and duration when publish is successful", async () => {
+    it("should log debug with item count and duration when publish is successful", async () => {
       const loggedProducer = createLoggedProducer(dependencies);
       await loggedProducer.publish(testItems);
 
@@ -67,13 +66,12 @@ describe("createLoggedProducer", () => {
           duration: expect.any(Number),
           details: {
             count: 5,
-            items: testItems,
           },
         }),
       );
     });
 
-    it("should log error with duration, count, items, and rethrow when publish fails", async () => {
+    it("should log error with duration, count, and rethrow when publish fails", async () => {
       const loggedProducer = createLoggedProducer(dependencies);
       const testError = new Error("Publish failed");
       mockProducer.publish.mockRejectedValue(testError);
@@ -89,14 +87,10 @@ describe("createLoggedProducer", () => {
           duration: expect.any(Number),
           details: {
             count: 5,
-            items: testItems,
           },
           error: testError,
         }),
       );
-
-      const errorCall = mockLogger.error.mock.calls[0]?.[0];
-      expect(errorCall?.details).toHaveProperty("items", testItems);
     });
 
     it("should handle empty array in publish", async () => {
@@ -113,7 +107,6 @@ describe("createLoggedProducer", () => {
           duration: expect.any(Number),
           details: {
             count: 0,
-            items: emptyItems,
           },
         }),
       );
@@ -128,21 +121,6 @@ describe("createLoggedProducer", () => {
         message: "Original publish error",
         name: "PublishError",
       });
-    });
-
-    it("should include correct items in success log details", async () => {
-      const loggedProducer = createLoggedProducer(dependencies);
-      const customItems = [10, 20, 30];
-
-      await loggedProducer.publish(customItems);
-
-      const debugCalls: [Log][] = mockLogger.debug.mock.calls;
-      const publishLog = debugCalls.find((call) =>
-        call[0].message.includes("сообщений опубликовано в очередь"),
-      );
-
-      expect(publishLog?.[0]).toHaveProperty("details");
-      expect(publishLog?.[0].details).toHaveProperty("items", customItems);
     });
   });
 

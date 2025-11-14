@@ -11,9 +11,7 @@ const RETRY_COUNT = 0;
 type AMQPConnection =
   ReturnType<AMQPClient["connect"]> extends Promise<infer T> ? T : never;
 
-export const createProducer = <T>(
-  config: ProducerConfig,
-): Producer<T> => {
+export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
   const { url, queue } = config;
   const client = new AMQPClient(url);
 
