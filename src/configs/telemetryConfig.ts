@@ -18,6 +18,11 @@ const telemetryConfigSchema = z.object({
     .url(
       "Некорректный URL OTel Collector: otelLogsUrl должен быть валидным URL (например, http://otel-collector:4318/v1/logs)",
     ),
+  otelMetricsUrl: z
+    .string()
+    .url(
+      "Некорректный URL OTel Collector: otelMetricsUrl должен быть валидным URL (например, http://otel-collector:4318/v1/metrics)",
+    ),
 });
 
 export const telemetryConfig: SDKConfig = telemetryConfigSchema.parse({
@@ -30,4 +35,5 @@ export const telemetryConfig: SDKConfig = telemetryConfigSchema.parse({
   port: process.env.PORT,
   otelTracesUrl: process.env.OTEL_TRACES_URL,
   otelLogsUrl: process.env.OTEL_LOGS_URL,
+  otelMetricsUrl: process.env.OTEL_METRICS_URL,
 });

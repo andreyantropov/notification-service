@@ -32,7 +32,9 @@ const mockDeliveryService = (): NotificationDeliveryService => ({
 const expectNotification = (id: string, incoming: IncomingNotification) =>
   expect.objectContaining({
     id,
-    createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/),
+    createdAt: expect.stringMatching(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/,
+    ),
     ...incoming,
   });
 
@@ -93,8 +95,22 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("id2");
 
       const deliveryResults: DeliveryResult[] = [
-        { success: true, notification: { id: "id1", createdAt: "2025-01-01T00:00:00.000Z", ...notif1 } },
-        { success: true, notification: { id: "id2", createdAt: "2025-01-01T00:00:00.000Z", ...notif2 } },
+        {
+          success: true,
+          notification: {
+            id: "id1",
+            createdAt: "2025-01-01T00:00:00.000Z",
+            ...notif1,
+          },
+        },
+        {
+          success: true,
+          notification: {
+            id: "id2",
+            createdAt: "2025-01-01T00:00:00.000Z",
+            ...notif2,
+          },
+        },
       ];
 
       deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
@@ -124,8 +140,22 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("id2");
 
       const deliveryResults: DeliveryResult[] = [
-        { success: true, notification: { id: "id1", createdAt: "2025-01-01T00:00:00.000Z", ...urgent1 } },
-        { success: false, notification: { id: "id2", createdAt: "2025-01-01T00:00:00.000Z", ...urgent2 } },
+        {
+          success: true,
+          notification: {
+            id: "id1",
+            createdAt: "2025-01-01T00:00:00.000Z",
+            ...urgent1,
+          },
+        },
+        {
+          success: false,
+          notification: {
+            id: "id2",
+            createdAt: "2025-01-01T00:00:00.000Z",
+            ...urgent2,
+          },
+        },
       ];
 
       deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
@@ -154,7 +184,14 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("nonurgent-id");
 
       const deliveryResults: DeliveryResult[] = [
-        { success: true, notification: { id: "urgent-id", createdAt: "2025-01-01T00:00:00.000Z", ...urgent } },
+        {
+          success: true,
+          notification: {
+            id: "urgent-id",
+            createdAt: "2025-01-01T00:00:00.000Z",
+            ...urgent,
+          },
+        },
       ];
 
       deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
@@ -212,11 +249,16 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const notif = createIncomingNotification("Test", true);
       const idGenerator = vi.fn().mockReturnValue("returned-id");
 
-      deliveryService.send = vi.fn().mockImplementation((notifications) =>
-        Promise.resolve(
-          notifications.map((n: Notification) => ({ success: true, notification: n }))
-        )
-      );
+      deliveryService.send = vi
+        .fn()
+        .mockImplementation((notifications) =>
+          Promise.resolve(
+            notifications.map((n: Notification) => ({
+              success: true,
+              notification: n,
+            })),
+          ),
+        );
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
@@ -233,8 +275,10 @@ describe("createHandleIncomingNotificationsUseCase", () => {
           id: "returned-id",
           message: "Test",
           isImmediate: true,
-          createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/),
-        })
+          createdAt: expect.stringMatching(
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/,
+          ),
+        }),
       );
     });
   });

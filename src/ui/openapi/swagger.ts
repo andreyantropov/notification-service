@@ -120,7 +120,8 @@ const getSwagger = (config: { baseUrl: string }) => {
 
         NotificationResponse: {
           type: "object",
-          description: "Уведомление с серверным ID и временной меткой создания (возвращается в ответе)",
+          description:
+            "Уведомление с серверным ID и временной меткой создания (возвращается в ответе)",
           required: ["id", "createdAt", "contacts", "message"],
           properties: {
             id: {
