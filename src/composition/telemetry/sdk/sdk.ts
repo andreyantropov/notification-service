@@ -3,6 +3,7 @@ import os from "os";
 import { propagation } from "@opentelemetry/api";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
@@ -11,6 +12,10 @@ import {
   BatchLogRecordProcessor,
   ConsoleLogRecordExporter,
 } from "@opentelemetry/sdk-logs";
+import {
+  ConsoleMetricExporter,
+  PeriodicExportingMetricReader,
+} from "@opentelemetry/sdk-metrics";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
   BatchSpanProcessor,
@@ -37,6 +42,7 @@ const {
   port,
   otelTracesUrl,
   otelLogsUrl,
+  otelMetricsUrl,
 } = telemetryConfig;
 
 propagation.setGlobalPropagator(new W3CTraceContextPropagator());
@@ -61,10 +67,20 @@ const logExporter =
     : new OTLPLogExporter({ url: otelLogsUrl });
 const logRecordProcessor = new BatchLogRecordProcessor(logExporter);
 
+const metricExporter =
+  environment === EnvironmentType.Development
+    ? new ConsoleMetricExporter()
+    : new OTLPMetricExporter({ url: otelMetricsUrl });
+
+const metricReader = new PeriodicExportingMetricReader({
+  exporter: metricExporter,
+});
+
 instance = new NodeSDK({
   resource,
   spanProcessor,
   logRecordProcessor,
+  metricReader,
   instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
 });
 

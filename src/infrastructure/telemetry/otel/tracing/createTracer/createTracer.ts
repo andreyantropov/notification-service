@@ -1,7 +1,7 @@
 import { trace, SpanKind, SpanStatusCode, Exception } from "@opentelemetry/api";
 
 import { TracerConfig } from "./interfaces/TracerConfig.js";
-import { Tracer } from "../../../../ports/Tracer.js";
+import { Tracer } from "../../../../../application/ports/Tracer.js";
 
 export const createTracer = (config: TracerConfig): Tracer => {
   const { serviceName } = config;

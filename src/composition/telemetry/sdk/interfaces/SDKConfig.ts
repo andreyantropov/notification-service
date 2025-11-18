@@ -7,4 +7,5 @@ export interface SDKConfig {
   port: number;
   otelTracesUrl: string;
   otelLogsUrl: string;
+  otelMetricsUrl: string;
 }

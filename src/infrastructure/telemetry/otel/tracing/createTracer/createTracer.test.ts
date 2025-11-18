@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createTracer } from "./createTracer.js";
 import { TracerConfig } from "./interfaces/TracerConfig.js";
-import { Tracer } from "../../../../ports/Tracer.js";
+import { Tracer } from "../../../../../application/ports/Tracer.js";
 
 const mockOtelSpan = {
   recordException: vi.fn(),

@@ -1,7 +1,7 @@
 interface HandlerResult {
-    success: boolean;
+  success: boolean;
 }
 
 export interface BatchConsumerDependencies<T> {
-    handler: (items: T[]) => Promise<HandlerResult[]>;
+  handler: (items: T[]) => Promise<HandlerResult[]>;
 }

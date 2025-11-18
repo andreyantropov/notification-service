@@ -1,5 +1,5 @@
+import { Tracer } from "../../../../../application/ports/Tracer.js";
 import { Channel } from "../../../../../domain/ports/Channel.js";
-import { Tracer } from "../../../../ports/Tracer.js";
 
 export interface TrasedChannelDependencies {
   channel: Channel;

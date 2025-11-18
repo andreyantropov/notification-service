@@ -35,8 +35,8 @@ interface TestAMQPClient {
 
 type Mocked<T> = {
   [K in keyof T]: T[K] extends (...args: infer A) => infer R
-  ? Mock<(...args: A) => R>
-  : T[K];
+    ? Mock<(...args: A) => R>
+    : T[K];
 };
 
 describe("RabbitMQConsumer", () => {
@@ -93,11 +93,10 @@ describe("RabbitMQConsumer", () => {
     };
   };
 
-  const createConsumer = <T>(handler: (items: T[]) => Promise<Array<{ success: boolean }>>) => {
-    return createBatchConsumer(
-      { handler },
-      mockConfig,
-    );
+  const createConsumer = <T>(
+    handler: (items: T[]) => Promise<Array<{ success: boolean }>>,
+  ) => {
+    return createBatchConsumer({ handler }, mockConfig);
   };
 
   describe("start", () => {

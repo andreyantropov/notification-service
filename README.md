@@ -114,6 +114,7 @@ SMTP_EMAIL=isp-noreply@planarchel.ru
 ```env
 OTEL_TRACES_URL=http://otel-collector:4318/v1/traces
 OTEL_LOGS_URL=http://otel-collector:4318/v1/logs
+OTEL_METRICS_URL=http://otel-collector:4318/v1/metrics
 SERVICE_NAME=notification-service
 SERVICE_VERSION=1.5.0
 ```
