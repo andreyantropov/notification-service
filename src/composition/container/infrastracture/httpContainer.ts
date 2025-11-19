@@ -1,5 +1,6 @@
 import { asFunction, AwilixContainer } from "awilix";
 import express from "express";
+import expressAsyncHandler from "express-async-handler";
 import swaggerUi from "swagger-ui-express";
 
 import { authConfig, serverConfig } from "../../../configs/index.js";
@@ -47,6 +48,18 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
           createActiveRequestsCountMiddleware({ activeRequestsCounter });
         app.use(activeRequestsCounterMiddleware);
 
+        const healthcheckController = createHealthcheckController({
+          checkNotificationServiceHealthUseCase,
+        });
+        app.get(
+          "/api/health/live",
+          expressAsyncHandler(healthcheckController.live),
+        );
+        app.get(
+          "/api/health/ready",
+          expressAsyncHandler(healthcheckController.ready),
+        );
+
         const authenticationMiddleware = createAuthenticationMiddleware({
           issuer: authConfig.issuer,
           jwksUri: authConfig.jwksUri,
@@ -57,28 +70,25 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
           serviceClientId: authConfig.serviceClientId,
           requiredRoles: authConfig.requiredRoles,
         });
-
         const notificationController = createNotificationController({
           handleIncomingNotificationsUseCase,
         });
-        const healthcheckController = createHealthcheckController({
-          checkNotificationServiceHealthUseCase,
-        });
-
         app.post(
           "/api/v1/notifications",
           authenticationMiddleware,
           authorizationMiddleware,
-          notificationController.send,
+          expressAsyncHandler(notificationController.send),
         );
-        app.get("/api/health/live", healthcheckController.live);
-        app.get("/api/health/ready", healthcheckController.ready);
 
         const swaggerSpec = getSwagger({ baseUrl: serverConfig.url });
         app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-        app.use(createNotFoundMiddleware());
-        app.use(createInternalServerErrorMiddleware());
+        const notFoundMiddleware = createNotFoundMiddleware();
+        app.use(notFoundMiddleware);
+
+        const internalServerErrorMiddleware =
+          createInternalServerErrorMiddleware();
+        app.use(internalServerErrorMiddleware);
 
         return app;
       },
