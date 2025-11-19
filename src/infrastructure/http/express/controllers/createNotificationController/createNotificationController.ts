@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 
 import { NotificationController } from "./interfaces/NotificationController.js";
 import { NotificationControllerDependencies } from "./interfaces/NotificationControllerDependencies.js";
@@ -115,50 +115,43 @@ export const createNotificationController = (
     };
   };
 
-  const send = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    try {
-      const { valid: accepted, invalid: rejected } =
-        validateNotificationRequest(req.body);
+  const send = async (req: Request, res: Response): Promise<void> => {
+    const { valid: accepted, invalid: rejected } = validateNotificationRequest(
+      req.body,
+    );
 
-      if (accepted.length === 0) {
-        res.status(400).json({
-          error: "HTTP 400 Bad Request",
-          message: "Ни одно уведомление не прошло валидацию",
-          details: rejected,
-        });
-        return;
-      }
+    if (accepted.length === 0) {
+      res.status(400).json({
+        error: "HTTP 400 Bad Request",
+        message: "Ни одно уведомление не прошло валидацию",
+        details: rejected,
+      });
+      return;
+    }
 
-      if (!req.auth) {
-        throw new Error(
-          `Контроллер вызван без предварительной проверки аутентификации.`,
-        );
-      }
+    if (!req.auth) {
+      throw new Error(
+        `Контроллер вызван без предварительной проверки аутентификации.`,
+      );
+    }
 
-      const subject = extractSubjectFromToken(req.auth.payload);
-      const notifications = accepted.map((item) => ({
-        ...item,
-        subject,
-      }));
+    const subject = extractSubjectFromToken(req.auth.payload);
+    const notifications = accepted.map((item) => ({
+      ...item,
+      subject,
+    }));
 
-      const result =
-        await handleIncomingNotificationsUseCase.handle(notifications);
+    const result =
+      await handleIncomingNotificationsUseCase.handle(notifications);
 
-      const receiptBatch = buildReceiptBatch(result, rejected);
+    const receiptBatch = buildReceiptBatch(result, rejected);
 
-      if (rejected.length === 0) {
-        res.status(202).json(receiptBatch);
-        return;
-      } else {
-        res.status(207).json(receiptBatch);
-        return;
-      }
-    } catch (error) {
-      next(error);
+    if (rejected.length === 0) {
+      res.status(202).json(receiptBatch);
+      return;
+    } else {
+      res.status(207).json(receiptBatch);
+      return;
     }
   };
 

@@ -82,7 +82,7 @@ describe("NotificationController", () => {
   it("should return 202 when all notifications are valid", async () => {
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -110,13 +110,12 @@ describe("NotificationController", () => {
         ]),
       }),
     );
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 207 when some notifications fail validation", async () => {
     req.body = [validIncomingNotification, invalidNotification];
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -150,13 +149,12 @@ describe("NotificationController", () => {
         ]),
       }),
     );
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 400 when no notifications are valid", async () => {
     req.body = [invalidNotification, { contacts: ["bad"], message: "" }];
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(
       mockHandleIncomingNotificationsUseCase.handle,
@@ -172,10 +170,9 @@ describe("NotificationController", () => {
         }),
       ]),
     });
-    expect(next).not.toHaveBeenCalled();
   });
 
-  it("should call next with error when use case throws an unexpected error", async () => {
+  it("should throw error when use case throws an unexpected error", async () => {
     req.body = validIncomingNotification;
 
     const testError = new Error("Unexpected error");
@@ -183,30 +180,31 @@ describe("NotificationController", () => {
       testError,
     );
 
-    await controller.send(req as Request, res as Response, next);
+    await expect(
+      controller.send(req as Request, res as Response),
+    ).rejects.toThrow(testError);
 
-    expect(next).toHaveBeenCalledWith(testError);
+    expect(next).not.toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
   });
 
-  it("should call next with error when req.auth is missing", async () => {
+  it("should throw error when req.auth is missing", async () => {
     req.auth = undefined;
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response, next);
-
-    expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message:
-          "Контроллер вызван без предварительной проверки аутентификации.",
-      }),
+    await expect(
+      controller.send(req as Request, res as Response),
+    ).rejects.toThrow(
+      "Контроллер вызван без предварительной проверки аутентификации.",
     );
+
+    expect(next).not.toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
   });
 
-  it("should call next with error when token payload is invalid", async () => {
+  it("should throw error when token payload is invalid", async () => {
     req.auth = {
       payload: {
         preferred_username: "john.doe",
@@ -214,15 +212,11 @@ describe("NotificationController", () => {
     };
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response, next);
+    await expect(
+      controller.send(req as Request, res as Response),
+    ).rejects.toThrow("Не удалось извлечь данные об отправителе запроса");
 
-    expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: expect.stringContaining(
-          "Не удалось извлечь данные об отправителе запроса",
-        ),
-      }),
-    );
+    expect(next).not.toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
   });
@@ -240,7 +234,7 @@ describe("NotificationController", () => {
 
     req.body = [notif1, notif2, notif3];
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -268,13 +262,12 @@ describe("NotificationController", () => {
         ]),
       }),
     );
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should handle single notification object", async () => {
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -287,7 +280,6 @@ describe("NotificationController", () => {
     ]);
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should handle array of notifications", async () => {
@@ -301,7 +293,7 @@ describe("NotificationController", () => {
     };
     req.body = [notif1, notif2];
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -321,17 +313,15 @@ describe("NotificationController", () => {
     ]);
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should return 202 when all notifications are valid (array)", async () => {
     req.body = [validIncomingNotification];
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should use name fallback when preferred_username is missing", async () => {
@@ -343,7 +333,7 @@ describe("NotificationController", () => {
     };
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -354,7 +344,6 @@ describe("NotificationController", () => {
         },
       },
     ]);
-    expect(next).not.toHaveBeenCalled();
   });
 
   it("should handle token with only sub field", async () => {
@@ -365,7 +354,7 @@ describe("NotificationController", () => {
     };
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response, next);
+    await controller.send(req as Request, res as Response);
 
     expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
       {
@@ -376,6 +365,5 @@ describe("NotificationController", () => {
         },
       },
     ]);
-    expect(next).not.toHaveBeenCalled();
   });
 });
