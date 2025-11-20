@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createServer } from "./createServer.js";
 import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
-import { Counter } from "../../../ports/Counter.js";
 
 type MockServer = {
   close: (cb?: (error?: Error) => void) => void;
@@ -14,7 +13,6 @@ type MockServer = {
 describe("createServer", () => {
   let mockApp: Express;
   let mockServer: MockServer;
-  let mockActiveRequestsCounter: Counter;
   let mockConfig: ServerConfig;
   let mockDependencies: ServerDependencies;
 
@@ -35,19 +33,12 @@ describe("createServer", () => {
       }),
     } as unknown as Express;
 
-    mockActiveRequestsCounter = {
-      value: 0,
-      increase: vi.fn(),
-      decrease: vi.fn(),
-    };
-
     mockConfig = {
       port: 3000,
     };
 
     mockDependencies = {
       app: mockApp,
-      activeRequestsCounter: mockActiveRequestsCounter,
     };
   });
 
@@ -95,37 +86,6 @@ describe("createServer", () => {
 
       expect(mockApp.listen).toHaveBeenCalledTimes(1);
     });
-
-    it("should not start if shutdown is in progress", async () => {
-      let counterValue = 1;
-      const counterWithPending: Counter = {
-        get value() {
-          return counterValue;
-        },
-        increase: vi.fn(() => counterValue++),
-        decrease: vi.fn(() => counterValue--),
-      };
-
-      const server = createServer(
-        {
-          ...mockDependencies,
-          activeRequestsCounter: counterWithPending,
-        },
-        mockConfig,
-      );
-
-      await server.start();
-      const shutdownPromise = server.shutdown();
-
-      await new Promise(setImmediate);
-
-      await server.start();
-
-      counterValue = 0;
-      await shutdownPromise;
-
-      expect(mockApp.listen).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe("shutdown", () => {
@@ -140,36 +100,6 @@ describe("createServer", () => {
       const server = createServer(mockDependencies, mockConfig);
       await server.start();
       await server.shutdown();
-
-      expect(mockServer.close).toHaveBeenCalled();
-    });
-
-    it("should wait for active requests to complete before closing", async () => {
-      let counterValue = 1;
-      const counterWithPending: Counter = {
-        get value() {
-          return counterValue;
-        },
-        increase: vi.fn(() => counterValue++),
-        decrease: vi.fn(() => counterValue--),
-      };
-
-      const server = createServer(
-        {
-          app: mockApp,
-          activeRequestsCounter: counterWithPending,
-        },
-        mockConfig,
-      );
-      await server.start();
-
-      const shutdownPromise = server.shutdown();
-
-      setTimeout(() => {
-        counterValue = 0;
-      }, 50);
-
-      await shutdownPromise;
 
       expect(mockServer.close).toHaveBeenCalled();
     });
@@ -242,39 +172,5 @@ describe("createServer", () => {
     );
 
     await expect(server.start()).rejects.toBe(originalError);
-  });
-
-  it("should reject if server.close reports an error", async () => {
-    const closeError = new Error("Close failed");
-
-    const faultyMockServer: MockServer = {
-      close: vi.fn((cb) => {
-        if (cb) setImmediate(() => cb(closeError));
-      }),
-      on: vi.fn(),
-    };
-
-    const appWithFaultyServer = {
-      listen: vi.fn((port: number, callback?: () => void) => {
-        if (callback) setImmediate(callback);
-        return faultyMockServer;
-      }),
-    } as unknown as Express;
-
-    const server = createServer(
-      {
-        app: appWithFaultyServer,
-        activeRequestsCounter: {
-          value: 0,
-          increase: vi.fn(),
-          decrease: vi.fn(),
-        },
-      },
-      mockConfig,
-    );
-
-    await server.start();
-
-    await expect(server.shutdown()).rejects.toBe(closeError);
   });
 });

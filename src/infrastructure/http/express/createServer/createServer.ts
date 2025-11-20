@@ -2,13 +2,11 @@ import { ServerConfig } from "./interfaces/ServerConfig.js";
 import { ServerDependencies } from "./interfaces/ServerDependencies.js";
 import { Server } from "../../interfaces/Server.js";
 
-const CHECK_ACTIVE_REQUESTS_INTERVAL = 100;
-
 export const createServer = (
   dependencies: ServerDependencies,
   config: ServerConfig,
 ): Server => {
-  const { app, activeRequestsCounter } = dependencies;
+  const { app } = dependencies;
   const { port } = config;
 
   let server: ReturnType<typeof app.listen> | null = null;
@@ -42,12 +40,6 @@ export const createServer = (
 
     const serverToClose = server;
     isShuttingDown = true;
-
-    while (activeRequestsCounter.value > 0) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, CHECK_ACTIVE_REQUESTS_INTERVAL),
-      );
-    }
 
     return new Promise<void>((resolve, reject) => {
       serverToClose.close((error) => {

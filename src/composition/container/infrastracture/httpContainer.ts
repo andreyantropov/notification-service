@@ -7,7 +7,6 @@ import { authConfig, serverConfig } from "../../../configs/index.js";
 import {
   createRateLimiterMiddleware,
   createRequestLoggerMiddleware,
-  createActiveRequestsCountMiddleware,
   createAuthenticationMiddleware,
   createAuthorizationMiddleware,
   createNotificationController,
@@ -25,7 +24,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
     app: asFunction(
       ({
         logger,
-        activeRequestsCounter,
         handleIncomingNotificationsUseCase,
         checkNotificationServiceHealthUseCase,
       }) => {
@@ -43,10 +41,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
           logger,
         });
         app.use(requestLoggerMiddleware);
-
-        const activeRequestsCounterMiddleware =
-          createActiveRequestsCountMiddleware({ activeRequestsCounter });
-        app.use(activeRequestsCounterMiddleware);
 
         const healthcheckController = createHealthcheckController({
           checkNotificationServiceHealthUseCase,
@@ -94,9 +88,9 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
       },
     ).singleton(),
 
-    server: asFunction(({ app, activeRequestsCounter, logger }) => {
+    server: asFunction(({ app, logger }) => {
       const server = createServer(
-        { app, activeRequestsCounter },
+        { app },
         {
           port: serverConfig.port,
         },

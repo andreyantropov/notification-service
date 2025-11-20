@@ -1,4 +1,3 @@
-export * from "./createActiveRequestsCountMiddleware.ts/index.js";
 export * from "./createInternalServerErrorMiddleware/index.js";
 export * from "./createNotFoundMiddleware/index.js";
 export * from "./createRateLimitMiddleware/index.js";
