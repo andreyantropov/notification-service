@@ -9,6 +9,7 @@ import {
 } from "../../../../../application/enums/index.js";
 import { Logger } from "../../../../../application/ports/Logger.js";
 import { Log } from "../../../../../application/types/Log.js";
+import { mapKeysToSnakeCase } from "../../../../../shared/utils/toSnakeCase/toSnakeCase.js";
 
 export const createLogger = (): Logger => {
   const logLevels = {
@@ -44,10 +45,10 @@ export const createLogger = (): Logger => {
     const meta = {
       id: v4(),
       trigger: TriggerType.Api,
-      eventType,
+      event_type: eventType,
       duration: duration || 0,
-      ...(details ? details : undefined),
-      ...(error ? serializeError(error) : undefined),
+      ...(details ? mapKeysToSnakeCase(details) : undefined),
+      ...(error ? mapKeysToSnakeCase(serializeError(error)) : undefined),
     };
     return meta;
   };

@@ -2,6 +2,10 @@ import { trace, SpanKind, SpanStatusCode, Exception } from "@opentelemetry/api";
 
 import { TracerConfig } from "./interfaces/TracerConfig.js";
 import { Tracer } from "../../../../../application/ports/Tracer.js";
+import {
+  mapKeysToSnakeCase,
+  toSnakeCase,
+} from "../../../../../shared/utils/toSnakeCase/toSnakeCase.js";
 
 export const createTracer = (config: TracerConfig): Tracer => {
   const { serviceName } = config;
@@ -31,11 +35,14 @@ export const createTracer = (config: TracerConfig): Tracer => {
       setStatus: (status: { code: "OK" | "ERROR"; message?: string }) => void;
     }) => Promise<T>,
   ): Promise<T> => {
+    const transformedName = toSnakeCase(name);
+    const transformedAttributes = mapKeysToSnakeCase(options.attributes);
+
     return tracer.startActiveSpan(
-      name,
+      transformedName,
       {
         kind: options.kind ? kindMap[options.kind] : SpanKind.INTERNAL,
-        attributes: options.attributes,
+        attributes: transformedAttributes,
       },
       async (otelSpan) => {
         const wrapper = {

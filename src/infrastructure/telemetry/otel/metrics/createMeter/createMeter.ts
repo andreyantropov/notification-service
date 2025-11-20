@@ -2,16 +2,29 @@ import { metrics } from "@opentelemetry/api";
 
 import { MeterConfig } from "./interfaces/MeterConfig.js";
 import { Meter } from "../../../../../application/ports/Meter.js";
+import { mapKeysToSnakeCase } from "../../../../../shared/utils/toSnakeCase/toSnakeCase.js";
 
 export const createMeter = (config: MeterConfig): Meter => {
   const { serviceName } = config;
   const meter = metrics.getMeter(serviceName);
 
+  const addWithSnakeCaseAttributes = (
+    counter: typeof processedByResultCounter,
+    value: number,
+    attributes?: Record<string, string | boolean>,
+  ): void => {
+    if (attributes) {
+      counter.add(value, mapKeysToSnakeCase(attributes));
+    } else {
+      counter.add(value);
+    }
+  };
+
   const totalNotificationsCounter = meter.createCounter("notifications_total", {
     description: "Общее количество уведомлений, обработанных сервисом",
   });
   const incrementTotalNotifications = (): void => {
-    totalNotificationsCounter.add(1);
+    addWithSnakeCaseAttributes(totalNotificationsCounter, 1);
   };
 
   const processedByResultCounter = meter.createCounter(
@@ -21,10 +34,11 @@ export const createMeter = (config: MeterConfig): Meter => {
         "Общее количество уведомлений, обработанных сервисом, по результату",
     },
   );
+
   const incrementNotificationsProcessedByResult = (
     result: "success" | "failure",
   ): void => {
-    processedByResultCounter.add(1, { result });
+    addWithSnakeCaseAttributes(processedByResultCounter, 1, { result });
   };
 
   const processedBySubjectCounter = meter.createCounter(
@@ -36,7 +50,7 @@ export const createMeter = (config: MeterConfig): Meter => {
   const incrementNotificationsProcessedBySubject = (
     subjectId: string,
   ): void => {
-    processedBySubjectCounter.add(1, { subjectId });
+    addWithSnakeCaseAttributes(processedBySubjectCounter, 1, { subjectId });
   };
 
   const processedByStrategyCounter = meter.createCounter(
@@ -48,7 +62,7 @@ export const createMeter = (config: MeterConfig): Meter => {
   const incrementNotificationsProcessedByStrategy = (
     strategy: string,
   ): void => {
-    processedByStrategyCounter.add(1, { strategy });
+    addWithSnakeCaseAttributes(processedByStrategyCounter, 1, { strategy });
   };
 
   const processedByPriorityCounter = meter.createCounter(
@@ -59,7 +73,7 @@ export const createMeter = (config: MeterConfig): Meter => {
     },
   );
   const incrementNotificationsByPriority = (isImmediate: boolean): void => {
-    processedByPriorityCounter.add(1, { isImmediate });
+    addWithSnakeCaseAttributes(processedByPriorityCounter, 1, { isImmediate });
   };
 
   const channelLatencyHistogram = meter.createHistogram("channel_latency_ms", {
@@ -69,7 +83,7 @@ export const createMeter = (config: MeterConfig): Meter => {
     latency: number,
     attributes: Record<string, string | boolean>,
   ): void => {
-    channelLatencyHistogram.record(latency, attributes);
+    channelLatencyHistogram.record(latency, mapKeysToSnakeCase(attributes));
   };
 
   const byChannelCounter = meter.createCounter(
@@ -83,7 +97,7 @@ export const createMeter = (config: MeterConfig): Meter => {
     channel: string,
     result: "success" | "failure",
   ): void => {
-    byChannelCounter.add(1, { channel, result });
+    addWithSnakeCaseAttributes(byChannelCounter, 1, { channel, result });
   };
 
   return {

@@ -68,7 +68,7 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        eventType: EventType.InfrastructureFailure,
+        event_type: EventType.InfrastructureFailure,
         duration: 0,
         trigger: TriggerType.Api,
       }),
@@ -93,7 +93,8 @@ describe("createLogger", () => {
         message: "DB connection failed",
         name: "Error",
         stack: expect.stringContaining("Error: DB connection failed"),
-        eventType: EventType.DependencyFailure,
+        event_type: EventType.DependencyFailure,
+        duration: 0,
         trigger: TriggerType.Api,
       }),
     );
@@ -111,7 +112,7 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        eventType: EventType.AuthAttempt,
+        event_type: EventType.AuthAttempt,
         trigger: TriggerType.Api,
       }),
     );
@@ -130,9 +131,9 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        userId: "u-123",
+        user_id: "u-123",
         path: "/api/data",
-        eventType: EventType.Request,
+        event_type: EventType.Request,
         trigger: TriggerType.Api,
       }),
     );
@@ -152,7 +153,7 @@ describe("createLogger", () => {
       expect.objectContaining({
         id: "test-uuid-123",
         duration: 15,
-        eventType: EventType.CacheOperation,
+        event_type: EventType.CacheOperation,
         trigger: TriggerType.Api,
       }),
     );
@@ -170,14 +171,14 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        eventType: EventType.HealthCheck,
+        event_type: EventType.HealthCheck,
         trigger: TriggerType.Api,
         duration: 0,
       }),
     );
 
     const meta = logSpy.mock.calls[0]?.[2] as Record<string, unknown>;
-    expect(meta).not.toHaveProperty("userId");
+    expect(meta).not.toHaveProperty("user_id");
     expect(meta).not.toHaveProperty("path");
   });
 
@@ -194,7 +195,7 @@ describe("createLogger", () => {
     expect(meta).not.toHaveProperty("stack");
   });
 
-  it("should serialize non-Error objects passed as error", () => {
+  it("should serialize non-Error objects passed as error and convert keys to snake_case", () => {
     const rawError = { code: "ERR_404", message: "Not found" };
     const logData: Log = {
       message: "External API error",
@@ -211,7 +212,7 @@ describe("createLogger", () => {
         id: "test-uuid-123",
         code: "ERR_404",
         message: "Not found",
-        eventType: EventType.ExternalCall,
+        event_type: EventType.ExternalCall,
         trigger: TriggerType.Api,
       }),
     );
@@ -230,7 +231,7 @@ describe("createLogger", () => {
       expect.objectContaining({
         id: "test-uuid-123",
         duration: 0,
-        eventType: EventType.CronJob,
+        event_type: EventType.CronJob,
         trigger: TriggerType.Api,
       }),
     );
@@ -250,7 +251,7 @@ describe("createLogger", () => {
       expect.objectContaining({
         id: "test-uuid-123",
         duration: 250,
-        eventType: EventType.Query,
+        event_type: EventType.Query,
         trigger: TriggerType.Api,
       }),
     );
@@ -270,7 +271,7 @@ describe("createLogger", () => {
       expect.objectContaining({
         id: "test-uuid-123",
         duration: 0,
-        eventType: EventType.Query,
+        event_type: EventType.Query,
         trigger: TriggerType.Api,
       }),
     );
@@ -292,7 +293,7 @@ describe("createLogger", () => {
       "Minimal log",
       expect.objectContaining({
         id: "test-uuid-123",
-        eventType: undefined,
+        event_type: undefined,
         duration: 0,
         trigger: TriggerType.Api,
       }),

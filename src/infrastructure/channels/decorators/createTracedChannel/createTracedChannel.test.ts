@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach, Mocked } from "vitest";
 
 import { createTracedChannel } from "./createTracedChannel.js";
 import { TrasedChannelDependencies } from "./interfaces/TracedChannelDependencies.js";
+import { Tracer } from "../../../../application/ports/Tracer.js";
 import { Channel } from "../../../../domain/ports/Channel.js";
 import { Contact } from "../../../../domain/types/Contact.js";
-import { Tracer } from "../../../ports/Tracer.js";
 
 describe("createTracedChannel", () => {
   let mockChannel: Mocked<Channel>;
@@ -59,8 +59,8 @@ describe("createTracedChannel", () => {
         {
           kind: "CLIENT",
           attributes: {
-            "channel.type": "email",
-            "contact.type": "email",
+            channelType: "email",
+            contactType: "email",
           },
         },
         expect.any(Function),
@@ -126,7 +126,7 @@ describe("createTracedChannel", () => {
         "email.send",
         expect.objectContaining({
           attributes: expect.objectContaining({
-            "contact.type": "bitrix",
+            contactType: "bitrix",
           }),
         }),
         expect.any(Function),
