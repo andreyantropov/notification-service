@@ -4,6 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createTracer } from "./createTracer.js";
 import { TracerConfig } from "./interfaces/TracerConfig.js";
 import { Tracer } from "../../../../../application/ports/Tracer.js";
+import {
+  mapKeysToSnakeCase,
+  toSnakeCase,
+} from "../../../../../shared/utils/toSnakeCase/toSnakeCase.js";
 
 const mockOtelSpan = {
   recordException: vi.fn(),
@@ -33,7 +37,17 @@ vi.mock("@opentelemetry/api", () => {
       OK: 1,
       ERROR: 2,
     },
-    Exception: Object,
+  };
+});
+
+vi.mock("../../../../../shared/utils/toSnakeCase/toSnakeCase.js", async () => {
+  const actual = await vi.importActual(
+    "../../../../../shared/utils/toSnakeCase/toSnakeCase.js",
+  );
+  return {
+    ...actual,
+    toSnakeCase: vi.fn((str) => str),
+    mapKeysToSnakeCase: vi.fn((obj) => obj),
   };
 });
 
@@ -44,6 +58,8 @@ describe("createTracer", () => {
   beforeEach(() => {
     config = { serviceName: "test-service" };
     vi.clearAllMocks();
+    vi.mocked(toSnakeCase).mockImplementation((str) => str);
+    vi.mocked(mapKeysToSnakeCase).mockImplementation((obj) => obj);
     tracer = createTracer(config);
   });
 
@@ -56,6 +72,8 @@ describe("createTracer", () => {
       const fn = vi.fn().mockResolvedValue("result");
       await tracer.startActiveSpan("test-span", {}, fn);
 
+      expect(toSnakeCase).toHaveBeenCalledWith("test-span");
+      expect(mapKeysToSnakeCase).toHaveBeenCalledWith(undefined);
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         "test-span",
         { kind: 3, attributes: undefined },
@@ -64,15 +82,33 @@ describe("createTracer", () => {
       expect(fn).toHaveBeenCalledOnce();
     });
 
-    it("should start span with specified kind and attributes", async () => {
+    it("should start span with specified kind and attributes, applying transformations", async () => {
       const fn = vi.fn().mockResolvedValue("result");
-      const attributes = { channel: "sms", status: "sent" };
+      const originalAttributes = {
+        channelType: "email",
+        contactType: "user@example.com",
+      };
+      const transformedAttributes = {
+        channel_type: "email",
+        contact_type: "user@example.com",
+      };
+      const originalName = "sendEmail";
+      const transformedName = "send_email";
 
-      await tracer.startActiveSpan("send", { kind: "CLIENT", attributes }, fn);
+      vi.mocked(toSnakeCase).mockReturnValue(transformedName);
+      vi.mocked(mapKeysToSnakeCase).mockReturnValue(transformedAttributes);
 
+      await tracer.startActiveSpan(
+        originalName,
+        { kind: "CLIENT", attributes: originalAttributes },
+        fn,
+      );
+
+      expect(toSnakeCase).toHaveBeenCalledWith(originalName);
+      expect(mapKeysToSnakeCase).toHaveBeenCalledWith(originalAttributes);
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
-        "send",
-        { kind: 2, attributes },
+        transformedName,
+        { kind: 2, attributes: transformedAttributes },
         expect.any(Function),
       );
     });
@@ -91,6 +127,9 @@ describe("createTracer", () => {
 
       for (let i = 0; i < kinds.length; i++) {
         vi.clearAllMocks();
+        vi.mocked(toSnakeCase).mockImplementation((str) => str);
+        vi.mocked(mapKeysToSnakeCase).mockImplementation((obj) => obj);
+
         await tracer.startActiveSpan("test", { kind: kinds[i] }, fn);
         expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
           "test",

@@ -13,8 +13,8 @@ export const createTracedChannel = (
       {
         kind: "CLIENT",
         attributes: {
-          "channel.type": channel.type,
-          "contact.type": contact.type,
+          channelType: channel.type,
+          contactType: contact.type,
         },
       },
       async () => {
