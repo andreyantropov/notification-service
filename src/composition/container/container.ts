@@ -4,7 +4,6 @@ import { Container } from "../types/Container.js";
 import { registerServices } from "./application/servicesContainer.js";
 import { registerUseCases } from "./application/useCasesContainer.js";
 import { registerConsumer } from "./infrastracture/consumerContainer.js";
-import { registerCounter } from "./infrastracture/counterContainer.js";
 import { registerHttp } from "./infrastracture/httpContainer.js";
 import { registerLogger } from "./infrastracture/loggerContainer.js";
 import { registerMeter } from "./infrastracture/meterContainer.js";
@@ -18,7 +17,6 @@ const container = createContainer<Container>({
 registerTracer(container);
 registerLogger(container);
 registerMeter(container);
-registerCounter(container);
 registerProducer(container);
 registerConsumer(container);
 registerHttp(container);

@@ -10,14 +10,12 @@ import { CheckNotificationServiceHealthUseCase } from "../../application/useCase
 import { HandleIncomingNotificationsUseCase } from "../../application/useCases/createHandleIncomingNotificationsUseCase/index.js";
 import { Notification } from "../../domain/types/Notification.js";
 import { Server } from "../../infrastructure/http/interfaces/Server.js";
-import { Counter } from "../../infrastructure/ports/Counter.js";
 
 export type Container = {
   tracer: Tracer;
   logger: Logger;
   meter: Meter;
   app: Express;
-  activeRequestsCounter: Counter;
   producer: Producer<Notification>;
   batchConsumer: Consumer;
   retryConsumer: Consumer;
