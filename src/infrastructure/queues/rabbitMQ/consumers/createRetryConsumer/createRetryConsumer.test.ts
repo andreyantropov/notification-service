@@ -62,7 +62,7 @@ const createMessage = (
 };
 
 describe("createRetryConsumer", () => {
-  const config = {
+  const baseConfig = {
     url: "amqp://test",
     queue: "retry-router",
   };
@@ -72,9 +72,11 @@ describe("createRetryConsumer", () => {
   let mockChannel: Mocked<MockAMQPChannel>;
   let consumeCallback: ((msg: MockAMQPMessage) => void) | null = null;
   let onError: Mock<(err: unknown) => void>;
+  let handler: Mock<(retryCount: number) => string>;
 
   beforeEach(() => {
     onError = vi.fn();
+    handler = vi.fn();
 
     mockChannel = {
       queueDeclare: vi.fn(),
@@ -104,7 +106,7 @@ describe("createRetryConsumer", () => {
   });
 
   it("should declare the configured queue and start consuming", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await consumer.start();
 
     expect(mockChannel.queueDeclare).toHaveBeenCalledWith("retry-router", {
@@ -115,7 +117,7 @@ describe("createRetryConsumer", () => {
   });
 
   it("should ack and skip processing if message body is null", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await consumer.start();
 
     const msg = createMessage(null);
@@ -125,10 +127,13 @@ describe("createRetryConsumer", () => {
 
     expect(msg.ack).toHaveBeenCalled();
     expect(mockChannel.basicPublish).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
 
-  it("should route message with x-retry-count=0 to retry-1 and increment counter", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
+  it("should call handler with retry count and route to returned queue", async () => {
+    handler.mockReturnValue("target-queue");
+
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await consumer.start();
 
     const msg = createMessage({ id: 1 }, { "x-retry-count": 0 });
@@ -136,6 +141,33 @@ describe("createRetryConsumer", () => {
 
     await consumer.shutdown();
 
+    expect(handler).toHaveBeenCalledWith(1);
+    expect(mockChannel.basicPublish).toHaveBeenCalledWith(
+      "",
+      "target-queue",
+      expect.any(Uint8Array),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "x-retry-count": 1,
+        }),
+        deliveryMode: 2,
+      }),
+    );
+    expect(msg.ack).toHaveBeenCalled();
+  });
+
+  it("should route message with x-retry-count=0 and increment counter", async () => {
+    handler.mockReturnValue("retry-1");
+
+    const consumer = createRetryConsumer({ handler }, baseConfig);
+    await consumer.start();
+
+    const msg = createMessage({ id: 1 }, { "x-retry-count": 0 });
+    consumeCallback!(msg);
+
+    await consumer.shutdown();
+
+    expect(handler).toHaveBeenCalledWith(1);
     expect(mockChannel.basicPublish).toHaveBeenCalledWith(
       "",
       "retry-1",
@@ -150,8 +182,10 @@ describe("createRetryConsumer", () => {
     expect(msg.ack).toHaveBeenCalled();
   });
 
-  it("should route message with x-retry-count=1 to retry-2 and increment counter", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
+  it("should route message with x-retry-count=1 and increment counter", async () => {
+    handler.mockReturnValue("retry-2");
+
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await consumer.start();
 
     const msg = createMessage({ id: 1 }, { "x-retry-count": 1 });
@@ -159,6 +193,7 @@ describe("createRetryConsumer", () => {
 
     await consumer.shutdown();
 
+    expect(handler).toHaveBeenCalledWith(2);
     expect(mockChannel.basicPublish).toHaveBeenCalledWith(
       "",
       "retry-2",
@@ -173,30 +208,7 @@ describe("createRetryConsumer", () => {
     expect(msg.ack).toHaveBeenCalled();
   });
 
-  it("should route message with x-retry-count=2 to dlq with incremented counter", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
-    await consumer.start();
-
-    const msg = createMessage({ id: 1 }, { "x-retry-count": 2 });
-    consumeCallback!(msg);
-
-    await consumer.shutdown();
-
-    expect(mockChannel.basicPublish).toHaveBeenCalledWith(
-      "",
-      "dlq",
-      expect.any(Uint8Array),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "x-retry-count": 3,
-        }),
-        deliveryMode: 2,
-      }),
-    );
-    expect(msg.ack).toHaveBeenCalled();
-  });
-
-  it("should route messages with invalid or missing x-retry-count directly to dlq preserving original headers", async () => {
+  it("should treat messages with invalid or missing x-retry-count as retry-count=0", async () => {
     const testCases = [
       { description: "missing header", headers: {} },
       { description: "null", headers: { "x-retry-count": null } },
@@ -213,19 +225,24 @@ describe("createRetryConsumer", () => {
     ];
 
     for (const { headers } of testCases) {
-      const consumer = createRetryConsumer({ ...config, onError });
+      handler.mockReturnValue("target-queue");
+
+      const consumer = createRetryConsumer({ handler }, baseConfig);
       await consumer.start();
 
       const msg = createMessage({ id: 1 }, headers);
       consumeCallback!(msg);
       await consumer.shutdown();
 
+      expect(handler).toHaveBeenCalledWith(1);
       expect(mockChannel.basicPublish).toHaveBeenCalledWith(
         "",
-        "dlq",
+        "target-queue",
         expect.any(Uint8Array),
         expect.objectContaining({
-          headers: expect.objectContaining(headers),
+          headers: expect.objectContaining({
+            "x-retry-count": 1,
+          }),
           deliveryMode: 2,
         }),
       );
@@ -238,10 +255,17 @@ describe("createRetryConsumer", () => {
     }
   });
 
-  it("should handle errors during routing by sending to dlq with fallback headers", async () => {
-    mockChannel.basicPublish.mockRejectedValueOnce(new Error("Publish failed"));
+  it("should handle errors during routing by nacking message", async () => {
+    handler.mockImplementation(() => {
+      throw new Error("Handler failed");
+    });
 
-    const consumer = createRetryConsumer({ ...config, onError });
+    const configWithOnError = {
+      ...baseConfig,
+      onError,
+    };
+
+    const consumer = createRetryConsumer({ handler }, configWithOnError);
     await consumer.start();
 
     const msg = createMessage({ id: 1 }, { "x-retry-count": 0 });
@@ -250,26 +274,43 @@ describe("createRetryConsumer", () => {
     await consumer.shutdown();
 
     expect(onError).toHaveBeenCalledWith(expect.any(Error));
-    expect(mockChannel.basicPublish).toHaveBeenCalledTimes(2);
-    expect(mockChannel.basicPublish).toHaveBeenLastCalledWith(
-      "",
-      "dlq",
-      expect.any(Uint8Array),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "x-retry-consumer-failure": true,
-          "x-original-retry-count": 0,
-        }),
-        deliveryMode: 2,
-      }),
-    );
-    expect(msg.ack).toHaveBeenCalled();
+    expect(msg.nack).toHaveBeenCalledWith(false, false);
+    expect(mockChannel.basicPublish).not.toHaveBeenCalled();
   });
 
-  it("should nack message if even DLQ fallback fails", async () => {
-    mockChannel.basicPublish.mockRejectedValue(new Error("Publish failed"));
+  it("should handle errors during publish by nacking message", async () => {
+    handler.mockReturnValue("target-queue");
+    mockChannel.basicPublish.mockRejectedValueOnce(new Error("Publish failed"));
 
-    const consumer = createRetryConsumer({ ...config, onError });
+    const configWithOnError = {
+      ...baseConfig,
+      onError,
+    };
+
+    const consumer = createRetryConsumer({ handler }, configWithOnError);
+    await consumer.start();
+
+    const msg = createMessage({ id: 1 }, { "x-retry-count": 0 });
+    consumeCallback!(msg);
+
+    await consumer.shutdown();
+
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    expect(msg.nack).toHaveBeenCalledWith(false, false);
+    expect(mockChannel.basicPublish).toHaveBeenCalledTimes(1);
+  });
+
+  it("should nack message if handler fails", async () => {
+    handler.mockImplementation(() => {
+      throw new Error("Handler failed");
+    });
+
+    const configWithOnError = {
+      ...baseConfig,
+      onError,
+    };
+
+    const consumer = createRetryConsumer({ handler }, configWithOnError);
     await consumer.start();
 
     const msg = createMessage({ id: 1 }, { "x-retry-count": 0 });
@@ -278,28 +319,44 @@ describe("createRetryConsumer", () => {
     await consumer.shutdown();
 
     expect(msg.nack).toHaveBeenCalledWith(false, false);
-    expect(onError).toHaveBeenCalledTimes(2);
+    expect(onError).toHaveBeenCalledTimes(1);
   });
 
   it("should support health check", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await expect(consumer.checkHealth?.()).resolves.toBeUndefined();
   });
 
   it("should reject health check when connection fails", async () => {
     mockClient.connect.mockRejectedValueOnce(new Error("Connection failed"));
-    const consumer = createRetryConsumer({ ...config, onError });
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await expect(consumer.checkHealth?.()).rejects.toThrow(
       "RabbitMQ недоступен",
     );
   });
 
   it("should shut down gracefully", async () => {
-    const consumer = createRetryConsumer({ ...config, onError });
+    const consumer = createRetryConsumer({ handler }, baseConfig);
     await consumer.start();
     await consumer.shutdown();
 
     expect(mockChannel.close).toHaveBeenCalled();
     expect(mockConn.close).toHaveBeenCalled();
+  });
+
+  it("should not process messages during shutdown", async () => {
+    const consumer = createRetryConsumer({ handler }, baseConfig);
+    await consumer.start();
+
+    const shutdownPromise = consumer.shutdown();
+
+    const msg = createMessage({ id: 1 }, { "x-retry-count": 0 });
+    consumeCallback!(msg);
+
+    await shutdownPromise;
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(mockChannel.basicPublish).not.toHaveBeenCalled();
+    expect(msg.ack).not.toHaveBeenCalled();
   });
 });

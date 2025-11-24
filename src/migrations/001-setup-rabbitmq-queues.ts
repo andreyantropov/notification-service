@@ -15,6 +15,9 @@ async function setupRabbitMQ(): Promise<void> {
   const createdQueues: string[] = [];
 
   try {
+    await ch.queueDeclare("retry-router-dlq", { durable: true });
+    createdQueues.push("retry-router-dlq");
+
     await ch.queueDeclare("dlq", { durable: true });
     createdQueues.push("dlq");
 
@@ -38,7 +41,13 @@ async function setupRabbitMQ(): Promise<void> {
     } as Parameters<typeof ch.queueDeclare>[1]);
     createdQueues.push("retry-2");
 
-    await ch.queueDeclare("retry-router", { durable: true });
+    await ch.queueDeclare("retry-router", {
+      durable: true,
+      arguments: {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "retry-router-dlq",
+      },
+    } as Parameters<typeof ch.queueDeclare>[1]);
     createdQueues.push("retry-router");
 
     await ch.queueDeclare("notifications", {

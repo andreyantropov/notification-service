@@ -84,7 +84,6 @@ describe("Producer", () => {
         JSON.stringify({ id: 1 }),
         {
           deliveryMode: 2,
-          headers: { "x-retry-count": 0 },
         },
       );
       expect(mockChannel.basicPublish).toHaveBeenNthCalledWith(
@@ -94,7 +93,6 @@ describe("Producer", () => {
         JSON.stringify({ id: 2 }),
         {
           deliveryMode: 2,
-          headers: { "x-retry-count": 0 },
         },
       );
     });

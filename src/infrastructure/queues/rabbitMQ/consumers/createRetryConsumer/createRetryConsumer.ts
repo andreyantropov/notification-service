@@ -10,13 +10,23 @@ import { RetryConsumerConfig } from "./interfaces/RetryConsumerConfig.js";
 import { Consumer } from "../../../../../application/ports/Consumer.js";
 import { noop } from "../../../../../shared/utils/noop/noop.js";
 import { AMQPConnection } from "../types/AMQPConnection.js";
+import { RetryConsumerDependencies } from "./interfaces/RetryConsumerDependencies.js";
 
-const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 const PERSISTENT = 2;
 const CHECK_SHUTDOWN_TIMEOUT = 100;
+const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
-export const createRetryConsumer = (config: RetryConsumerConfig): Consumer => {
-  const { url, queue, onError = noop } = config;
+export const createRetryConsumer = (
+  dependencies: RetryConsumerDependencies,
+  config: RetryConsumerConfig,
+): Consumer => {
+  const { handler } = dependencies;
+  const {
+    url,
+    queue,
+    nackOptions = { requeue: false, multiple: false },
+    onError = noop,
+  } = config;
 
   const client = new AMQPClient(url);
 
@@ -72,15 +82,14 @@ export const createRetryConsumer = (config: RetryConsumerConfig): Consumer => {
 
       const rawHeaders = msg.properties?.headers ?? {};
       const rawRetryCount = rawHeaders["x-retry-count"];
-      const isRawRetryCountValid = isRetryCountValid(rawRetryCount);
 
-      if (!isRawRetryCountValid) {
-        await publishToQueue("dlq", msg.body, { ...rawHeaders });
-        await msg.ack();
-        return;
+      let currentRetryCount: number;
+      if (isRetryCountValid(rawRetryCount)) {
+        currentRetryCount = Number(rawRetryCount);
+      } else {
+        currentRetryCount = 0;
       }
 
-      const currentRetryCount = Number(rawRetryCount);
       const nextRetryCount = currentRetryCount + 1;
 
       const newHeaders: Record<string, Field> = {
@@ -88,35 +97,13 @@ export const createRetryConsumer = (config: RetryConsumerConfig): Consumer => {
         "x-retry-count": nextRetryCount,
       };
 
-      let targetQueue: string;
-
-      if (nextRetryCount === 1) {
-        targetQueue = "retry-1";
-      } else if (nextRetryCount === 2) {
-        targetQueue = "retry-2";
-      } else {
-        targetQueue = "dlq";
-      }
+      const targetQueue = handler(nextRetryCount);
 
       await publishToQueue(targetQueue, msg.body, newHeaders);
       await msg.ack();
     } catch (error) {
       onError(error);
-      try {
-        const originalRetryCount = msg.properties?.headers?.["x-retry-count"];
-        const fallbackHeaders: Record<string, Field> = {
-          "x-retry-consumer-failure": true,
-          "x-original-retry-count":
-            originalRetryCount != null && !isNaN(Number(originalRetryCount))
-              ? Number(originalRetryCount)
-              : 0,
-        };
-        await publishToQueue("dlq", msg.body, fallbackHeaders);
-        await msg.ack();
-      } catch (dlqError) {
-        onError(dlqError);
-        await msg.nack(false, false);
-      }
+      await msg.nack(nackOptions.requeue, nackOptions.multiple);
     }
   };
 

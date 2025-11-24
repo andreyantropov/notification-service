@@ -4,9 +4,8 @@ import pTimeout from "p-timeout";
 import { ProducerConfig } from "./interfaces/ProducerConfig.js";
 import { Producer } from "../../../../../application/ports/Producer.js";
 
-const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 const PERSISTENT = 2;
-const RETRY_COUNT = 0;
+const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 type AMQPConnection =
   ReturnType<AMQPClient["connect"]> extends Promise<infer T> ? T : never;
@@ -47,9 +46,6 @@ export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
       items.map((item) =>
         ch!.basicPublish("", queue, JSON.stringify(item), {
           deliveryMode: PERSISTENT,
-          headers: {
-            "x-retry-count": RETRY_COUNT,
-          },
         }),
       ),
     );
