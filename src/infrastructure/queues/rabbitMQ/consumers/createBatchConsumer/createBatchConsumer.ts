@@ -7,10 +7,10 @@ import { Consumer } from "../../../../../application/ports/Consumer.js";
 import { noop } from "../../../../../shared/utils/noop/noop.js";
 import { AMQPConnection } from "../types/AMQPConnection.js";
 
-const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 const DEFAULT_MAX_BATCH_SIZE = 1000;
 const DEFAULT_BATCH_FLUSH_TIMEOUT_MS = 60_000;
 const CHECK_SHUTDOWN_TIMEOUT = 100;
+const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createBatchConsumer = <T>(
   dependencies: BatchConsumerDependencies<T>,
@@ -22,6 +22,7 @@ export const createBatchConsumer = <T>(
     queue,
     maxBatchSize = DEFAULT_MAX_BATCH_SIZE,
     batchSizeFlushTimeoutMs = DEFAULT_BATCH_FLUSH_TIMEOUT_MS,
+    nackOptions = { requeue: false, multiple: false },
     onError = noop,
   } = config;
 
@@ -65,7 +66,7 @@ export const createBatchConsumer = <T>(
         if (success) {
           await msg.ack();
         } else {
-          await msg.nack(false, false);
+          await msg.nack(nackOptions.requeue, nackOptions.multiple);
         }
       }
     } catch (error) {
@@ -94,7 +95,7 @@ export const createBatchConsumer = <T>(
         const bodyStr = Buffer.from(msg.body).toString();
         item = JSON.parse(bodyStr) as T;
       } catch {
-        await msg.nack(false, false);
+        await msg.nack(nackOptions.requeue, nackOptions.multiple);
         return;
       }
 

@@ -5,6 +5,7 @@ import {
   createNotificationDeliveryService,
 } from "../../../application/services/createNotificationDeliveryService/index.js";
 import { createLoggedNotificationDeliveryService } from "../../../application/services/createNotificationDeliveryService/index.js";
+import { createNotificationRetryService } from "../../../application/services/createNotificationRetryService/index.js";
 import { bitrixConfig, smtpConfig } from "../../../configs/index.js";
 import {
   createBitrixChannel,
@@ -58,5 +59,8 @@ export const registerServices = (container: AwilixContainer<Container>) => {
 
       return meteredLoggedNotificationDeliveryService;
     }).singleton(),
+    notificationRetryService: asFunction(() =>
+      createNotificationRetryService(),
+    ).singleton(),
   });
 };

@@ -6,22 +6,24 @@ import { Meter } from "../../application/ports/Meter.js";
 import { Producer } from "../../application/ports/Producer.js";
 import { Tracer } from "../../application/ports/Tracer.js";
 import { NotificationDeliveryService } from "../../application/services/createNotificationDeliveryService/index.js";
+import { NotificationRetryService } from "../../application/services/createNotificationRetryService/index.js";
 import { CheckNotificationServiceHealthUseCase } from "../../application/useCases/createCheckNotificationServiceHealthUseCase/index.js";
 import { HandleIncomingNotificationsUseCase } from "../../application/useCases/createHandleIncomingNotificationsUseCase/index.js";
 import { Notification } from "../../domain/types/Notification.js";
 import { Server } from "../../infrastructure/http/interfaces/Server.js";
 
 export type Container = {
+  notificationDeliveryService: NotificationDeliveryService;
+  notificationRetryService: NotificationRetryService;
+  handleIncomingNotificationsUseCase: HandleIncomingNotificationsUseCase;
+  checkNotificationServiceHealthUseCase: CheckNotificationServiceHealthUseCase;
+
   tracer: Tracer;
   logger: Logger;
   meter: Meter;
-  app: Express;
   producer: Producer<Notification>;
   batchConsumer: Consumer;
   retryConsumer: Consumer;
+  app: Express;
   server: Server;
-
-  notificationDeliveryService: NotificationDeliveryService;
-  handleIncomingNotificationsUseCase: HandleIncomingNotificationsUseCase;
-  checkNotificationServiceHealthUseCase: CheckNotificationServiceHealthUseCase;
 };
