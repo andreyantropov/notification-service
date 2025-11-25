@@ -82,5 +82,34 @@ describe("HealthcheckController", () => {
         message: "Сервис недоступен",
       });
     });
+
+    it("should return 503 Service Unavailable if checkHealth times out", async () => {
+      vi.useFakeTimers();
+
+      const mockUseCase: CheckNotificationServiceHealthUseCase = {
+        checkHealth: vi.fn().mockReturnValue(new Promise(() => {})),
+      };
+
+      const controller = createHealthcheckController({
+        checkNotificationServiceHealthUseCase: mockUseCase,
+      });
+
+      const readyPromise = controller.ready(
+        mockReq as Request,
+        mockRes as Response,
+      );
+
+      vi.advanceTimersByTime(5001);
+
+      await readyPromise;
+
+      expect(mockRes.status).toHaveBeenCalledWith(503);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: "HTTP 503 Service Unavailable",
+        message: "Сервис недоступен",
+      });
+
+      vi.useRealTimers();
+    });
   });
 });
