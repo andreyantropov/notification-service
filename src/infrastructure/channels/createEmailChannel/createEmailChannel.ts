@@ -1,13 +1,14 @@
 import nodemailer from "nodemailer";
 import pTimeout from "p-timeout";
 
-import { SmtpChannelConfig } from "./interfaces/SmtpChannelConfig.js";
+import { EmailChannelConfig } from "./interfaces/EmailChannelConfig.js";
 import { Channel } from "../../../domain/ports/Channel.js";
-import { Contact, isEmailContact } from "../../../domain/types/Contact.js";
+import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
+import { Contact, isContactOfType } from "../../../domain/types/Contact.js";
 
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
-export const createSmtpChannel = (config: SmtpChannelConfig): Channel => {
+export const createEmailChannel = (config: EmailChannelConfig): Channel => {
   const { host, port, secure, auth, fromEmail } = config;
 
   const transporter = nodemailer.createTransport({
@@ -20,14 +21,14 @@ export const createSmtpChannel = (config: SmtpChannelConfig): Channel => {
     },
   });
 
-  const type = "email";
+  const type = CHANNEL_TYPES.EMAIL;
 
   const isSupports = (contact: Contact): boolean => {
-    return contact.type === type;
+    return isContactOfType(contact, type);
   };
 
   const send = async (contact: Contact, message: string): Promise<void> => {
-    if (!isEmailContact(contact)) {
+    if (!isContactOfType(contact, type)) {
       throw new Error(
         `Неверный тип получателя: ожидается email, получено "${contact.type}"`,
       );

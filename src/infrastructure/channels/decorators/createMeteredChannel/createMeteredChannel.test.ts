@@ -3,13 +3,17 @@ import { describe, it, expect, vi, type Mock } from "vitest";
 import { createMeteredChannel } from "./createMeteredChannel.js";
 import type { MeteredChannelDependencies } from "./interfaces/MeteredChannelDependencies.js";
 import type { Channel } from "../../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../../domain/types/ChannelTypes.js";
 import type { Contact } from "../../../../domain/types/Contact.js";
 
-const mockContact: Contact = { type: "email", value: "test@example.com" };
+const mockContact: Contact = {
+  type: CHANNEL_TYPES.EMAIL,
+  value: "test@example.com",
+};
 const mockMessage = "Test message";
 
 const createMockChannel = (): Channel => ({
-  type: "email",
+  type: CHANNEL_TYPES.EMAIL,
   isSupports: vi.fn().mockReturnValue(true),
   send: vi.fn().mockResolvedValue(undefined),
   checkHealth: vi.fn().mockResolvedValue(undefined),
@@ -61,12 +65,12 @@ describe("createMeteredChannel", () => {
     const latencyCall = (mockMeter.recordChannelLatency as Mock).mock.calls[0];
     expect(latencyCall[0]).toBeGreaterThanOrEqual(0);
     expect(latencyCall[1]).toEqual({
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
       result: "success",
     });
 
     expect(mockMeter.incrementNotificationsByChannel).toHaveBeenCalledWith(
-      "email",
+      CHANNEL_TYPES.EMAIL,
       "success",
     );
   });
@@ -96,12 +100,12 @@ describe("createMeteredChannel", () => {
     const latencyCall = (mockMeter.recordChannelLatency as Mock).mock.calls[0];
     expect(latencyCall[0]).toBeGreaterThanOrEqual(0);
     expect(latencyCall[1]).toEqual({
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
       result: "failure",
     });
 
     expect(mockMeter.incrementNotificationsByChannel).toHaveBeenCalledWith(
-      "email",
+      CHANNEL_TYPES.EMAIL,
       "failure",
     );
   });
@@ -195,9 +199,12 @@ describe("createMeteredChannel", () => {
   });
 
   it("should work with bitrix channel type", async () => {
-    const mockBitrixContact: Contact = { type: "bitrix", value: 123 };
+    const mockBitrixContact: Contact = {
+      type: CHANNEL_TYPES.BITRIX,
+      value: 123,
+    };
     const mockChannel: Channel = {
-      type: "bitrix",
+      type: CHANNEL_TYPES.BITRIX,
       isSupports: vi.fn().mockReturnValue(true),
       send: vi.fn().mockResolvedValue(undefined),
     };
@@ -217,7 +224,7 @@ describe("createMeteredChannel", () => {
       mockMessage,
     );
     expect(mockMeter.incrementNotificationsByChannel).toHaveBeenCalledWith(
-      "bitrix",
+      CHANNEL_TYPES.BITRIX,
       "success",
     );
   });

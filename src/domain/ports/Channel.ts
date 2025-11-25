@@ -1,9 +1,8 @@
+import { ChannelTypes } from "../types/ChannelTypes.js";
 import { Contact } from "../types/Contact.js";
 
-type ChannelTypeLiteral = "bitrix" | "email";
-
 export interface Channel {
-  type: ChannelTypeLiteral;
+  type: ChannelTypes;
   isSupports: (contact: Contact) => boolean;
   send: (contact: Contact, message: string) => Promise<void>;
   checkHealth?: () => Promise<void>;

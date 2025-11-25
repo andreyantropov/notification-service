@@ -5,11 +5,15 @@ import { DeliveryResult } from "./interfaces/DeliveryResult.js";
 import {
   strategyRegistry,
   DEFAULT_STRATEGY_KEY,
-} from "./strategies/strategyRegistry.js";
+} from "./strategies/strategyRegistry/index.js";
 import { Channel } from "../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
 import { Notification } from "../../../domain/types/Notification.js";
 
-const emailContact = { type: "email", value: "test@example.com" } as const;
+const emailContact = {
+  type: CHANNEL_TYPES.EMAIL,
+  value: "test@example.com",
+} as const;
 const message = "Test message";
 const notification: Notification = {
   contacts: [emailContact],
@@ -24,7 +28,7 @@ const createMockChannel = (
   checkHealthImpl?: () => Promise<void>,
 ): Channel => {
   return {
-    type: "bitrix",
+    type: CHANNEL_TYPES.BITRIX,
     isSupports,
     send: vi.fn(sendImpl),
     checkHealth: checkHealthImpl ? vi.fn(checkHealthImpl) : undefined,

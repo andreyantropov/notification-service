@@ -1,4 +1,4 @@
-export interface SmtpChannelConfig {
+export interface EmailChannelConfig {
   host: string;
   port: number;
   secure: boolean;

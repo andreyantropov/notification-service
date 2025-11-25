@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createTracer } from "./createTracer.js";
 import { TracerConfig } from "./interfaces/TracerConfig.js";
 import { Tracer } from "../../../../../application/ports/Tracer.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
 import {
   mapKeysToSnakeCase,
   toSnakeCase,
@@ -85,11 +86,11 @@ describe("createTracer", () => {
     it("should start span with specified kind and attributes, applying transformations", async () => {
       const fn = vi.fn().mockResolvedValue("result");
       const originalAttributes = {
-        channelType: "email",
+        channelType: CHANNEL_TYPES.EMAIL,
         contactType: "user@example.com",
       };
       const transformedAttributes = {
-        channel_type: "email",
+        channel_type: CHANNEL_TYPES.EMAIL,
         contact_type: "user@example.com",
       };
       const originalName = "sendEmail";

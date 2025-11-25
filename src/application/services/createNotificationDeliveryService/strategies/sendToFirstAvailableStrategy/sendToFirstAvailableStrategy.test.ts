@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 
 import { sendToFirstAvailableStrategy } from "./sendToFirstAvailableStrategy.js";
 import { Channel } from "../../../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../../../domain/types/Contact.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 
 class MockEmailChannel implements Channel {
-  readonly type = "email";
+  readonly type = CHANNEL_TYPES.EMAIL;
 
   constructor(
     public isHealthy = true,
@@ -14,21 +15,21 @@ class MockEmailChannel implements Channel {
   ) {}
 
   isSupports(contact: Contact): boolean {
-    return this.supports && contact.type === "email";
+    return this.supports && contact.type === CHANNEL_TYPES.EMAIL;
   }
 
   async send(contact: Contact): Promise<void> {
     if (!this.isHealthy) {
       throw new Error("Email service is down");
     }
-    if (contact.type !== "email") {
+    if (contact.type !== CHANNEL_TYPES.EMAIL) {
       throw new Error("Invalid contact type for email");
     }
   }
 }
 
 class MockBitrixChannel implements Channel {
-  readonly type = "bitrix";
+  readonly type = CHANNEL_TYPES.BITRIX;
 
   constructor(
     public isHealthy = true,
@@ -36,14 +37,14 @@ class MockBitrixChannel implements Channel {
   ) {}
 
   isSupports(contact: Contact): boolean {
-    return this.supports && contact.type === "bitrix";
+    return this.supports && contact.type === CHANNEL_TYPES.BITRIX;
   }
 
   async send(contact: Contact): Promise<void> {
     if (!this.isHealthy) {
       throw new Error("Bitrix API error");
     }
-    if (contact.type !== "bitrix") {
+    if (contact.type !== CHANNEL_TYPES.BITRIX) {
       throw new Error("Invalid contact type for bitrix");
     }
   }
@@ -53,10 +54,10 @@ describe("sendToFirstAvailableStrategy", () => {
   const message = "Test notification";
 
   const emailContact: Contact = {
-    type: "email",
+    type: CHANNEL_TYPES.EMAIL,
     value: "test@example.com",
   };
-  const bitrixContact: Contact = { type: "bitrix", value: 123 };
+  const bitrixContact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 123 };
 
   it("should return error if no contacts are provided", async () => {
     const channels: Channel[] = [new MockEmailChannel()];
@@ -82,7 +83,7 @@ describe("sendToFirstAvailableStrategy", () => {
     const notification: Notification = {
       id: "1",
       createdAt: "2025-01-01T00:00:00.000Z",
-      contacts: [{ type: "email", value: "test@example.com" }],
+      contacts: [{ type: CHANNEL_TYPES.EMAIL, value: "test@example.com" }],
       message: "",
     };
 
@@ -114,7 +115,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       contact: emailContact,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
   });
 
@@ -136,7 +137,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       contact: bitrixContact,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
   });
 
@@ -184,11 +185,11 @@ describe("sendToFirstAvailableStrategy", () => {
       message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       contact: emailContact.type,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
     expect(result.details).toEqual({
       contact: bitrixContact,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
   });
 
@@ -212,13 +213,13 @@ describe("sendToFirstAvailableStrategy", () => {
       message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       contact: emailContact.type,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
     expect(result.warnings![1]).toEqual({
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       contact: bitrixContact.type,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(
@@ -243,7 +244,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       contact: emailContact,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
   });
 
@@ -265,7 +266,7 @@ describe("sendToFirstAvailableStrategy", () => {
     expect(result.warnings).toEqual([]);
     expect(result.details).toEqual({
       contact: bitrixContact,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
   });
 
@@ -288,7 +289,7 @@ describe("sendToFirstAvailableStrategy", () => {
       message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       contact: emailContact.type,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(

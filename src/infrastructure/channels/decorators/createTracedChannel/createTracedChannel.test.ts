@@ -4,6 +4,7 @@ import { createTracedChannel } from "./createTracedChannel.js";
 import { TrasedChannelDependencies } from "./interfaces/TracedChannelDependencies.js";
 import { Tracer } from "../../../../application/ports/Tracer.js";
 import { Channel } from "../../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../../domain/types/Contact.js";
 
 describe("createTracedChannel", () => {
@@ -15,7 +16,7 @@ describe("createTracedChannel", () => {
 
   beforeEach(() => {
     mockChannel = {
-      type: "email",
+      type: CHANNEL_TYPES.EMAIL,
       isSupports: vi.fn(),
       send: vi.fn(),
       checkHealth: vi.fn(),
@@ -34,7 +35,7 @@ describe("createTracedChannel", () => {
     };
 
     contact = {
-      type: "email",
+      type: CHANNEL_TYPES.EMAIL,
       value: "test@example.com",
     };
 
@@ -59,8 +60,8 @@ describe("createTracedChannel", () => {
         {
           kind: "CLIENT",
           attributes: {
-            channelType: "email",
-            contactType: "email",
+            channelType: CHANNEL_TYPES.EMAIL,
+            contactType: CHANNEL_TYPES.EMAIL,
           },
         },
         expect.any(Function),
@@ -116,7 +117,7 @@ describe("createTracedChannel", () => {
       });
 
       const customContact: Contact = {
-        type: "bitrix",
+        type: CHANNEL_TYPES.BITRIX,
         value: 99999,
       };
 
@@ -126,7 +127,7 @@ describe("createTracedChannel", () => {
         "email.send",
         expect.objectContaining({
           attributes: expect.objectContaining({
-            contactType: "bitrix",
+            contactType: CHANNEL_TYPES.BITRIX,
           }),
         }),
         expect.any(Function),
@@ -196,7 +197,7 @@ describe("createTracedChannel", () => {
       const tracedChannel = createTracedChannel(dependencies);
 
       const testContact: Contact = {
-        type: "bitrix",
+        type: CHANNEL_TYPES.BITRIX,
         value: 99999,
       };
 
@@ -212,7 +213,7 @@ describe("createTracedChannel", () => {
       const tracedChannel = createTracedChannel(dependencies);
 
       const testContact: Contact = {
-        type: "bitrix",
+        type: CHANNEL_TYPES.BITRIX,
         value: 99999,
       };
 
@@ -227,7 +228,7 @@ describe("createTracedChannel", () => {
     it("should return an object with correct methods", () => {
       const tracedChannel = createTracedChannel(dependencies);
 
-      expect(tracedChannel).toHaveProperty("type", "email");
+      expect(tracedChannel).toHaveProperty("type", CHANNEL_TYPES.EMAIL);
       expect(tracedChannel).toHaveProperty("isSupports");
       expect(tracedChannel).toHaveProperty("send");
       expect(tracedChannel).toHaveProperty("checkHealth");
@@ -239,7 +240,7 @@ describe("createTracedChannel", () => {
     it("should maintain the same isSupports implementation as original channel", () => {
       const originalIsSupports = vi.fn();
       const customChannel = {
-        type: "bitrix",
+        type: CHANNEL_TYPES.BITRIX,
         isSupports: originalIsSupports,
         send: vi.fn(),
         checkHealth: vi.fn(),
@@ -252,7 +253,7 @@ describe("createTracedChannel", () => {
 
       const tracedChannel = createTracedChannel(customDependencies);
       const testContact: Contact = {
-        type: "email",
+        type: CHANNEL_TYPES.EMAIL,
         value: "test@test.com",
       };
 

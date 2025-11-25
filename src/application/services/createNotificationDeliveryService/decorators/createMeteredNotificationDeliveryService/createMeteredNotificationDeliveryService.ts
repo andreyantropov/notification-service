@@ -1,9 +1,10 @@
 import { MeteredNotificationDeliveryServiceDependencies } from "./interfaces/MeteredNotificationDeliveryServiceDependencies.js";
+import { DELIVERY_STRATEGIES } from "../../../../../domain/types/DeliveryStrategies.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
 import { NotificationDeliveryService } from "../../interfaces/NotificationDeliveryService.js";
 
-const DEFAULT_STRATEGY = "send_to_first_available";
+const DEFAULT_STRATEGY = DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE;
 const DEFAULT_SUBJECT = "unknown";
 
 export const createMeteredNotificationDeliveryService = (

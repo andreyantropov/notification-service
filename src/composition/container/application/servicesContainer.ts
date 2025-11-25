@@ -6,10 +6,10 @@ import {
 } from "../../../application/services/createNotificationDeliveryService/index.js";
 import { createLoggedNotificationDeliveryService } from "../../../application/services/createNotificationDeliveryService/index.js";
 import { createNotificationRetryService } from "../../../application/services/createNotificationRetryService/index.js";
-import { bitrixConfig, smtpConfig } from "../../../configs/index.js";
+import { bitrixConfig, emailConfig } from "../../../configs/index.js";
 import {
   createBitrixChannel,
-  createSmtpChannel,
+  createEmailChannel,
   createTracedChannel,
   createLoggedChannel,
   createMeteredChannel,
@@ -19,17 +19,17 @@ import { Container } from "../../types/Container.js";
 export const registerServices = (container: AwilixContainer<Container>) => {
   container.register({
     notificationDeliveryService: asFunction(({ tracer, logger, meter }) => {
-      const smtpChannel = createSmtpChannel(smtpConfig);
-      const tracedSmtpChannel = createTracedChannel({
-        channel: smtpChannel,
+      const emailChannel = createEmailChannel(emailConfig);
+      const tracedEmailChannel = createTracedChannel({
+        channel: emailChannel,
         tracer,
       });
-      const loggedTracedSmtpChannel = createLoggedChannel({
-        channel: tracedSmtpChannel,
+      const loggedTracedEmailChannel = createLoggedChannel({
+        channel: tracedEmailChannel,
         logger,
       });
-      const meteredLoggedTracedSmtpChannel = createMeteredChannel({
-        channel: loggedTracedSmtpChannel,
+      const meteredLoggedTracedEmailChannel = createMeteredChannel({
+        channel: loggedTracedEmailChannel,
         meter,
       });
 
@@ -44,7 +44,7 @@ export const registerServices = (container: AwilixContainer<Container>) => {
       });
 
       const notificationDeliveryService = createNotificationDeliveryService({
-        channels: [meteredLoggedBitrixChannel, meteredLoggedTracedSmtpChannel],
+        channels: [meteredLoggedBitrixChannel, meteredLoggedTracedEmailChannel],
       });
       const loggedNotificationDeliveryService =
         createLoggedNotificationDeliveryService({

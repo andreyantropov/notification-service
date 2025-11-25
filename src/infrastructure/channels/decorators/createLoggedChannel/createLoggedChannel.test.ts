@@ -5,6 +5,10 @@ import { LoggedChannelDependencies } from "./interfaces/LoggedChannelDependencie
 import { EventType } from "../../../../application/enums/index.js";
 import { Logger } from "../../../../application/ports/Logger.js";
 import { Channel } from "../../../../domain/ports/Channel.js";
+import {
+  CHANNEL_TYPES,
+  ChannelTypes,
+} from "../../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../../domain/types/Contact.js";
 
 const mockLoggerFn = (): Logger => ({
@@ -17,7 +21,7 @@ const mockLoggerFn = (): Logger => ({
 
 describe("createLoggedChannel", () => {
   let mockChannel: {
-    type: "bitrix";
+    type: ChannelTypes;
     isSupports: Mock;
     send: Mock;
     checkHealth?: Mock;
@@ -30,7 +34,7 @@ describe("createLoggedChannel", () => {
 
   beforeEach(() => {
     mockChannel = {
-      type: "bitrix",
+      type: CHANNEL_TYPES.BITRIX,
       isSupports: vi.fn(),
       send: vi.fn(),
       checkHealth: vi.fn(),
@@ -43,7 +47,7 @@ describe("createLoggedChannel", () => {
     };
 
     contact = {
-      type: "email",
+      type: CHANNEL_TYPES.EMAIL,
       value: "test@example.com",
     };
 
@@ -65,7 +69,10 @@ describe("createLoggedChannel", () => {
         message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { channelType: "bitrix", contactType: "email" },
+        details: {
+          channelType: CHANNEL_TYPES.BITRIX,
+          contactType: CHANNEL_TYPES.EMAIL,
+        },
       });
     });
 
@@ -82,14 +89,20 @@ describe("createLoggedChannel", () => {
         message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { channelType: "bitrix", contactType: "email" },
+        details: {
+          channelType: CHANNEL_TYPES.BITRIX,
+          contactType: CHANNEL_TYPES.EMAIL,
+        },
         error: testError,
       });
     });
 
     it("should include contact and message details in success log with duration", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
-      const customContact: Contact = { type: "bitrix", value: 99999 };
+      const customContact: Contact = {
+        type: CHANNEL_TYPES.BITRIX,
+        value: 99999,
+      };
       const customMessage = "Custom test message";
 
       await loggedChannel.send(customContact, customMessage);
@@ -98,14 +111,20 @@ describe("createLoggedChannel", () => {
         message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { channelType: "bitrix", contactType: "bitrix" },
+        details: {
+          channelType: CHANNEL_TYPES.BITRIX,
+          contactType: CHANNEL_TYPES.BITRIX,
+        },
       });
     });
 
     it("should include contact and message details in error log with duration", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       const testError = new Error("Send failed");
-      const customContact: Contact = { type: "bitrix", value: 99999 };
+      const customContact: Contact = {
+        type: CHANNEL_TYPES.BITRIX,
+        value: 99999,
+      };
       const customMessage = "Custom test message";
 
       mockChannel.send.mockRejectedValue(testError);
@@ -118,7 +137,10 @@ describe("createLoggedChannel", () => {
         message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
         duration: expect.any(Number),
-        details: { channelType: "bitrix", contactType: "bitrix" },
+        details: {
+          channelType: CHANNEL_TYPES.BITRIX,
+          contactType: CHANNEL_TYPES.BITRIX,
+        },
         error: testError,
       });
     });
@@ -154,7 +176,7 @@ describe("createLoggedChannel", () => {
         message: "Канал bitrix готов к работе",
         eventType: EventType.HealthCheck,
         duration: expect.any(Number),
-        details: { channelType: "bitrix" },
+        details: { channelType: CHANNEL_TYPES.BITRIX },
       });
     });
 
@@ -171,7 +193,7 @@ describe("createLoggedChannel", () => {
         message: "Канал bitrix не отвечает",
         eventType: EventType.HealthCheck,
         duration: expect.any(Number),
-        details: { channelType: "bitrix" },
+        details: { channelType: CHANNEL_TYPES.BITRIX },
         error: testError,
       });
     });
@@ -180,7 +202,7 @@ describe("createLoggedChannel", () => {
   describe("isSupports method", () => {
     it("should delegate isSupports calls to the underlying channel", () => {
       const loggedChannel = createLoggedChannel(dependencies);
-      const testContact: Contact = { type: "bitrix", value: 99999 };
+      const testContact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 99999 };
       mockChannel.isSupports.mockReturnValue(true);
       const result = loggedChannel.isSupports(testContact);
       expect(mockChannel.isSupports).toHaveBeenCalledWith(testContact);
@@ -189,7 +211,10 @@ describe("createLoggedChannel", () => {
 
     it("should not log isSupports calls", () => {
       const loggedChannel = createLoggedChannel(dependencies);
-      const testContact: Contact = { type: "email", value: "test@test.com" };
+      const testContact: Contact = {
+        type: CHANNEL_TYPES.EMAIL,
+        value: "test@test.com",
+      };
       loggedChannel.isSupports(testContact);
       expect(mockLogger.info).not.toHaveBeenCalled();
       expect(mockLogger.error).not.toHaveBeenCalled();
@@ -200,7 +225,7 @@ describe("createLoggedChannel", () => {
   describe("returned channel interface", () => {
     it("should return an object with correct methods", () => {
       const loggedChannel = createLoggedChannel(dependencies);
-      expect(loggedChannel).toHaveProperty("type", "bitrix");
+      expect(loggedChannel).toHaveProperty("type", CHANNEL_TYPES.BITRIX);
       expect(loggedChannel).toHaveProperty("isSupports");
       expect(loggedChannel).toHaveProperty("send");
       expect(loggedChannel).toHaveProperty("checkHealth");
@@ -212,7 +237,7 @@ describe("createLoggedChannel", () => {
     it("should maintain the same isSupports implementation as original channel", () => {
       const originalIsSupports = vi.fn();
       const customChannel = {
-        type: "email",
+        type: CHANNEL_TYPES.EMAIL,
         isSupports: originalIsSupports,
         send: vi.fn(),
         checkHealth: vi.fn(),
@@ -224,7 +249,10 @@ describe("createLoggedChannel", () => {
       };
 
       const loggedChannel = createLoggedChannel(customDependencies);
-      const testContact: Contact = { type: "email", value: "test@test.com" };
+      const testContact: Contact = {
+        type: CHANNEL_TYPES.EMAIL,
+        value: "test@test.com",
+      };
       loggedChannel.isSupports(testContact);
       expect(originalIsSupports).toHaveBeenCalledWith(testContact);
     });

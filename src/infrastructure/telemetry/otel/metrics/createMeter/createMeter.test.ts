@@ -2,6 +2,9 @@ import { metrics } from "@opentelemetry/api";
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createMeter } from "./createMeter.js";
+import { Meter } from "../../../../../application/ports/Meter.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
+import { DELIVERY_STRATEGIES } from "../../../../../domain/types/DeliveryStrategies.js";
 import { mapKeysToSnakeCase } from "../../../../../shared/utils/toSnakeCase/toSnakeCase.js";
 
 vi.mock("@opentelemetry/api", () => ({
@@ -55,10 +58,16 @@ describe("createMeter", () => {
 
   describe("recordChannelLatency", () => {
     it("should record latency with correct histogram and transformed attributes", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
       const latency = 150;
-      const originalAttributes = { channelType: "email", success: true };
-      const transformedAttributes = { channel_type: "email", success: true };
+      const originalAttributes = {
+        channelType: CHANNEL_TYPES.EMAIL,
+        success: true,
+      };
+      const transformedAttributes = {
+        channel_type: CHANNEL_TYPES.EMAIL,
+        success: true,
+      };
 
       vi.mocked(mapKeysToSnakeCase).mockReturnValue(transformedAttributes);
 
@@ -78,12 +87,21 @@ describe("createMeter", () => {
       );
     });
 
-    it("should handle different latency values and attribute types", () => {
-      const meter = createMeter(mockConfig);
+    it("should handle different latency values and valid channel types", () => {
+      const meter: Meter = createMeter(mockConfig);
       const testCases = [
-        { latency: 0, attributes: { channelType: "sms", success: false } },
-        { latency: 1000, attributes: { channelType: "push", success: true } },
-        { latency: 42.5, attributes: { channelType: "email", success: true } },
+        {
+          latency: 0,
+          attributes: { channelType: CHANNEL_TYPES.EMAIL, success: false },
+        },
+        {
+          latency: 1000,
+          attributes: { channelType: CHANNEL_TYPES.BITRIX, success: true },
+        },
+        {
+          latency: 42.5,
+          attributes: { channelType: CHANNEL_TYPES.EMAIL, success: true },
+        },
       ];
 
       testCases.forEach(({ latency, attributes }) => {
@@ -106,9 +124,9 @@ describe("createMeter", () => {
 
   describe("incrementNotificationsByChannel", () => {
     it("should increment counter with correct transformed channel and result attributes for success", () => {
-      const meter = createMeter(mockConfig);
-      const channel = "email";
-      const result = "success";
+      const meter: Meter = createMeter(mockConfig);
+      const channel = CHANNEL_TYPES.EMAIL;
+      const result = "success" as const;
       const originalAttrs = { channel, result };
       const transformedAttrs = { channel, result };
 
@@ -129,9 +147,9 @@ describe("createMeter", () => {
     });
 
     it("should increment counter with correct transformed channel and result attributes for failure", () => {
-      const meter = createMeter(mockConfig);
-      const channel = "sms";
-      const result = "failure";
+      const meter: Meter = createMeter(mockConfig);
+      const channel = CHANNEL_TYPES.BITRIX;
+      const result = "failure" as const;
       const originalAttrs = { channel, result };
       const transformedAttrs = { channel, result };
 
@@ -143,13 +161,13 @@ describe("createMeter", () => {
       expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrs);
     });
 
-    it("should handle different channels and results", () => {
-      const meter = createMeter(mockConfig);
+    it("should handle different valid channels and results", () => {
+      const meter: Meter = createMeter(mockConfig);
       const testCases = [
-        { channel: "email", result: "success" as const },
-        { channel: "sms", result: "failure" as const },
-        { channel: "push", result: "success" as const },
-        { channel: "phone", result: "failure" as const },
+        { channel: CHANNEL_TYPES.EMAIL, result: "success" as const },
+        { channel: CHANNEL_TYPES.BITRIX, result: "failure" as const },
+        { channel: CHANNEL_TYPES.EMAIL, result: "failure" as const },
+        { channel: CHANNEL_TYPES.BITRIX, result: "success" as const },
       ];
 
       testCases.forEach(({ channel, result }) => {
@@ -167,7 +185,7 @@ describe("createMeter", () => {
 
   describe("incrementTotalNotifications", () => {
     it("should increment total notifications counter", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
 
       meter.incrementTotalNotifications();
 
@@ -182,7 +200,7 @@ describe("createMeter", () => {
     });
 
     it("should handle multiple increments", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
 
       meter.incrementTotalNotifications();
       meter.incrementTotalNotifications();
@@ -197,8 +215,8 @@ describe("createMeter", () => {
 
   describe("incrementNotificationsProcessedByResult", () => {
     it("should increment counter with correct transformed result attribute for success", () => {
-      const meter = createMeter(mockConfig);
-      const result = "success";
+      const meter: Meter = createMeter(mockConfig);
+      const result = "success" as const;
       const originalAttrs = { result };
       const transformedAttrs = { result };
 
@@ -218,22 +236,8 @@ describe("createMeter", () => {
       expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrs);
     });
 
-    it("should increment counter with correct transformed result attribute for failure", () => {
-      const meter = createMeter(mockConfig);
-      const result = "failure";
-      const originalAttrs = { result };
-      const transformedAttrs = { result };
-
-      vi.mocked(mapKeysToSnakeCase).mockReturnValue(transformedAttrs);
-
-      meter.incrementNotificationsProcessedByResult(result);
-
-      expect(mapKeysToSnakeCase).toHaveBeenCalledWith(originalAttrs);
-      expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrs);
-    });
-
     it("should handle different results", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
       const results = ["success", "failure"] as const;
 
       results.forEach((result) => {
@@ -251,7 +255,7 @@ describe("createMeter", () => {
 
   describe("incrementNotificationsProcessedBySubject", () => {
     it("should increment counter with correct transformed subjectId attribute", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
       const subjectId = "user-123";
       const originalAttrs = { subjectId };
       const transformedAttrs = { subject_id: subjectId };
@@ -273,7 +277,7 @@ describe("createMeter", () => {
     });
 
     it("should handle different subject IDs", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
       const subjectIds = ["user-123", "user-456", "admin-789"];
 
       subjectIds.forEach((subjectId) => {
@@ -291,8 +295,8 @@ describe("createMeter", () => {
 
   describe("incrementNotificationsProcessedByStrategy", () => {
     it("should increment counter with correct transformed strategy attribute", () => {
-      const meter = createMeter(mockConfig);
-      const strategy = "email";
+      const meter: Meter = createMeter(mockConfig);
+      const strategy = DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE;
       const originalAttrs = { strategy };
       const transformedAttrs = { strategy };
 
@@ -311,9 +315,12 @@ describe("createMeter", () => {
       expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrs);
     });
 
-    it("should handle different strategy names", () => {
-      const meter = createMeter(mockConfig);
-      const strategies = ["email", "sms", "push", "webhook"];
+    it("should handle different valid strategies", () => {
+      const meter: Meter = createMeter(mockConfig);
+      const strategies = [
+        DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE,
+        DELIVERY_STRATEGIES.SEND_TO_ALL_AVAILABLE,
+      ];
 
       strategies.forEach((strategy) => {
         const originalAttrs = { strategy };
@@ -330,7 +337,7 @@ describe("createMeter", () => {
 
   describe("incrementNotificationsByPriority", () => {
     it("should increment counter with transformed isImmediate true for immediate notifications", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
       const isImmediate = true;
       const originalAttrs = { isImmediate };
       const transformedAttrs = { is_immediate: true };
@@ -351,37 +358,20 @@ describe("createMeter", () => {
       expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrs);
     });
 
-    it("should increment counter with transformed isImmediate false for non-immediate notifications", () => {
-      const meter = createMeter(mockConfig);
-      const isImmediate = false;
-      const originalAttrs = { isImmediate };
-      const transformedAttrs = { is_immediate: false };
-
-      vi.mocked(mapKeysToSnakeCase).mockReturnValue(transformedAttrs);
-
-      meter.incrementNotificationsByPriority(isImmediate);
-
-      expect(mapKeysToSnakeCase).toHaveBeenCalledWith(originalAttrs);
-      expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrs);
-    });
-
     it("should handle both priority types", () => {
-      const meter = createMeter(mockConfig);
+      const meter: Meter = createMeter(mockConfig);
 
       const originalAttrsTrue = { isImmediate: true };
       const transformedAttrsTrue = { is_immediate: true };
       vi.mocked(mapKeysToSnakeCase).mockReturnValue(transformedAttrsTrue);
-
       meter.incrementNotificationsByPriority(true);
       expect(mapKeysToSnakeCase).toHaveBeenCalledWith(originalAttrsTrue);
       expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrsTrue);
 
       mockCounter.add.mockClear();
-      vi.mocked(mapKeysToSnakeCase).mockReturnValue({ is_immediate: false });
-
       const originalAttrsFalse = { isImmediate: false };
       const transformedAttrsFalse = { is_immediate: false };
-
+      vi.mocked(mapKeysToSnakeCase).mockReturnValue(transformedAttrsFalse);
       meter.incrementNotificationsByPriority(false);
       expect(mapKeysToSnakeCase).toHaveBeenCalledWith(originalAttrsFalse);
       expect(mockCounter.add).toHaveBeenCalledWith(1, transformedAttrsFalse);
@@ -396,29 +386,21 @@ describe("createMeter", () => {
   });
 
   it("should return all meter functions", () => {
-    const meter = createMeter(mockConfig);
+    const meter: Meter = createMeter(mockConfig);
 
-    expect(meter).toHaveProperty("recordChannelLatency");
-    expect(meter).toHaveProperty("incrementNotificationsByChannel");
+    const expectedMethods = [
+      "recordChannelLatency",
+      "incrementNotificationsByChannel",
+      "incrementTotalNotifications",
+      "incrementNotificationsProcessedByResult",
+      "incrementNotificationsProcessedBySubject",
+      "incrementNotificationsProcessedByStrategy",
+      "incrementNotificationsByPriority",
+    ] as const;
 
-    expect(meter).toHaveProperty("incrementTotalNotifications");
-    expect(meter).toHaveProperty("incrementNotificationsProcessedByResult");
-    expect(meter).toHaveProperty("incrementNotificationsProcessedBySubject");
-    expect(meter).toHaveProperty("incrementNotificationsProcessedByStrategy");
-    expect(meter).toHaveProperty("incrementNotificationsByPriority");
-
-    expect(typeof meter.recordChannelLatency).toBe("function");
-    expect(typeof meter.incrementNotificationsByChannel).toBe("function");
-    expect(typeof meter.incrementTotalNotifications).toBe("function");
-    expect(typeof meter.incrementNotificationsProcessedByResult).toBe(
-      "function",
-    );
-    expect(typeof meter.incrementNotificationsProcessedBySubject).toBe(
-      "function",
-    );
-    expect(typeof meter.incrementNotificationsProcessedByStrategy).toBe(
-      "function",
-    );
-    expect(typeof meter.incrementNotificationsByPriority).toBe("function");
+    expectedMethods.forEach((method) => {
+      expect(meter).toHaveProperty(method);
+      expect(typeof meter[method]).toBe("function");
+    });
   });
 });

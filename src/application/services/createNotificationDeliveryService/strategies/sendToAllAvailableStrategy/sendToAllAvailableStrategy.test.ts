@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 
 import { sendToAllAvailableStrategy } from "./sendToAllAvailableStrategy.js";
 import { Channel } from "../../../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../../../domain/types/Contact.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 
@@ -17,15 +18,18 @@ const createMockChannel = (
   };
 };
 
-const emailContact: Contact = { type: "email", value: "test@example.com" };
-const bitrixContact: Contact = { type: "bitrix", value: 123 };
+const emailContact: Contact = {
+  type: CHANNEL_TYPES.EMAIL,
+  value: "test@example.com",
+};
+const bitrixContact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 123 };
 const message = "Test notification";
 
 describe("sendToAllAvailableStrategy", () => {
   it("should return error if no contacts are provided", async () => {
     const channels = [
       createMockChannel(
-        "email",
+        CHANNEL_TYPES.EMAIL,
         () => true,
         async () => {},
       ),
@@ -51,7 +55,7 @@ describe("sendToAllAvailableStrategy", () => {
   it("should return error if message is empty", async () => {
     const channels = [
       createMockChannel(
-        "email",
+        CHANNEL_TYPES.EMAIL,
         () => true,
         async () => {},
       ),
@@ -78,8 +82,8 @@ describe("sendToAllAvailableStrategy", () => {
     const sendSpy = vi.fn().mockResolvedValue(undefined);
 
     const emailChannel = createMockChannel(
-      "email",
-      (r) => r.type === "email",
+      CHANNEL_TYPES.EMAIL,
+      (r) => r.type === CHANNEL_TYPES.EMAIL,
       sendSpy,
     );
 
@@ -100,7 +104,7 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.details).toEqual([
       {
         contact: emailContact,
-        channel: "email",
+        channel: CHANNEL_TYPES.EMAIL,
       },
     ]);
     expect(sendSpy).toHaveBeenCalledWith(emailContact, message);
@@ -111,14 +115,14 @@ describe("sendToAllAvailableStrategy", () => {
     const bitrixSendSpy = vi.fn().mockResolvedValue(undefined);
 
     const emailChannel = createMockChannel(
-      "email",
-      (r) => r.type === "email",
+      CHANNEL_TYPES.EMAIL,
+      (r) => r.type === CHANNEL_TYPES.EMAIL,
       emailSendSpy,
     );
 
     const bitrixChannel = createMockChannel(
-      "bitrix",
-      (r) => r.type === "bitrix",
+      CHANNEL_TYPES.BITRIX,
+      (r) => r.type === CHANNEL_TYPES.BITRIX,
       bitrixSendSpy,
     );
 
@@ -140,11 +144,11 @@ describe("sendToAllAvailableStrategy", () => {
     expect(result.details).toEqual([
       {
         contact: emailContact,
-        channel: "email",
+        channel: CHANNEL_TYPES.EMAIL,
       },
       {
         contact: bitrixContact,
-        channel: "bitrix",
+        channel: CHANNEL_TYPES.BITRIX,
       },
     ]);
     expect(emailSendSpy).toHaveBeenCalledWith(emailContact, message);
@@ -185,14 +189,14 @@ describe("sendToAllAvailableStrategy", () => {
       .mockRejectedValue(new Error("Network error"));
 
     const workingChannel = createMockChannel(
-      "email",
-      (r) => r.type === "email",
+      CHANNEL_TYPES.EMAIL,
+      (r) => r.type === CHANNEL_TYPES.EMAIL,
       workingSendSpy,
     );
 
     const failingChannel = createMockChannel(
-      "bitrix",
-      (r) => r.type === "bitrix",
+      CHANNEL_TYPES.BITRIX,
+      (r) => r.type === CHANNEL_TYPES.BITRIX,
       failingSendSpy,
     );
 
@@ -215,12 +219,12 @@ describe("sendToAllAvailableStrategy", () => {
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       contact: bitrixContact.type,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
     expect(result.details).toEqual([
       {
         contact: emailContact,
-        channel: "email",
+        channel: CHANNEL_TYPES.EMAIL,
       },
     ]);
     expect(workingSendSpy).toHaveBeenCalledWith(emailContact, message);
@@ -234,14 +238,14 @@ describe("sendToAllAvailableStrategy", () => {
       .mockRejectedValue(new Error("Bitrix API error"));
 
     const emailChannel = createMockChannel(
-      "email",
-      (r) => r.type === "email",
+      CHANNEL_TYPES.EMAIL,
+      (r) => r.type === CHANNEL_TYPES.EMAIL,
       failingEmailSend,
     );
 
     const bitrixChannel = createMockChannel(
-      "bitrix",
-      (r) => r.type === "bitrix",
+      CHANNEL_TYPES.BITRIX,
+      (r) => r.type === CHANNEL_TYPES.BITRIX,
       failingBitrixSend,
     );
 
@@ -264,13 +268,13 @@ describe("sendToAllAvailableStrategy", () => {
       message: "Ошибка отправки через канал email",
       details: expect.any(Error),
       contact: emailContact.type,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
     expect(result.warnings![1]).toEqual({
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       contact: bitrixContact.type,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(
@@ -283,14 +287,14 @@ describe("sendToAllAvailableStrategy", () => {
     const failingSend = vi.fn().mockRejectedValue(new Error("Failed"));
 
     const channelForEmail = createMockChannel(
-      "email",
-      (r) => r.type === "email",
+      CHANNEL_TYPES.EMAIL,
+      (r) => r.type === CHANNEL_TYPES.EMAIL,
       successfulSend,
     );
 
     const channelForBitrix = createMockChannel(
-      "bitrix",
-      (r) => r.type === "bitrix",
+      CHANNEL_TYPES.BITRIX,
+      (r) => r.type === CHANNEL_TYPES.BITRIX,
       failingSend,
     );
 
@@ -313,12 +317,12 @@ describe("sendToAllAvailableStrategy", () => {
       message: "Ошибка отправки через канал bitrix",
       details: expect.any(Error),
       contact: bitrixContact.type,
-      channel: "bitrix",
+      channel: CHANNEL_TYPES.BITRIX,
     });
     expect(result.details).toEqual([
       {
         contact: emailContact,
-        channel: "email",
+        channel: CHANNEL_TYPES.EMAIL,
       },
     ]);
     expect(successfulSend).toHaveBeenCalledWith(emailContact, message);
@@ -330,8 +334,8 @@ describe("sendToAllAvailableStrategy", () => {
     const failingSend = vi.fn().mockRejectedValue(originalError);
 
     const channel = createMockChannel(
-      "email",
-      (r) => r.type === "email",
+      CHANNEL_TYPES.EMAIL,
+      (r) => r.type === CHANNEL_TYPES.EMAIL,
       failingSend,
     );
 
@@ -351,7 +355,7 @@ describe("sendToAllAvailableStrategy", () => {
       message: "Ошибка отправки через канал email",
       details: originalError,
       contact: emailContact.type,
-      channel: "email",
+      channel: CHANNEL_TYPES.EMAIL,
     });
     expect(result.error).toBeInstanceOf(Error);
     expect((result.error as Error).message).toBe(

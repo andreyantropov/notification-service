@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedNotificationDeliveryService } from "./createLoggedNotificationDeliveryService.js";
 import { LoggedNotificationDeliveryServiceDependencies } from "./interfaces/LoggedNotificationDeliveryServiceDependencies.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 import { EventType } from "../../../../enums/index.js";
 import { Logger } from "../../../../ports/Logger.js";
@@ -42,13 +43,13 @@ describe("createLoggedNotificationDeliveryService", () => {
       {
         id: "1",
         message: "Test notification 1",
-        contacts: [{ type: "email", value: "test1@example.com" }],
+        contacts: [{ type: CHANNEL_TYPES.EMAIL, value: "test1@example.com" }],
         createdAt: "2025-11-12T10:00:00Z",
       },
       {
         id: "2",
         message: "Test notification 2",
-        contacts: [{ type: "email", value: "test2@example.com" }],
+        contacts: [{ type: CHANNEL_TYPES.EMAIL, value: "test2@example.com" }],
         createdAt: "2025-11-12T10:00:00Z",
       },
     ];
