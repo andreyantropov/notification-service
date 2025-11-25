@@ -100,6 +100,22 @@ describe("createEmailChannel", () => {
 
       expect(transporter.sendMail).toHaveBeenCalled();
     });
+
+    it("should reject with timeout error if sendMail hangs", async () => {
+      vi.useFakeTimers();
+
+      transporter.sendMail.mockReturnValue(new Promise(() => {}));
+
+      const sendPromise = channel.send(contact, message);
+
+      vi.advanceTimersByTime(10_001);
+
+      await expect(sendPromise).rejects.toThrow(
+        "Не удалось отправить email через SMTP",
+      );
+
+      vi.useRealTimers();
+    });
   });
 
   describe("checkHealth", () => {

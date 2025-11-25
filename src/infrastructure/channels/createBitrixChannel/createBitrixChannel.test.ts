@@ -70,6 +70,7 @@ describe("createBitrixChannel", () => {
             user_id: contact.value,
             message,
           },
+          timeout: 10000,
         },
       );
     });
@@ -110,6 +111,22 @@ describe("createBitrixChannel", () => {
       await expect(channel.send(contact, message)).rejects.toThrow(
         "Не удалось отправить уведомление через Bitrix",
       );
+    });
+
+    it("should reject with timeout error if axios.post hangs", async () => {
+      vi.useFakeTimers();
+
+      vi.mocked(axios.post).mockReturnValue(new Promise(() => {}));
+
+      const sendPromise = channel.send(contact, message);
+
+      vi.advanceTimersByTime(10_001);
+
+      await expect(sendPromise).rejects.toThrow(
+        "Не удалось отправить уведомление через Bitrix",
+      );
+
+      vi.useRealTimers();
     });
   });
 
@@ -156,6 +173,20 @@ describe("createBitrixChannel", () => {
       );
 
       await expect(channel.checkHealth!()).rejects.toThrow("Bitrix недоступен");
+    });
+
+    it("should reject with timeout error if axios.get hangs", async () => {
+      vi.useFakeTimers();
+
+      vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+
+      const healthPromise = channel.checkHealth!();
+
+      vi.advanceTimersByTime(5_001);
+
+      await expect(healthPromise).rejects.toThrow("Bitrix недоступен");
+
+      vi.useRealTimers();
     });
   });
 });

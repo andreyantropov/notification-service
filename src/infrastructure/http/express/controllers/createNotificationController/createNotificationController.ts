@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import pTimeout from "p-timeout";
 
 import { NotificationController } from "./interfaces/NotificationController.js";
 import { NotificationControllerDependencies } from "./interfaces/NotificationControllerDependencies.js";
@@ -12,6 +13,8 @@ import {
   IncomingNotificationSchema,
   SubjectSchema,
 } from "../../../schemas/index.js";
+
+const DEFAULT_SEND_TIMEOUT = 10_000;
 
 export const createNotificationController = (
   dependencies: NotificationControllerDependencies,
@@ -141,8 +144,23 @@ export const createNotificationController = (
       subject,
     }));
 
-    const result =
-      await handleIncomingNotificationsUseCase.handle(notifications);
+    let result: Notification[];
+    try {
+      result = await pTimeout(
+        handleIncomingNotificationsUseCase.handle(notifications),
+        {
+          milliseconds: DEFAULT_SEND_TIMEOUT,
+          message: "Превышено время синхронной обработки срочных уведомлений",
+        },
+      );
+    } catch {
+      res.status(504).json({
+        error: "HTTP 504 Gateway Timeout",
+        message:
+          "Не удалось завершить обработку вовремя. Уведомления могут быть поставлены в очередь на повторную отправку.",
+      });
+      return;
+    }
 
     const receiptBatch = buildReceiptBatch(result, rejected);
 

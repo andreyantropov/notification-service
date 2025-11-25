@@ -6,6 +6,7 @@ import { Channel } from "../../../domain/ports/Channel.js";
 import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
 import { Contact, isContactOfType } from "../../../domain/types/Contact.js";
 
+const DEFAULT_SEND_TIMEOUT = 10_000;
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
@@ -27,17 +28,21 @@ export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
     try {
       const restUrl = `${baseUrl}/rest/${userId}/${authToken}`.trim();
 
-      const responce = await axios.post(
-        `${restUrl}/im.notify.personal.add.json`,
-        null,
-        {
+      const response = await pTimeout(
+        axios.post(`${restUrl}/im.notify.personal.add.json`, null, {
           params: {
             user_id: contact.value,
             message,
           },
+          timeout: DEFAULT_SEND_TIMEOUT,
+        }),
+        {
+          milliseconds: DEFAULT_SEND_TIMEOUT,
+          message: `Превышено время ожидания ответа от Bitrix при отправке уведомления`,
         },
       );
-      const data = responce.data;
+
+      const data = response.data;
 
       if (!data.result) {
         throw new Error(
