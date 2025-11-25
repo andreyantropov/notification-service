@@ -4,7 +4,7 @@ import { NotificationDeliveryServiceDependencies } from "./interfaces/Notificati
 import {
   DEFAULT_STRATEGY_KEY,
   strategyRegistry,
-} from "./strategies/strategyRegistry.js";
+} from "./strategies/strategyRegistry/strategyRegistry.js";
 import { Notification } from "../../../domain/types/Notification.js";
 
 export const createNotificationDeliveryService = (

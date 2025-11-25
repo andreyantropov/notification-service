@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { SmtpChannelConfig } from "../infrastructure/channels/createSmtpChannel/interfaces/SmtpChannelConfig.js";
+import { EmailChannelConfig } from "../infrastructure/channels/createEmailChannel/interfaces/EmailChannelConfig.js";
 
-const smtpConfigSchema = z.object({
+const emailConfigSchema = z.object({
   host: z.string().min(1, "host не может быть пустым"),
   port: z.coerce.number().int().positive().default(25),
   secure: z.boolean().default(false),
@@ -13,7 +13,7 @@ const smtpConfigSchema = z.object({
   fromEmail: z.string().min(1, "fromEmail не может быть пустым"),
 });
 
-export const smtpConfig: SmtpChannelConfig = smtpConfigSchema.parse({
+export const emailConfig: EmailChannelConfig = emailConfigSchema.parse({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
   secure: false,

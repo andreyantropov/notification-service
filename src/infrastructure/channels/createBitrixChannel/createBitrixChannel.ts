@@ -3,21 +3,22 @@ import pTimeout from "p-timeout";
 
 import { BitrixChannelConfig } from "./interfaces/BitrixChannelConfig.js";
 import { Channel } from "../../../domain/ports/Channel.js";
-import { Contact, isBitrixContact } from "../../../domain/types/Contact.js";
+import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
+import { Contact, isContactOfType } from "../../../domain/types/Contact.js";
 
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
   const { baseUrl, userId, authToken } = config;
 
-  const type = "bitrix";
+  const type = CHANNEL_TYPES.BITRIX;
 
   const isSupports = (contact: Contact): boolean => {
-    return contact.type === type;
+    return isContactOfType(contact, type);
   };
 
   const send = async (contact: Contact, message: string): Promise<void> => {
-    if (!isBitrixContact(contact)) {
+    if (!isContactOfType(contact, type)) {
       throw new Error(
         `Неверный тип получателя: ожидается id пользователя Bitrix, получено "${contact.type}"`,
       );

@@ -1,7 +1,24 @@
 import z from "zod";
 
-import { ContactSchema } from "./ContactSchema.js";
-import { NotificationStrategySchema } from "./NotificationStrategySchema.js";
+const BitrixContactSchema = z.object({
+  type: z.literal("bitrix"),
+  value: z.number().int(),
+});
+
+const EmailContactSchema = z.object({
+  type: z.literal("email"),
+  value: z.string().email(),
+});
+
+const ContactSchema = z.discriminatedUnion("type", [
+  EmailContactSchema,
+  BitrixContactSchema,
+]);
+
+const NotificationStrategySchema = z.enum([
+  "send_to_first_available",
+  "send_to_all_available",
+]);
 
 export const IncomingNotificationSchema = z.object({
   contacts: z.array(ContactSchema),

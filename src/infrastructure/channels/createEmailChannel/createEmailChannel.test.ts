@@ -1,16 +1,17 @@
 import nodemailer from "nodemailer";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { createSmtpChannel } from "./createSmtpChannel.js";
-import { SmtpChannelConfig } from "./interfaces/SmtpChannelConfig.js";
+import { createEmailChannel } from "./createEmailChannel.js";
+import { EmailChannelConfig } from "./interfaces/EmailChannelConfig.js";
 import { Channel } from "../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../domain/types/Contact.js";
 import { noop } from "../../../shared/utils/noop/noop.js";
 
 vi.mock("nodemailer");
 
-describe("createSmtpChannel", () => {
-  const mockConfig: SmtpChannelConfig = {
+describe("createEmailChannel", () => {
+  const mockConfig: EmailChannelConfig = {
     host: "smtp.example.com",
     port: 587,
     secure: false,
@@ -33,7 +34,7 @@ describe("createSmtpChannel", () => {
       mockTransporter,
     );
 
-    channel = createSmtpChannel(mockConfig);
+    channel = createEmailChannel(mockConfig);
     transporter = mockTransporter;
   });
 
@@ -46,19 +47,25 @@ describe("createSmtpChannel", () => {
 
   describe("isSupports", () => {
     it("should return true for an email contact", () => {
-      const contact: Contact = { type: "email", value: "test@example.com" };
+      const contact: Contact = {
+        type: CHANNEL_TYPES.EMAIL,
+        value: "test@example.com",
+      };
       expect(channel.isSupports(contact)).toBe(true);
     });
 
     it("should return false for a non-email contact", () => {
-      const contact: Contact = { type: "bitrix", value: 42 };
+      const contact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 42 };
       expect(channel.isSupports(contact)).toBe(false);
     });
   });
 
   describe("send", () => {
     const message = "Test message";
-    const contact: Contact = { type: "email", value: "test@example.com" };
+    const contact: Contact = {
+      type: CHANNEL_TYPES.EMAIL,
+      value: "test@example.com",
+    };
 
     it("should call sendMail with correct options", async () => {
       await channel.send(contact, message);
@@ -76,7 +83,7 @@ describe("createSmtpChannel", () => {
     });
 
     it("should throw error if contact is not email", async () => {
-      const invalidContact: Contact = { type: "bitrix", value: 42 };
+      const invalidContact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 42 };
 
       await expect(channel.send(invalidContact, message)).rejects.toThrow(
         `Неверный тип получателя: ожидается email, получено "bitrix"`,
@@ -121,7 +128,7 @@ describe("createSmtpChannel", () => {
         mockTransporter,
       );
 
-      const newChannel = createSmtpChannel(mockConfig);
+      const newChannel = createEmailChannel(mockConfig);
 
       await expect(newChannel.checkHealth!()).resolves.not.toThrow();
     });
@@ -139,7 +146,7 @@ describe("createSmtpChannel", () => {
         mockTransporter,
       );
 
-      const newChannel = createSmtpChannel(mockConfig);
+      const newChannel = createEmailChannel(mockConfig);
 
       await expect(newChannel.checkHealth!()).rejects.toThrow(
         "SMTP сервер недоступен",
@@ -159,7 +166,7 @@ describe("createSmtpChannel", () => {
         mockTransporter,
       );
 
-      const newChannel = createSmtpChannel(mockConfig);
+      const newChannel = createEmailChannel(mockConfig);
 
       const checkHealthPromise = newChannel.checkHealth!();
 

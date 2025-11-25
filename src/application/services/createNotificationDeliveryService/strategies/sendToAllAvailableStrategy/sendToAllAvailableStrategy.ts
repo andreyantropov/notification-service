@@ -1,4 +1,5 @@
 import { Channel } from "../../../../../domain/ports/Channel.js";
+import { ChannelTypes } from "../../../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../../../domain/types/Contact.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
@@ -13,7 +14,10 @@ export const sendToAllAvailableStrategy: DeliveryStrategy = async (
   const { contacts, message } = notification;
 
   const warnings: Warning[] = [];
-  const successfulDeliveries: Array<{ contact: Contact; channel: string }> = [];
+  const successfulDeliveries: Array<{
+    contact: Contact;
+    channel: ChannelTypes;
+  }> = [];
 
   if (!validateNotification(notification)) {
     return {

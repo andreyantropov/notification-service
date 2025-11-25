@@ -1,15 +1,17 @@
-export type Contact =
-  | { type: "email"; value: string }
-  | { type: "bitrix"; value: number };
+import { ChannelTypes } from "./ChannelTypes.js";
 
-export function isEmailContact(
-  contact: Contact,
-): contact is { type: "email"; value: string } {
-  return contact.type === "email";
+interface ContactValueMap {
+  email: string;
+  bitrix: number;
 }
 
-export function isBitrixContact(
+export type Contact = {
+  [K in ChannelTypes]: { type: K; value: ContactValueMap[K] };
+}[ChannelTypes];
+
+export function isContactOfType<T extends ChannelTypes>(
   contact: Contact,
-): contact is { type: "bitrix"; value: number } {
-  return contact.type === "bitrix";
+  type: T,
+): contact is Extract<Contact, { type: T }> {
+  return contact.type === type;
 }

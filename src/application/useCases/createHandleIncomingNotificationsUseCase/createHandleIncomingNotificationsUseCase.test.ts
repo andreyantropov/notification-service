@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createHandleIncomingNotificationsUseCase } from "./createHandleIncomingNotificationsUseCase.js";
+import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
 import { Notification } from "../../../domain/types/Notification.js";
 import { Producer } from "../../ports/Producer.js";
 import {
@@ -13,7 +14,7 @@ const createIncomingNotification = (
   message: string,
   isImmediate = false,
 ): IncomingNotification => ({
-  contacts: [{ type: "email", value: "user@example.com" }],
+  contacts: [{ type: CHANNEL_TYPES.EMAIL, value: "user@example.com" }],
   message,
   isImmediate,
 });
@@ -249,16 +250,14 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const notif = createIncomingNotification("Test", true);
       const idGenerator = vi.fn().mockReturnValue("returned-id");
 
-      deliveryService.send = vi
-        .fn()
-        .mockImplementation((notifications) =>
-          Promise.resolve(
-            notifications.map((n: Notification) => ({
-              success: true,
-              notification: n,
-            })),
-          ),
-        );
+      deliveryService.send = vi.fn().mockImplementation((notifications) =>
+        Promise.resolve(
+          notifications.map((n: Notification) => ({
+            success: true,
+            notification: n,
+          })),
+        ),
+      );
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,

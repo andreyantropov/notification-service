@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createMeteredNotificationDeliveryService } from "./createMeteredNotificationDeliveryService.js";
 import { MeteredNotificationDeliveryServiceDependencies } from "./interfaces/MeteredNotificationDeliveryServiceDependencies.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
+import { DELIVERY_STRATEGIES } from "../../../../../domain/types/DeliveryStrategies.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
 import { NotificationDeliveryService } from "../../interfaces/NotificationDeliveryService.js";
@@ -27,12 +29,12 @@ const createMockNotification = (
   id: "test-notification-1",
   createdAt: "2023-01-01T00:00:00Z",
   contacts: [
-    { type: "email", value: "test@example.com" },
-    { type: "bitrix", value: 12345 },
+    { type: CHANNEL_TYPES.EMAIL, value: "test@example.com" },
+    { type: CHANNEL_TYPES.BITRIX, value: 12345 },
   ],
   message: "Test message",
   isImmediate: false,
-  strategy: "send_to_first_available",
+  strategy: DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE,
   subject: { id: "subject-1", name: "Test Subject" },
   ...overrides,
 });
@@ -83,7 +85,7 @@ describe("createMeteredNotificationDeliveryService", () => {
         createMockNotification({
           id: "notif-1",
           subject: { id: "user-123" },
-          strategy: "send_to_first_available",
+          strategy: DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE,
           isImmediate: true,
         }),
       ];
@@ -104,7 +106,7 @@ describe("createMeteredNotificationDeliveryService", () => {
       ).toHaveBeenCalledWith("user-123");
       expect(
         mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledWith("send_to_first_available");
+      ).toHaveBeenCalledWith(DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE);
       expect(mockMeter.incrementNotificationsByPriority).toHaveBeenCalledWith(
         true,
       );
@@ -134,7 +136,7 @@ describe("createMeteredNotificationDeliveryService", () => {
       ).toHaveBeenCalledWith("unknown");
       expect(
         mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledWith("send_to_first_available");
+      ).toHaveBeenCalledWith(DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE);
       expect(mockMeter.incrementNotificationsByPriority).toHaveBeenCalledWith(
         false,
       );
@@ -199,7 +201,7 @@ describe("createMeteredNotificationDeliveryService", () => {
         createMockNotification({
           id: "notif-1",
           subject: { id: "user-456" },
-          strategy: "send_to_all_available",
+          strategy: DELIVERY_STRATEGIES.SEND_TO_ALL_AVAILABLE,
           isImmediate: false,
         }),
       ];
@@ -220,7 +222,7 @@ describe("createMeteredNotificationDeliveryService", () => {
       ).toHaveBeenCalledWith("user-456");
       expect(
         mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledWith("send_to_all_available");
+      ).toHaveBeenCalledWith(DELIVERY_STRATEGIES.SEND_TO_ALL_AVAILABLE);
       expect(mockMeter.incrementNotificationsByPriority).toHaveBeenCalledWith(
         false,
       );
@@ -266,7 +268,7 @@ describe("createMeteredNotificationDeliveryService", () => {
       ).toHaveBeenCalledWith("unknown");
       expect(
         mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledWith("send_to_first_available");
+      ).toHaveBeenCalledWith(DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE);
       expect(mockMeter.incrementNotificationsByPriority).toHaveBeenCalledWith(
         false,
       );

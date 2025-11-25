@@ -3,10 +3,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotificationController } from "./createNotificationController.js";
 import { IncomingNotification } from "../../../../../application/types/IncomingNotification.js";
+import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../../../domain/types/Contact.js";
 import { Notification } from "../../../../../domain/types/Notification.js";
 
-const emailContact: Contact = { type: "email", value: "user1@example.com" };
+const emailContact: Contact = {
+  type: CHANNEL_TYPES.EMAIL,
+  value: "user1@example.com",
+};
 
 const validIncomingNotification: IncomingNotification = {
   contacts: [emailContact],
@@ -228,7 +232,7 @@ describe("NotificationController", () => {
     };
     const notif2 = { contacts: [], message: "" };
     const notif3 = {
-      contacts: [{ type: "email", value: 123 }],
+      contacts: [{ type: CHANNEL_TYPES.EMAIL, value: 123 }],
       message: "Bad value",
     };
 

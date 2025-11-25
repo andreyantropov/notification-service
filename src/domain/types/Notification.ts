@@ -1,9 +1,6 @@
 import { Contact } from "./Contact.js";
+import { DeliveryStrategies } from "./DeliveryStrategies.js";
 import { Subject } from "./Subject.js";
-
-type NotificationStrategyLiteral =
-  | "send_to_first_available"
-  | "send_to_all_available";
 
 export interface Notification {
   id: string;
@@ -11,6 +8,6 @@ export interface Notification {
   contacts: Contact[];
   message: string;
   isImmediate?: boolean;
-  strategy?: NotificationStrategyLiteral;
+  strategy?: DeliveryStrategies;
   subject?: Subject;
 }

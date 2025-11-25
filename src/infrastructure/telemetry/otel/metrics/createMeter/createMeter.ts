@@ -2,6 +2,8 @@ import { metrics } from "@opentelemetry/api";
 
 import { MeterConfig } from "./interfaces/MeterConfig.js";
 import { Meter } from "../../../../../application/ports/Meter.js";
+import { ChannelTypes } from "../../../../../domain/types/ChannelTypes.js";
+import { DeliveryStrategies } from "../../../../../domain/types/DeliveryStrategies.js";
 import { mapKeysToSnakeCase } from "../../../../../shared/utils/toSnakeCase/toSnakeCase.js";
 
 export const createMeter = (config: MeterConfig): Meter => {
@@ -60,7 +62,7 @@ export const createMeter = (config: MeterConfig): Meter => {
     },
   );
   const incrementNotificationsProcessedByStrategy = (
-    strategy: string,
+    strategy: DeliveryStrategies,
   ): void => {
     addWithSnakeCaseAttributes(processedByStrategyCounter, 1, { strategy });
   };
@@ -94,7 +96,7 @@ export const createMeter = (config: MeterConfig): Meter => {
     },
   );
   const incrementNotificationsByChannel = (
-    channel: string,
+    channel: ChannelTypes,
     result: "success" | "failure",
   ): void => {
     addWithSnakeCaseAttributes(byChannelCounter, 1, { channel, result });

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createBitrixChannel } from "./createBitrixChannel.js";
 import { BitrixChannelConfig } from "./interfaces/BitrixChannelConfig.js";
 import { Channel } from "../../../domain/ports/Channel.js";
+import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
 import { Contact } from "../../../domain/types/Contact.js";
 
 vi.mock("axios");
@@ -36,19 +37,22 @@ describe("createBitrixChannel", () => {
 
   describe("isSupports", () => {
     it("should return true for a bitrix contact", () => {
-      const contact: Contact = { type: "bitrix", value: 42 };
+      const contact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 42 };
       expect(channel.isSupports(contact)).toBe(true);
     });
 
     it("should return false for a non-bitrix contact", () => {
-      const contact: Contact = { type: "email", value: "test@example.com" };
+      const contact: Contact = {
+        type: CHANNEL_TYPES.EMAIL,
+        value: "test@example.com",
+      };
       expect(channel.isSupports(contact)).toBe(false);
     });
   });
 
   describe("send", () => {
     const message = "Test message";
-    const contact: Contact = { type: "bitrix", value: 42 };
+    const contact: Contact = { type: CHANNEL_TYPES.BITRIX, value: 42 };
     const restUrl = `${mockBaseUrl}/rest/${mockUserId}/${mockAuthToken}`;
 
     it("should send a notification via axios with correct params", async () => {
@@ -90,7 +94,7 @@ describe("createBitrixChannel", () => {
 
     it("should throw error if contact is not bitrix", async () => {
       const invalidContact: Contact = {
-        type: "email",
+        type: CHANNEL_TYPES.EMAIL,
         value: "test@example.com",
       };
 
