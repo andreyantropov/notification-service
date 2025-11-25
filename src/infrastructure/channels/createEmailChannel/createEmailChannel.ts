@@ -6,19 +6,23 @@ import { Channel } from "../../../domain/ports/Channel.js";
 import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
 import { Contact, isContactOfType } from "../../../domain/types/Contact.js";
 
+const DEFAULT_GREETING_TIMEOUT = 5_000;
+const DEFAULT_SEND_TIMEOUT = 10_000;
 const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
 
 export const createEmailChannel = (config: EmailChannelConfig): Channel => {
   const { host, port, secure, auth, fromEmail } = config;
 
   const transporter = nodemailer.createTransport({
-    host: host,
-    port: port,
-    secure: secure,
+    host,
+    port,
+    secure,
     auth: {
       user: auth.user,
       pass: auth.pass,
     },
+    greetingTimeout: DEFAULT_GREETING_TIMEOUT,
+    socketTimeout: DEFAULT_SEND_TIMEOUT,
   });
 
   const type = CHANNEL_TYPES.EMAIL;
@@ -35,12 +39,18 @@ export const createEmailChannel = (config: EmailChannelConfig): Channel => {
     }
 
     try {
-      await transporter.sendMail({
-        from: `"ISPlanar" <${fromEmail}>`,
-        to: contact.value,
-        subject: "ISPlanar",
-        text: message,
-      });
+      await pTimeout(
+        transporter.sendMail({
+          from: `"ISPlanar" <${fromEmail}>`,
+          to: contact.value,
+          subject: "ISPlanar",
+          text: message,
+        }),
+        {
+          milliseconds: DEFAULT_SEND_TIMEOUT,
+          message: `Превышено время ожидания ответа от SMTP-сервера при отправке email`,
+        },
+      );
     } catch (error) {
       throw new Error(`Не удалось отправить email через SMTP`, {
         cause: error,

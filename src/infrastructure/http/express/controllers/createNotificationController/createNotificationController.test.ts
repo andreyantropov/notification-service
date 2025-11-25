@@ -176,7 +176,7 @@ describe("NotificationController", () => {
     });
   });
 
-  it("should throw error when use case throws an unexpected error", async () => {
+  it("should return 504 when use case throws an unexpected error", async () => {
     req.body = validIncomingNotification;
 
     const testError = new Error("Unexpected error");
@@ -184,13 +184,14 @@ describe("NotificationController", () => {
       testError,
     );
 
-    await expect(
-      controller.send(req as Request, res as Response),
-    ).rejects.toThrow(testError);
+    await controller.send(req as Request, res as Response);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalled();
-    expect(res.json).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(504);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "HTTP 504 Gateway Timeout",
+      message:
+        "Не удалось завершить обработку вовремя. Уведомления могут быть поставлены в очередь на повторную отправку.",
+    });
   });
 
   it("should throw error when req.auth is missing", async () => {
@@ -369,5 +370,30 @@ describe("NotificationController", () => {
         },
       },
     ]);
+  });
+
+  it("should return 504 Gateway Timeout if handleIncomingNotificationsUseCase hangs", async () => {
+    vi.useFakeTimers();
+
+    mockHandleIncomingNotificationsUseCase.handle.mockReturnValue(
+      new Promise(() => {}),
+    );
+
+    req.body = validIncomingNotification;
+
+    const sendPromise = controller.send(req as Request, res as Response);
+
+    vi.advanceTimersByTime(10_001);
+
+    await sendPromise;
+
+    expect(res.status).toHaveBeenCalledWith(504);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "HTTP 504 Gateway Timeout",
+      message:
+        "Не удалось завершить обработку вовремя. Уведомления могут быть поставлены в очередь на повторную отправку.",
+    });
+
+    vi.useRealTimers();
   });
 });
