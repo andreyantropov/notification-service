@@ -2,21 +2,23 @@ import { ChannelTypes } from "../../domain/types/ChannelTypes.js";
 import { DeliveryStrategies } from "../../domain/types/DeliveryStrategies.js";
 
 export interface Meter {
-  incrementTotalNotifications: () => void;
-  incrementNotificationsProcessedByResult: (
+  readonly incrementTotalNotifications: () => void;
+  readonly incrementNotificationsProcessedByResult: (
     result: "success" | "failure",
   ) => void;
-  incrementNotificationsProcessedBySubject: (subjectId: string) => void;
-  incrementNotificationsProcessedByStrategy: (
+  readonly incrementNotificationsProcessedBySubject: (
+    subjectId: string,
+  ) => void;
+  readonly incrementNotificationsProcessedByStrategy: (
     strategy: DeliveryStrategies,
   ) => void;
-  incrementNotificationsByPriority: (isImmediate: boolean) => void;
+  readonly incrementNotificationsByPriority: (isImmediate: boolean) => void;
 
-  recordChannelLatency: (
+  readonly recordChannelLatency: (
     latency: number,
     attributes: Record<string, string | boolean>,
   ) => void;
-  incrementNotificationsByChannel: (
+  readonly incrementNotificationsByChannel: (
     contactType: ChannelTypes,
     result: "success" | "failure",
   ) => void;

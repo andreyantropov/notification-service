@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createMeteredNotificationDeliveryService } from "./createMeteredNotificationDeliveryService.js";
-import { MeteredNotificationDeliveryServiceDependencies } from "./interfaces/MeteredNotificationDeliveryServiceDependencies.js";
-import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
-import { DELIVERY_STRATEGIES } from "../../../../../domain/types/DeliveryStrategies.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
-import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
-import { NotificationDeliveryService } from "../../interfaces/NotificationDeliveryService.js";
+import { MeteredNotificationDeliveryServiceDependencies } from "./interfaces/index.js";
+import {
+  Notification,
+  CHANNEL_TYPES,
+  DELIVERY_STRATEGIES,
+} from "../../../../../domain/types/index.js";
+import {
+  DeliveryResult,
+  NotificationDeliveryService,
+} from "../../interfaces/index.js";
 
 const mockMeter = {
   incrementTotalNotifications: vi.fn(),

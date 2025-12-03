@@ -1,4 +1,4 @@
-import { NotificationRetryService } from "./interfaces/NotificationRetryService.js";
+import { NotificationRetryService } from "./interfaces/index.js";
 
 const FIRST_RETRY_QUEUE = "retry-1";
 const SECOND_RETRY_QUEUE = "retry-2";

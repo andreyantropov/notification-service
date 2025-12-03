@@ -1,23 +1,21 @@
 import { createContainer, InjectionMode } from "awilix";
 
+import { registerChannels } from "./channelsContainer.js";
+import { registerHttp } from "./httpContainer.js";
+import { registerQueue } from "./queueContainer.js";
+import { registerServices } from "./servicesContainer.js";
+import { registerTelemetry } from "./telemetryContainer.js";
+import { registerUseCases } from "./useCasesContainer.js";
 import { Container } from "../types/Container.js";
-import { registerServices } from "./application/servicesContainer.js";
-import { registerUseCases } from "./application/useCasesContainer.js";
-import { registerHttp } from "./infrastracture/httpContainer.js";
-import { registerLogger } from "./infrastracture/loggerContainer.js";
-import { registerMeter } from "./infrastracture/meterContainer.js";
-import { registerQueue } from "./infrastracture/queueContainer.js";
-import { registerTracer } from "./infrastracture/tracerContainer.js";
 
 const container = createContainer<Container>({
   injectionMode: InjectionMode.PROXY,
 });
 
-registerTracer(container);
-registerLogger(container);
-registerMeter(container);
+registerTelemetry(container);
 registerQueue(container);
 registerHttp(container);
+registerChannels(container);
 registerServices(container);
 registerUseCases(container);
 

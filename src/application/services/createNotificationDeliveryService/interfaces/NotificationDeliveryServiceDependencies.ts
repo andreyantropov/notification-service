@@ -1,5 +1,5 @@
-import { Channel } from "../../../../domain/ports/Channel.js";
+import { Channel } from "../../../../domain/ports/index.js";
 
 export interface NotificationDeliveryServiceDependencies {
-  channels: Channel[];
+  readonly channels: readonly Channel[];
 }

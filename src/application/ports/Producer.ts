@@ -1,6 +1,6 @@
 export interface Producer<T> {
-  start: () => Promise<void>;
-  publish: (items: T[]) => Promise<void>;
-  shutdown: () => Promise<void>;
-  checkHealth?: () => Promise<void>;
+  readonly start: () => Promise<void>;
+  readonly publish: (items: readonly T[]) => Promise<void>;
+  readonly shutdown: () => Promise<void>;
+  readonly checkHealth?: () => Promise<void>;
 }

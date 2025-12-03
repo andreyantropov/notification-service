@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedChannel } from "./createLoggedChannel.js";
-import { LoggedChannelDependencies } from "./interfaces/LoggedChannelDependencies.js";
+import { LoggedChannelDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Logger } from "../../../../application/ports/Logger.js";
-import { Channel } from "../../../../domain/ports/Channel.js";
+import { Logger } from "../../../../application/ports/index.js";
+import { Channel } from "../../../../domain/ports/index.js";
 import {
+  Contact,
   CHANNEL_TYPES,
   ChannelTypes,
-} from "../../../../domain/types/ChannelTypes.js";
-import { Contact } from "../../../../domain/types/Contact.js";
+} from "../../../../domain/types/index.js";
 
 const mockLoggerFn = (): Logger => ({
   debug: vi.fn() as Mock,

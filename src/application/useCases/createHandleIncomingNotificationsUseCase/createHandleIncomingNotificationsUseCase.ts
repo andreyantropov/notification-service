@@ -1,7 +1,7 @@
 import { HandleIncomingNotificationsUseCase } from "./interfaces/HandleIncomingNotificationsUseCase.js";
-import { HandleIncomingNotificationsUseCaseDependencies } from "./interfaces/HandleIncomingNotificationsUseCaseDependencies.js";
-import { Notification } from "../../../domain/types/Notification.js";
-import { IncomingNotification } from "../../types/IncomingNotification.js";
+import { HandleIncomingNotificationsUseCaseDependencies } from "./interfaces/index.js";
+import { Notification } from "../../../domain/types/index.js";
+import { IncomingNotification } from "../../types/index.js";
 
 export const createHandleIncomingNotificationsUseCase = (
   dependencies: HandleIncomingNotificationsUseCaseDependencies,
@@ -9,7 +9,7 @@ export const createHandleIncomingNotificationsUseCase = (
   const { producer, notificationDeliveryService, idGenerator } = dependencies;
 
   const handle = async (
-    incomingNotifications: IncomingNotification[],
+    incomingNotifications: readonly IncomingNotification[],
   ): Promise<Notification[]> => {
     const notifications = incomingNotifications.map((incomingNotification) => ({
       id: idGenerator(),

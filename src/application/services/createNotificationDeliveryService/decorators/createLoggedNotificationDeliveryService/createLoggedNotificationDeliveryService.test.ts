@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedNotificationDeliveryService } from "./createLoggedNotificationDeliveryService.js";
-import { LoggedNotificationDeliveryServiceDependencies } from "./interfaces/LoggedNotificationDeliveryServiceDependencies.js";
-import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
+import { LoggedNotificationDeliveryServiceDependencies } from "./interfaces/index.js";
+import {
+  Notification,
+  CHANNEL_TYPES,
+} from "../../../../../domain/types/index.js";
 import { EventType } from "../../../../enums/index.js";
-import { Logger } from "../../../../ports/Logger.js";
-import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
-import { NotificationDeliveryService } from "../../interfaces/NotificationDeliveryService.js";
+import { Logger } from "../../../../ports/index.js";
+import {
+  NotificationDeliveryService,
+  DeliveryResult,
+} from "../../interfaces/index.js";
 
 const mockLoggerFn = (): Logger => ({
   debug: vi.fn() as Mock,

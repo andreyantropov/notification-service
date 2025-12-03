@@ -1,2 +1,2 @@
-export * from "./interfaces/BitrixChannelConfig.js";
+export * from "./interfaces/index.js";
 export * from "./createBitrixChannel.js";

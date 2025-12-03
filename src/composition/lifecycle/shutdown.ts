@@ -1,6 +1,6 @@
 /* eslint-disable import/order */
-import { shutdown as shutdownSDK } from "../telemetry/sdk/index.js";
-import { container } from "../container/container.js";
+import { telemetry } from "../telemetry/index.js";
+import { container } from "../container/index.js";
 
 export const shutdown = async () => {
   const server = container.resolve("server");
@@ -15,5 +15,5 @@ export const shutdown = async () => {
   const producer = container.resolve("producer");
   await producer.shutdown();
 
-  shutdownSDK();
+  telemetry.shutdown();
 };

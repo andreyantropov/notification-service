@@ -1,12 +1,12 @@
 import { ChannelTypes } from "./ChannelTypes.js";
 
 interface ContactValueMap {
-  email: string;
-  bitrix: number;
+  readonly email: string;
+  readonly bitrix: number;
 }
 
 export type Contact = {
-  [K in ChannelTypes]: { type: K; value: ContactValueMap[K] };
+  [K in ChannelTypes]: { readonly type: K; readonly value: ContactValueMap[K] };
 }[ChannelTypes];
 
 export function isContactOfType<T extends ChannelTypes>(

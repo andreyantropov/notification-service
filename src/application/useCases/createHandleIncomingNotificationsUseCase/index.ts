@@ -1,3 +1,2 @@
-export * from "./interfaces/HandleIncomingNotificationsUseCaseDependencies.js";
-export * from "./interfaces/HandleIncomingNotificationsUseCase.js";
+export * from "./interfaces/index.js";
 export * from "./createHandleIncomingNotificationsUseCase.js";

@@ -1,7 +1,7 @@
-import { LoggedChannelDependencies } from "./interfaces/LoggedChannelDependencies.js";
+import { LoggedChannelDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Channel } from "../../../../domain/ports/Channel.js";
-import { Contact } from "../../../../domain/types/Contact.js";
+import { Channel } from "../../../../domain/ports/index.js";
+import { Contact } from "../../../../domain/types/index.js";
 
 export const createLoggedChannel = (
   dependencies: LoggedChannelDependencies,

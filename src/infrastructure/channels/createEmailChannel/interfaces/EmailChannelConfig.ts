@@ -1,10 +1,13 @@
 export interface EmailChannelConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
+  readonly host: string;
+  readonly port: number;
+  readonly secure: boolean;
+  readonly auth: {
+    readonly user: string;
+    readonly pass: string;
   };
-  fromEmail: string;
+  readonly fromEmail: string;
+  readonly greetingTimeoutMs?: number;
+  readonly sendTimeoutMs?: number;
+  readonly healthcheckTimeoutMs?: number;
 }

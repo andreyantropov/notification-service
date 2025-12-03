@@ -1,3 +1,3 @@
 export interface NotificationRetryService {
-  getRetryQueue: (retryCount: number) => string;
+  readonly getRetryQueue: (retryCount: number) => string;
 }

@@ -1,11 +1,10 @@
-import { DeliveryResult } from "./interfaces/DeliveryResult.js";
-import { NotificationDeliveryService } from "./interfaces/NotificationDeliveryService.js";
-import { NotificationDeliveryServiceDependencies } from "./interfaces/NotificationDeliveryServiceDependencies.js";
 import {
-  DEFAULT_STRATEGY_KEY,
-  strategyRegistry,
-} from "./strategies/strategyRegistry/strategyRegistry.js";
-import { Notification } from "../../../domain/types/Notification.js";
+  DeliveryResult,
+  NotificationDeliveryService,
+  NotificationDeliveryServiceDependencies,
+} from "./interfaces/index.js";
+import { DEFAULT_STRATEGY_KEY, strategyRegistry } from "./strategies/index.js";
+import { Notification } from "../../../domain/types/index.js";
 
 export const createNotificationDeliveryService = (
   dependencies: NotificationDeliveryServiceDependencies,
@@ -17,7 +16,7 @@ export const createNotificationDeliveryService = (
   }
 
   const send = async (
-    notifications: Notification[],
+    notifications: readonly Notification[],
   ): Promise<DeliveryResult[]> => {
     const results = await Promise.allSettled(
       notifications.map((notification) => {

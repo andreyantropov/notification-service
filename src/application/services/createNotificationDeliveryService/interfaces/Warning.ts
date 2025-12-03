@@ -1,6 +1,6 @@
 export interface Warning {
-  message: string;
-  details?: unknown;
-  contact?: string;
-  channel?: string;
+  readonly message: string;
+  readonly details?: unknown;
+  readonly contact?: string;
+  readonly channel?: string;
 }

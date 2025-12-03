@@ -1,9 +1,9 @@
 import { Log } from "../types/Log.js";
 
 export interface Logger {
-  debug: (log: Log) => Promise<void>;
-  info: (log: Log) => Promise<void>;
-  warning: (log: Log) => Promise<void>;
-  error: (log: Log) => Promise<void>;
-  critical: (log: Log) => Promise<void>;
+  readonly debug: (log: Log) => Promise<void>;
+  readonly info: (log: Log) => Promise<void>;
+  readonly warning: (log: Log) => Promise<void>;
+  readonly error: (log: Log) => Promise<void>;
+  readonly critical: (log: Log) => Promise<void>;
 }

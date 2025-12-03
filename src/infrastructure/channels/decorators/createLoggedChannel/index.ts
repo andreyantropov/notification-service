@@ -1,2 +1,2 @@
-export * from "./interfaces/LoggedChannelDependencies.js";
+export * from "./interfaces/index.js";
 export * from "./createLoggedChannel.js";

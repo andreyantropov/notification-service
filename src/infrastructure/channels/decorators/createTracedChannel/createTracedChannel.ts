@@ -1,6 +1,6 @@
-import { TrasedChannelDependencies } from "./interfaces/TracedChannelDependencies.js";
-import { Channel } from "../../../../domain/ports/Channel.js";
-import { Contact } from "../../../../domain/types/Contact.js";
+import { TrasedChannelDependencies } from "./interfaces/index.js";
+import { Channel } from "../../../../domain/ports/index.js";
+import { Contact } from "../../../../domain/types/index.js";
 
 export const createTracedChannel = (
   dependencies: TrasedChannelDependencies,

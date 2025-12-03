@@ -1,5 +1,5 @@
 export interface Consumer {
-  start: () => Promise<void>;
-  shutdown: () => Promise<void>;
-  checkHealth?: () => Promise<void>;
+  readonly start: () => Promise<void>;
+  readonly shutdown: () => Promise<void>;
+  readonly checkHealth?: () => Promise<void>;
 }

@@ -1,14 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createHandleIncomingNotificationsUseCase } from "./createHandleIncomingNotificationsUseCase.js";
-import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
-import { Notification } from "../../../domain/types/Notification.js";
-import { Producer } from "../../ports/Producer.js";
+import { Notification, CHANNEL_TYPES } from "../../../domain/types/index.js";
+import { Producer } from "../../ports/index.js";
 import {
   NotificationDeliveryService,
   DeliveryResult,
 } from "../../services/createNotificationDeliveryService/index.js";
-import { IncomingNotification } from "../../types/IncomingNotification.js";
+import { IncomingNotification } from "../../types/index.js";
 
 const createIncomingNotification = (
   message: string,

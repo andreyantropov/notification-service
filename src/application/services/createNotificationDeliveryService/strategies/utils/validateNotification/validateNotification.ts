@@ -1,4 +1,4 @@
-import { Notification } from "../../../../../../domain/types/Notification.js";
+import { Notification } from "../../../../../../domain/types/index.js";
 
 const EMPTY_MESSAGE = "";
 
