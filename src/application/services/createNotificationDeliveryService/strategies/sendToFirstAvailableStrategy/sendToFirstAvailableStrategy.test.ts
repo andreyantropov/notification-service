@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 
 import { sendToFirstAvailableStrategy } from "./sendToFirstAvailableStrategy.js";
-import { Channel } from "../../../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
-import { Contact } from "../../../../../domain/types/Contact.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
+import { Channel } from "../../../../../domain/ports/index.js";
+import {
+  CHANNEL_TYPES,
+  Contact,
+  Notification,
+} from "../../../../../domain/types/index.js";
 
 class MockEmailChannel implements Channel {
   readonly type = CHANNEL_TYPES.EMAIL;

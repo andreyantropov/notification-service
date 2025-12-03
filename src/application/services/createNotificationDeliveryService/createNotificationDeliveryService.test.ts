@@ -1,14 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotificationDeliveryService } from "./createNotificationDeliveryService.js";
-import { DeliveryResult } from "./interfaces/DeliveryResult.js";
-import {
-  strategyRegistry,
-  DEFAULT_STRATEGY_KEY,
-} from "./strategies/strategyRegistry/index.js";
-import { Channel } from "../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
-import { Notification } from "../../../domain/types/Notification.js";
+import { DeliveryResult } from "./interfaces/index.js";
+import { strategyRegistry, DEFAULT_STRATEGY_KEY } from "./strategies/index.js";
+import { Channel } from "../../../domain/ports/index.js";
+import { Notification, CHANNEL_TYPES } from "../../../domain/types/index.js";
 
 const emailContact = {
   type: CHANNEL_TYPES.EMAIL,

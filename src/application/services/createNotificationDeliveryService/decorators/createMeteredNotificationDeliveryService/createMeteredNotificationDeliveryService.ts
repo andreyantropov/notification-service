@@ -1,8 +1,12 @@
-import { MeteredNotificationDeliveryServiceDependencies } from "./interfaces/MeteredNotificationDeliveryServiceDependencies.js";
-import { DELIVERY_STRATEGIES } from "../../../../../domain/types/DeliveryStrategies.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
-import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
-import { NotificationDeliveryService } from "../../interfaces/NotificationDeliveryService.js";
+import { MeteredNotificationDeliveryServiceDependencies } from "./interfaces/index.js";
+import {
+  Notification,
+  DELIVERY_STRATEGIES,
+} from "../../../../../domain/types/index.js";
+import {
+  NotificationDeliveryService,
+  DeliveryResult,
+} from "../../interfaces/index.js";
 
 const DEFAULT_STRATEGY = DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE;
 const DEFAULT_SUBJECT = "unknown";
@@ -13,7 +17,7 @@ export const createMeteredNotificationDeliveryService = (
   const { notificationDeliveryService, meter } = dependencies;
 
   const send = async (
-    notifications: Notification[],
+    notifications: readonly Notification[],
   ): Promise<DeliveryResult[]> => {
     try {
       const results = await notificationDeliveryService.send(notifications);

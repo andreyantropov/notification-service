@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 
 import { validateNotification } from "./validateNotification.js";
-import { CHANNEL_TYPES } from "../../../../../../domain/types/ChannelTypes.js";
-import { Contact } from "../../../../../../domain/types/Contact.js";
-import { Notification } from "../../../../../../domain/types/Notification.js";
+import {
+  Notification,
+  Contact,
+  CHANNEL_TYPES,
+} from "../../../../../../domain/types/index.js";
 
 describe("validateNotification", () => {
   it("should return false when contacts is undefined", () => {

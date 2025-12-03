@@ -1,10 +1,10 @@
-import { Notification } from "../../../../domain/types/Notification.js";
-import { Producer } from "../../../ports/Producer.js";
+import { Notification } from "../../../../domain/types/index.js";
+import { Producer } from "../../../ports/index.js";
 import { NotificationDeliveryService } from "../../../services/createNotificationDeliveryService/index.js";
-import { Generator } from "../../../types/Generator.js";
+import { Generator } from "../../../types/index.js";
 
 export interface HandleIncomingNotificationsUseCaseDependencies {
-  producer: Producer<Notification>;
-  notificationDeliveryService: NotificationDeliveryService;
-  idGenerator: Generator;
+  readonly producer: Producer<Notification>;
+  readonly notificationDeliveryService: NotificationDeliveryService;
+  readonly idGenerator: Generator;
 }

@@ -1,7 +1,7 @@
-import { Logger } from "../../../../../application/ports/Logger.js";
-import { Channel } from "../../../../../domain/ports/Channel.js";
+import { Logger } from "../../../../../application/ports/index.js";
+import { Channel } from "../../../../../domain/ports/index.js";
 
 export interface LoggedChannelDependencies {
-  channel: Channel;
-  logger: Logger;
+  readonly channel: Channel;
+  readonly logger: Logger;
 }

@@ -1,2 +1,2 @@
-export * from "./interfaces/EmailChannelConfig.js";
+export * from "./interfaces/index.js";
 export * from "./createEmailChannel.js";

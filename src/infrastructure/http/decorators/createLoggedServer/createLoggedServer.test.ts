@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedServer } from "./createLoggedServer.js";
-import { LoggedServerDependencies } from "./interfaces/LoggedServerDependencies.js";
+import { LoggedServerDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Logger } from "../../../../application/ports/Logger.js";
-import { Server } from "../../interfaces/Server.js";
+import { Logger } from "../../../../application/ports/index.js";
+import { Server } from "../../interfaces/index.js";
 
 const mockLoggerFn = (): Logger => ({
   debug: vi.fn() as Mock,

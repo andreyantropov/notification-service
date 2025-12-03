@@ -1,6 +1,6 @@
-import { MeteredChannelDependencies } from "./interfaces/MeteredChannelDependencies.js";
-import { Channel } from "../../../../domain/ports/Channel.js";
-import { Contact } from "../../../../domain/types/Contact.js";
+import { MeteredChannelDependencies } from "./interfaces/index.js";
+import { Channel } from "../../../../domain/ports/index.js";
+import { Contact } from "../../../../domain/types/index.js";
 
 export const createMeteredChannel = (
   dependencies: MeteredChannelDependencies,

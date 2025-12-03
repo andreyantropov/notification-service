@@ -1,2 +1,2 @@
-export * from "./interfaces/NotificationRetryService.js";
+export * from "./interfaces/index.js";
 export * from "./createNotificationRetryService.js";

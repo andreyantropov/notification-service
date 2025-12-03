@@ -1,9 +1,9 @@
 import { EventType } from "../enums/index.js";
 
 export interface Log {
-  message: string;
-  eventType?: EventType;
-  duration?: number;
-  details?: unknown;
-  error?: unknown;
+  readonly message: string;
+  readonly eventType?: EventType;
+  readonly duration?: number;
+  readonly details?: unknown;
+  readonly error?: unknown;
 }

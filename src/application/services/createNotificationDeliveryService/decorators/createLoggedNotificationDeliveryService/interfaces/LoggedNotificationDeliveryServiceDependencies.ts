@@ -1,7 +1,7 @@
-import { Logger } from "../../../../../ports/Logger.js";
+import { Logger } from "../../../../../ports/index.js";
 import { NotificationDeliveryService } from "../../../interfaces/NotificationDeliveryService.js";
 
 export interface LoggedNotificationDeliveryServiceDependencies {
-  notificationDeliveryService: NotificationDeliveryService;
-  logger: Logger;
+  readonly notificationDeliveryService: NotificationDeliveryService;
+  readonly logger: Logger;
 }

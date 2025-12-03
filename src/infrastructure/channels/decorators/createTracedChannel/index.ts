@@ -1,2 +1,2 @@
-export * from "./interfaces/TracedChannelDependencies.js";
+export * from "./interfaces/index.js";
 export * from "./createTracedChannel.js";

@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 
 import { createMeteredChannel } from "./createMeteredChannel.js";
-import { MeteredChannelDependencies } from "./interfaces/MeteredChannelDependencies.js";
-import { Channel } from "../../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../../domain/types/ChannelTypes.js";
-import { Contact } from "../../../../domain/types/Contact.js";
+import { MeteredChannelDependencies } from "./interfaces/index.js";
+import { Channel } from "../../../../domain/ports/index.js";
+import { Contact, CHANNEL_TYPES } from "../../../../domain/types/index.js";
 
 const mockContact: Contact = {
   type: CHANNEL_TYPES.EMAIL,

@@ -1,6 +1,6 @@
-import { LoggedServerDependencies } from "./interfaces/LoggedServerDependencies.js";
+import { LoggedServerDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Server } from "../../interfaces/Server.js";
+import { Server } from "../../interfaces/index.js";
 
 export const createLoggedServer = (
   dependencies: LoggedServerDependencies,

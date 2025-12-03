@@ -1,3 +1,2 @@
-export * from "./interfaces/CheckNotificationServiceHealthUseCaseDependencies.js";
-export * from "./interfaces/CheckNotificationServiceHealthUseCase.js";
+export * from "./interfaces/index.js";
 export * from "./createCheckNotificationServiceHealthUseCase.js";

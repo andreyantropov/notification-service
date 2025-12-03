@@ -1,7 +1,7 @@
-import { Meter } from "../../../../../ports/Meter.js";
+import { Meter } from "../../../../../ports/index.js";
 import { NotificationDeliveryService } from "../../../interfaces/NotificationDeliveryService.js";
 
 export interface MeteredNotificationDeliveryServiceDependencies {
-  notificationDeliveryService: NotificationDeliveryService;
-  meter: Meter;
+  readonly notificationDeliveryService: NotificationDeliveryService;
+  readonly meter: Meter;
 }

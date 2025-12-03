@@ -1,8 +1,8 @@
-import { Notification } from "../../../../domain/types/Notification.js";
-import { IncomingNotification } from "../../../types/IncomingNotification.js";
+import { Notification } from "../../../../domain/types/index.js";
+import { IncomingNotification } from "../../../types/index.js";
 
 export interface HandleIncomingNotificationsUseCase {
-  handle: (
-    incomingNotifications: IncomingNotification[],
+  readonly handle: (
+    incomingNotifications: readonly IncomingNotification[],
   ) => Promise<Notification[]>;
 }

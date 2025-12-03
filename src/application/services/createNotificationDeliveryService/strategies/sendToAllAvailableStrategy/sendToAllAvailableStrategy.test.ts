@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
 import { sendToAllAvailableStrategy } from "./sendToAllAvailableStrategy.js";
-import { Channel } from "../../../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../../../domain/types/ChannelTypes.js";
-import { Contact } from "../../../../../domain/types/Contact.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
+import { Channel } from "../../../../../domain/ports/index.js";
+import {
+  Contact,
+  CHANNEL_TYPES,
+  Notification,
+} from "../../../../../domain/types/index.js";
 
 const createMockChannel = (
   type: Channel["type"],

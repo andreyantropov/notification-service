@@ -1,5 +1,7 @@
 export interface BitrixChannelConfig {
-  baseUrl: string;
-  userId: string;
-  authToken: string;
+  readonly baseUrl: string;
+  readonly userId: string;
+  readonly authToken: string;
+  readonly sendTimeoutMs?: number;
+  readonly healthcheckTimeoutMs?: number;
 }

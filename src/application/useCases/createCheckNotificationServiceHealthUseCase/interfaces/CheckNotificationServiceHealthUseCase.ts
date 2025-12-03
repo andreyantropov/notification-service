@@ -1,3 +1,3 @@
 export interface CheckNotificationServiceHealthUseCase {
-  checkHealth: () => Promise<void>;
+  readonly checkHealth: () => Promise<void>;
 }

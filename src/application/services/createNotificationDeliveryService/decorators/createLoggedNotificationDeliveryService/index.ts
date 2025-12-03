@@ -1,2 +1,2 @@
-export * from "./interfaces/LoggedNotificationDeliveryServiceDependencies.js";
+export * from "./interfaces/index.js";
 export * from "./createLoggedNotificationDeliveryService.js";

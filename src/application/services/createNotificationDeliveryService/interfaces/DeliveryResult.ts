@@ -1,10 +1,10 @@
 import { Warning } from "./Warning.js";
-import { Notification } from "../../../../domain/types/Notification.js";
+import { Notification } from "../../../../domain/types/index.js";
 
 export type DeliveryResult = {
-  success: boolean;
-  notification: Notification;
-  details?: unknown;
-  error?: unknown;
-  warnings?: Warning[];
+  readonly success: boolean;
+  readonly notification: Notification;
+  readonly details?: unknown;
+  readonly error?: unknown;
+  readonly warnings?: readonly Warning[];
 };

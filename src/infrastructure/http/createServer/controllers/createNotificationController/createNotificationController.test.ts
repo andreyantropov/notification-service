@@ -1,0 +1,396 @@
+import { Request, Response, NextFunction } from "express";
+import { TimeoutError } from "p-timeout";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { createNotificationController } from "./createNotificationController.js";
+import { IncomingNotification } from "../../../../../application/types/index.js";
+import {
+  Notification,
+  Contact,
+  CHANNEL_TYPES,
+} from "../../../../../domain/types/index.js";
+
+const emailContact: Contact = {
+  type: CHANNEL_TYPES.EMAIL,
+  value: "user1@example.com",
+};
+
+const validIncomingNotification: IncomingNotification = {
+  contacts: [emailContact],
+  message: "Привет!",
+  isImmediate: true,
+};
+
+const invalidNotification = {
+  contacts: [],
+  message: "",
+};
+
+const mockHandleIncomingNotificationsUseCase = {
+  handle:
+    vi.fn<
+      (
+        input: IncomingNotification | IncomingNotification[],
+      ) => Promise<Notification[]>
+    >(),
+};
+
+const mockAuthPayload = {
+  sub: "user-123",
+  preferred_username: "john.doe",
+  name: "John Doe",
+};
+
+interface AuthenticatedRequest extends Request {
+  auth?: {
+    payload: unknown;
+  };
+}
+
+describe("NotificationController", () => {
+  let controller: ReturnType<typeof createNotificationController>;
+  let req: AuthenticatedRequest;
+  let res: Partial<Response>;
+  let next: NextFunction;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockHandleIncomingNotificationsUseCase.handle.mockImplementation(
+      (input) => {
+        const rawList = Array.isArray(input) ? input : [input];
+        const notifications: Notification[] = rawList.map((raw, i) => ({
+          id: `generated-id-${i}`,
+          createdAt: "2025-01-01T00:00:00.000Z",
+          ...raw,
+        }));
+        return Promise.resolve(notifications);
+      },
+    );
+
+    controller = createNotificationController({
+      handleIncomingNotificationsUseCase:
+        mockHandleIncomingNotificationsUseCase,
+    });
+
+    req = {
+      body: null,
+      auth: {
+        payload: mockAuthPayload,
+      },
+    } as AuthenticatedRequest;
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+    next = vi.fn();
+  });
+
+  it("should return 202 when all notifications are valid", async () => {
+    req.body = validIncomingNotification;
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...validIncomingNotification,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+    ]);
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Все уведомления приняты в обработку",
+        acceptedCount: 1,
+        rejectedCount: 0,
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            success: true,
+            notification: expect.objectContaining({
+              id: expect.any(String),
+              ...validIncomingNotification,
+            }),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("should return 207 when some notifications fail validation", async () => {
+    req.body = [validIncomingNotification, invalidNotification];
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...validIncomingNotification,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+    ]);
+    expect(res.status).toHaveBeenCalledWith(207);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Уведомления приняты частично: 1 принято, 1 отклонено",
+        totalCount: 2,
+        acceptedCount: 1,
+        rejectedCount: 1,
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            success: true,
+            notification: expect.objectContaining({
+              id: expect.any(String),
+              ...validIncomingNotification,
+            }),
+          }),
+          expect.objectContaining({
+            success: false,
+            notification: invalidNotification,
+            error: expect.any(Array),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("should return 400 when no notifications are valid", async () => {
+    req.body = [invalidNotification, { contacts: ["bad"], message: "" }];
+
+    await controller.send(req as Request, res as Response);
+
+    expect(
+      mockHandleIncomingNotificationsUseCase.handle,
+    ).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "HTTP 400 Bad Request",
+      message: "Ни одно уведомление не прошло валидацию",
+      details: expect.arrayContaining([
+        expect.objectContaining({
+          item: invalidNotification,
+          error: expect.any(Array),
+        }),
+      ]),
+    });
+  });
+
+  it("should propagate non-timeout errors to be handled by 500 middleware", async () => {
+    req.body = validIncomingNotification;
+
+    const testError = new Error("Unexpected error");
+    mockHandleIncomingNotificationsUseCase.handle.mockRejectedValueOnce(
+      testError,
+    );
+
+    await expect(
+      controller.send(req as Request, res as Response),
+    ).rejects.toThrow(testError);
+
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should throw error when req.auth is missing", async () => {
+    req.auth = undefined;
+    req.body = validIncomingNotification;
+
+    await expect(
+      controller.send(req as Request, res as Response),
+    ).rejects.toThrow(
+      "Контроллер вызван без предварительной проверки аутентификации.",
+    );
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should throw error when token payload is invalid", async () => {
+    req.auth = {
+      payload: {
+        preferred_username: "john.doe",
+      },
+    };
+    req.body = validIncomingNotification;
+
+    await expect(
+      controller.send(req as Request, res as Response),
+    ).rejects.toThrow("Не удалось извлечь данные об отправителе запроса");
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should return 207 with multiple invalid notifications", async () => {
+    const notif1: IncomingNotification = {
+      ...validIncomingNotification,
+      message: "Valid",
+    };
+    const notif2 = { contacts: [], message: "" };
+    const notif3 = {
+      contacts: [{ type: CHANNEL_TYPES.EMAIL, value: 123 }],
+      message: "Bad value",
+    };
+
+    req.body = [notif1, notif2, notif3];
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...notif1,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+    ]);
+    expect(res.status).toHaveBeenCalledWith(207);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Уведомления приняты частично: 1 принято, 2 отклонено",
+        totalCount: 3,
+        acceptedCount: 1,
+        rejectedCount: 2,
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            success: true,
+            notification: expect.objectContaining(notif1),
+          }),
+          expect.objectContaining({ success: false, notification: notif2 }),
+          expect.objectContaining({ success: false, notification: notif3 }),
+        ]),
+      }),
+    );
+  });
+
+  it("should handle single notification object", async () => {
+    req.body = validIncomingNotification;
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...validIncomingNotification,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+    ]);
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  it("should handle array of notifications", async () => {
+    const notif1: IncomingNotification = {
+      ...validIncomingNotification,
+      message: "Msg 1",
+    };
+    const notif2: IncomingNotification = {
+      ...validIncomingNotification,
+      message: "Msg 2",
+    };
+    req.body = [notif1, notif2];
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...notif1,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+      {
+        ...notif2,
+        subject: {
+          id: "user-123",
+          name: "john.doe",
+        },
+      },
+    ]);
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  it("should return 202 when all notifications are valid (array)", async () => {
+    req.body = [validIncomingNotification];
+
+    await controller.send(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  it("should use name fallback when preferred_username is missing", async () => {
+    req.auth = {
+      payload: {
+        sub: "user-456",
+        name: "Jane Smith",
+      },
+    };
+    req.body = validIncomingNotification;
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...validIncomingNotification,
+        subject: {
+          id: "user-456",
+          name: "Jane Smith",
+        },
+      },
+    ]);
+  });
+
+  it("should handle token with only sub field", async () => {
+    req.auth = {
+      payload: {
+        sub: "user-789",
+      },
+    };
+    req.body = validIncomingNotification;
+
+    await controller.send(req as Request, res as Response);
+
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
+      {
+        ...validIncomingNotification,
+        subject: {
+          id: "user-789",
+          name: undefined,
+        },
+      },
+    ]);
+  });
+
+  it("should throw TimeoutError if handleIncomingNotificationsUseCase hangs", async () => {
+    vi.useFakeTimers();
+
+    mockHandleIncomingNotificationsUseCase.handle.mockReturnValue(
+      new Promise(() => {}),
+    );
+
+    req.body = validIncomingNotification;
+
+    const sendPromise = controller.send(req as Request, res as Response);
+
+    vi.advanceTimersByTime(60_001);
+
+    await expect(sendPromise).rejects.toThrow(TimeoutError);
+
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
+});

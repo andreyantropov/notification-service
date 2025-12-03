@@ -1,8 +1,10 @@
-import { LoggedNotificationDeliveryServiceDependencies } from "./interfaces/LoggedNotificationDeliveryServiceDependencies.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
+import { LoggedNotificationDeliveryServiceDependencies } from "./interfaces/index.js";
+import { Notification } from "../../../../../domain/types/index.js";
 import { EventType } from "../../../../enums/index.js";
-import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
-import { NotificationDeliveryService } from "../../interfaces/NotificationDeliveryService.js";
+import {
+  NotificationDeliveryService,
+  DeliveryResult,
+} from "../../interfaces/index.js";
 
 export const createLoggedNotificationDeliveryService = (
   dependencies: LoggedNotificationDeliveryServiceDependencies,
@@ -10,7 +12,7 @@ export const createLoggedNotificationDeliveryService = (
   const { notificationDeliveryService, logger } = dependencies;
 
   const send = async (
-    notifications: Notification[],
+    notifications: readonly Notification[],
   ): Promise<DeliveryResult[]> => {
     const start = Date.now();
     try {

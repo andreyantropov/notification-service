@@ -1,5 +1,5 @@
 export interface Tracer {
-  startActiveSpan<T>(
+  startActiveSpan: <T>(
     name: string,
     options: {
       kind?: "SERVER" | "CLIENT" | "INTERNAL" | "PRODUCER" | "CONSUMER";
@@ -9,5 +9,5 @@ export interface Tracer {
       recordException: (error: Error) => void;
       setStatus: (status: { code: "OK" | "ERROR"; message?: string }) => void;
     }) => Promise<T>,
-  ): Promise<T>;
+  ) => Promise<T>;
 }

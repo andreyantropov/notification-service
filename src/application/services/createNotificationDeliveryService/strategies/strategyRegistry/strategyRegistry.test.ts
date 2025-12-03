@@ -4,7 +4,7 @@ import { DEFAULT_STRATEGY_KEY, strategyRegistry } from "./strategyRegistry.js";
 import {
   DELIVERY_STRATEGIES,
   DeliveryStrategies,
-} from "../../../../../domain/types/DeliveryStrategies.js";
+} from "../../../../../domain/types/index.js";
 
 describe("strategyRegistry", () => {
   it('should export DEFAULT_STRATEGY_KEY as "send_to_first_available"', () => {

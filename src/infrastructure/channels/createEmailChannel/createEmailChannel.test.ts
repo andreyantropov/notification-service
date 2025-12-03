@@ -2,11 +2,10 @@ import nodemailer from "nodemailer";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { createEmailChannel } from "./createEmailChannel.js";
-import { EmailChannelConfig } from "./interfaces/EmailChannelConfig.js";
-import { Channel } from "../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
-import { Contact } from "../../../domain/types/Contact.js";
-import { noop } from "../../../shared/utils/noop/noop.js";
+import { EmailChannelConfig } from "./interfaces/index.js";
+import { Channel } from "../../../domain/ports/index.js";
+import { Contact, CHANNEL_TYPES } from "../../../domain/types/index.js";
+import { noop } from "../../../shared/utils/index.js";
 
 vi.mock("nodemailer");
 
@@ -19,7 +18,7 @@ describe("createEmailChannel", () => {
       user: "user@example.com",
       pass: "password",
     },
-    fromEmail: "no-reply@example.com",
+    fromEmail: '"ISPlanar" <no-reply@example.com>',
   };
 
   let channel: Channel;
@@ -71,7 +70,7 @@ describe("createEmailChannel", () => {
       await channel.send(contact, message);
 
       expect(transporter.sendMail).toHaveBeenCalledWith({
-        from: `"ISPlanar" <${mockConfig.fromEmail}>`,
+        from: mockConfig.fromEmail,
         to: contact.value,
         subject: "ISPlanar",
         text: message,

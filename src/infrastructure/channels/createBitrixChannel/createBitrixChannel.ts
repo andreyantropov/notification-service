@@ -1,16 +1,25 @@
 import axios from "axios";
 import pTimeout from "p-timeout";
 
-import { BitrixChannelConfig } from "./interfaces/BitrixChannelConfig.js";
-import { Channel } from "../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
-import { Contact, isContactOfType } from "../../../domain/types/Contact.js";
+import { BitrixChannelConfig } from "./interfaces/index.js";
+import { Channel } from "../../../domain/ports/index.js";
+import {
+  Contact,
+  isContactOfType,
+  CHANNEL_TYPES,
+} from "../../../domain/types/index.js";
 
-const DEFAULT_SEND_TIMEOUT = 10_000;
-const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
+const DEFAULT_SEND_TIMEOUT_MS = 10_000;
+const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 5_000;
 
 export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
-  const { baseUrl, userId, authToken } = config;
+  const {
+    baseUrl,
+    userId,
+    authToken,
+    sendTimeoutMs = DEFAULT_SEND_TIMEOUT_MS,
+    healthcheckTimeoutMs = DEFAULT_HEALTHCHECK_TIMEOUT_MS,
+  } = config;
 
   const type = CHANNEL_TYPES.BITRIX;
 
@@ -34,10 +43,10 @@ export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
             user_id: contact.value,
             message,
           },
-          timeout: DEFAULT_SEND_TIMEOUT,
+          timeout: sendTimeoutMs,
         }),
         {
-          milliseconds: DEFAULT_SEND_TIMEOUT,
+          milliseconds: sendTimeoutMs,
           message: `Превышено время ожидания ответа от Bitrix при отправке уведомления`,
         },
       );
@@ -63,7 +72,7 @@ export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
           validateStatus: (status) => status >= 200 && status < 400,
         }),
         {
-          milliseconds: DEFAULT_HEALTHCHECK_TIMEOUT,
+          milliseconds: healthcheckTimeoutMs,
           message: "Превышено время ожидания ответа от Bitrix",
         },
       );

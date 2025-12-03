@@ -1,4 +1,4 @@
 export interface Server {
-  start: () => Promise<void>;
-  shutdown: () => Promise<void>;
+  readonly start: () => Promise<void>;
+  readonly shutdown: () => Promise<void>;
 }

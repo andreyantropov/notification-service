@@ -1,13 +1,12 @@
-import { Channel } from "../../../../../domain/ports/Channel.js";
-import { Notification } from "../../../../../domain/types/Notification.js";
-import { DeliveryResult } from "../../interfaces/DeliveryResult.js";
-import { Warning } from "../../interfaces/Warning.js";
-import { DeliveryStrategy } from "../../types/DeliveryStrategy.js";
-import { validateNotification } from "../utils/validateNotification/validateNotification.js";
+import { Channel } from "../../../../../domain/ports/index.js";
+import { Notification } from "../../../../../domain/types/index.js";
+import { DeliveryResult, Warning } from "../../interfaces/index.js";
+import { DeliveryStrategy } from "../../types/index.js";
+import { validateNotification } from "../utils/index.js";
 
 export const sendToFirstAvailableStrategy: DeliveryStrategy = async (
   notification: Notification,
-  channels: Channel[],
+  channels: readonly Channel[],
 ): Promise<DeliveryResult> => {
   const { contacts, message } = notification;
 

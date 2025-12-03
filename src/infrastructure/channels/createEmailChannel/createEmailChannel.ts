@@ -1,28 +1,37 @@
 import nodemailer from "nodemailer";
 import pTimeout from "p-timeout";
 
-import { EmailChannelConfig } from "./interfaces/EmailChannelConfig.js";
-import { Channel } from "../../../domain/ports/Channel.js";
-import { CHANNEL_TYPES } from "../../../domain/types/ChannelTypes.js";
-import { Contact, isContactOfType } from "../../../domain/types/Contact.js";
+import { EmailChannelConfig } from "./interfaces/index.js";
+import { Channel } from "../../../domain/ports/index.js";
+import {
+  Contact,
+  isContactOfType,
+  CHANNEL_TYPES,
+} from "../../../domain/types/index.js";
 
-const DEFAULT_GREETING_TIMEOUT = 5_000;
-const DEFAULT_SEND_TIMEOUT = 10_000;
-const DEFAULT_HEALTHCHECK_TIMEOUT = 5000;
+const DEFAULT_GREETING_TIMEOUT_MS = 5_000;
+const DEFAULT_SEND_TIMEOUT_MS = 10_000;
+const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 5_000;
 
 export const createEmailChannel = (config: EmailChannelConfig): Channel => {
-  const { host, port, secure, auth, fromEmail } = config;
+  const {
+    host,
+    port,
+    secure,
+    auth,
+    fromEmail,
+    greetingTimeoutMs = DEFAULT_GREETING_TIMEOUT_MS,
+    sendTimeoutMs = DEFAULT_SEND_TIMEOUT_MS,
+    healthcheckTimeoutMs = DEFAULT_HEALTHCHECK_TIMEOUT_MS,
+  } = config;
 
   const transporter = nodemailer.createTransport({
     host,
     port,
     secure,
-    auth: {
-      user: auth.user,
-      pass: auth.pass,
-    },
-    greetingTimeout: DEFAULT_GREETING_TIMEOUT,
-    socketTimeout: DEFAULT_SEND_TIMEOUT,
+    auth,
+    greetingTimeout: greetingTimeoutMs,
+    socketTimeout: sendTimeoutMs,
   });
 
   const type = CHANNEL_TYPES.EMAIL;
@@ -41,13 +50,13 @@ export const createEmailChannel = (config: EmailChannelConfig): Channel => {
     try {
       await pTimeout(
         transporter.sendMail({
-          from: `"ISPlanar" <${fromEmail}>`,
+          from: fromEmail,
           to: contact.value,
           subject: "ISPlanar",
           text: message,
         }),
         {
-          milliseconds: DEFAULT_SEND_TIMEOUT,
+          milliseconds: sendTimeoutMs,
           message: `Превышено время ожидания ответа от SMTP-сервера при отправке email`,
         },
       );
@@ -71,7 +80,7 @@ export const createEmailChannel = (config: EmailChannelConfig): Channel => {
           });
         }),
         {
-          milliseconds: DEFAULT_HEALTHCHECK_TIMEOUT,
+          milliseconds: healthcheckTimeoutMs,
           message: "Превышено время ожидания подключения к SMTP",
         },
       );

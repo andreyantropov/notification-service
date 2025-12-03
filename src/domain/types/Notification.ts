@@ -3,11 +3,11 @@ import { DeliveryStrategies } from "./DeliveryStrategies.js";
 import { Subject } from "./Subject.js";
 
 export interface Notification {
-  id: string;
-  createdAt: string;
-  contacts: Contact[];
-  message: string;
-  isImmediate?: boolean;
-  strategy?: DeliveryStrategies;
-  subject?: Subject;
+  readonly id: string;
+  readonly createdAt: string;
+  readonly contacts: readonly Contact[];
+  readonly message: string;
+  readonly isImmediate?: boolean;
+  readonly strategy?: DeliveryStrategies;
+  readonly subject?: Subject;
 }

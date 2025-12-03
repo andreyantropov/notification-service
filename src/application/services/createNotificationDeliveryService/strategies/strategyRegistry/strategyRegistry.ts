@@ -1,10 +1,10 @@
 import {
   DELIVERY_STRATEGIES,
   DeliveryStrategies,
-} from "../../../../../domain/types/DeliveryStrategies.js";
-import { DeliveryStrategy } from "../../types/DeliveryStrategy.js";
-import { sendToAllAvailableStrategy } from "../sendToAllAvailableStrategy/sendToAllAvailableStrategy.js";
-import { sendToFirstAvailableStrategy } from "../sendToFirstAvailableStrategy/sendToFirstAvailableStrategy.js";
+} from "../../../../../domain/types/index.js";
+import { DeliveryStrategy } from "../../types/index.js";
+import { sendToAllAvailableStrategy } from "../sendToAllAvailableStrategy/index.js";
+import { sendToFirstAvailableStrategy } from "../sendToFirstAvailableStrategy/index.js";
 
 export const DEFAULT_STRATEGY_KEY = DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE;
 

@@ -4,5 +4,5 @@ import { DeliveryResult } from "../interfaces/DeliveryResult.js";
 
 export type DeliveryStrategy = (
   notification: Notification,
-  channels: Channel[],
+  channels: readonly Channel[],
 ) => Promise<DeliveryResult>;

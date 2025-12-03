@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createCheckNotificationServiceHealthUseCase } from "./createCheckNotificationServiceHealthUseCase.js";
-import { Consumer } from "../../../application/ports/Consumer.js";
-import { Producer } from "../../../application/ports/Producer.js";
-import { Notification } from "../../../domain/types/Notification.js";
+import { Consumer, Producer } from "../../../application/ports/index.js";
+import { Notification } from "../../../domain/types/index.js";
 import { NotificationDeliveryService } from "../../services/createNotificationDeliveryService/index.js";
 
 const createMockProducer = (hasCheckHealth = false): Producer<Notification> => {

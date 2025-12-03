@@ -1,9 +1,9 @@
 /* eslint-disable import/order */
-import { start as startSDK } from "../telemetry/sdk/index.js";
-import { container } from "../container/container.js";
+import { telemetry } from "../telemetry/index.js";
+import { container } from "../container/index.js";
 
 export const start = async () => {
-  startSDK();
+  telemetry.start();
 
   const producer = container.resolve("producer");
   await producer.start();

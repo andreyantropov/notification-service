@@ -1,5 +1,7 @@
-import { CheckNotificationServiceHealthUseCase } from "./interfaces/CheckNotificationServiceHealthUseCase.js";
-import { CheckNotificationServiceHealthUseCaseDependencies } from "./interfaces/CheckNotificationServiceHealthUseCaseDependencies.js";
+import {
+  CheckNotificationServiceHealthUseCase,
+  CheckNotificationServiceHealthUseCaseDependencies,
+} from "./interfaces/index.js";
 
 export const createCheckNotificationServiceHealthUseCase = (
   dependencies: CheckNotificationServiceHealthUseCaseDependencies,
