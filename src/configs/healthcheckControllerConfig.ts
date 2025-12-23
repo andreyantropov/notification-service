@@ -1,12 +1,14 @@
 import { z } from "zod";
 
-import { HealthcheckControllerConfig } from "../infrastructure/http/index.js";
+import type { HealthcheckControllerConfig } from "../infrastructure/http/index.js";
 
-const healthcheckControllerConfigSchema = z.object({
+const schema = z.object({
   readyTimeoutMs: z.coerce.number().int().positive().optional(),
 });
 
+const rawEnv = {
+  readyTimeoutMs: process.env.HEALTHCHECK_CONTROLLER_READY_TIMEOUT_MS,
+};
+
 export const healthcheckControllerConfig: HealthcheckControllerConfig =
-  healthcheckControllerConfigSchema.parse({
-    readyTimeoutMs: process.env.HEALTHCHECK_CONTROLLER_READY_TIMEOUT_MS,
-  });
+  schema.parse(rawEnv);

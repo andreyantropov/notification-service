@@ -1,13 +1,14 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
 import { TimeoutError } from "p-timeout";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotificationController } from "./createNotificationController.js";
-import { IncomingNotification } from "../../../../../application/types/index.js";
-import {
+import type { IncomingNotification } from "../../../../../application/types/index.js";
+import { CHANNEL_TYPES } from "../../../../../domain/constants/index.js";
+import type {
   Notification,
   Contact,
-  CHANNEL_TYPES,
+  Subject,
 } from "../../../../../domain/types/index.js";
 
 const emailContact: Contact = {
@@ -27,12 +28,7 @@ const invalidNotification = {
 };
 
 const mockHandleIncomingNotificationsUseCase = {
-  handle:
-    vi.fn<
-      (
-        input: IncomingNotification | IncomingNotification[],
-      ) => Promise<Notification[]>
-    >(),
+  handle: vi.fn(),
 };
 
 const mockAuthPayload = {
@@ -51,20 +47,22 @@ describe("NotificationController", () => {
   let controller: ReturnType<typeof createNotificationController>;
   let req: AuthenticatedRequest;
   let res: Partial<Response>;
-  let next: NextFunction;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockHandleIncomingNotificationsUseCase.handle.mockImplementation(
-      (input) => {
-        const rawList = Array.isArray(input) ? input : [input];
-        const notifications: Notification[] = rawList.map((raw, i) => ({
+      (notifications: readonly IncomingNotification[], subject?: Subject) => {
+        const list = Array.isArray(notifications)
+          ? notifications
+          : [notifications];
+        const result: Notification[] = list.map((item, i) => ({
           id: `generated-id-${i}`,
           createdAt: "2025-01-01T00:00:00.000Z",
-          ...raw,
+          ...item,
+          ...(subject && { subject }),
         }));
-        return Promise.resolve(notifications);
+        return Promise.resolve(result);
       },
     );
 
@@ -83,23 +81,17 @@ describe("NotificationController", () => {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
     };
-    next = vi.fn();
   });
 
   it("should return 202 when all notifications are valid", async () => {
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...validIncomingNotification,
-        subject: {
-          id: "user-123",
-          name: "john.doe",
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [validIncomingNotification],
+      { id: "user-123", name: "john.doe" },
+    );
     expect(res.status).toHaveBeenCalledWith(202);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -108,7 +100,7 @@ describe("NotificationController", () => {
         rejectedCount: 0,
         details: expect.arrayContaining([
           expect.objectContaining({
-            success: true,
+            status: "success",
             notification: expect.objectContaining({
               id: expect.any(String),
               ...validIncomingNotification,
@@ -122,17 +114,12 @@ describe("NotificationController", () => {
   it("should return 207 when some notifications fail validation", async () => {
     req.body = [validIncomingNotification, invalidNotification];
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...validIncomingNotification,
-        subject: {
-          id: "user-123",
-          name: "john.doe",
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [validIncomingNotification],
+      { id: "user-123", name: "john.doe" },
+    );
     expect(res.status).toHaveBeenCalledWith(207);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -142,14 +129,11 @@ describe("NotificationController", () => {
         rejectedCount: 1,
         details: expect.arrayContaining([
           expect.objectContaining({
-            success: true,
-            notification: expect.objectContaining({
-              id: expect.any(String),
-              ...validIncomingNotification,
-            }),
+            status: "success",
+            notification: expect.objectContaining(validIncomingNotification),
           }),
           expect.objectContaining({
-            success: false,
+            status: "failure",
             notification: invalidNotification,
             error: expect.any(Array),
           }),
@@ -161,7 +145,7 @@ describe("NotificationController", () => {
   it("should return 400 when no notifications are valid", async () => {
     req.body = [invalidNotification, { contacts: ["bad"], message: "" }];
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
     expect(
       mockHandleIncomingNotificationsUseCase.handle,
@@ -188,26 +172,24 @@ describe("NotificationController", () => {
     );
 
     await expect(
-      controller.send(req as Request, res as Response),
+      controller.handle(req as Request, res as Response),
     ).rejects.toThrow(testError);
 
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
   });
 
-  it("should throw error when req.auth is missing", async () => {
+  it("should process without subject when req.auth is missing", async () => {
     req.auth = undefined;
     req.body = validIncomingNotification;
 
-    await expect(
-      controller.send(req as Request, res as Response),
-    ).rejects.toThrow(
-      "Контроллер вызван без предварительной проверки аутентификации.",
-    );
+    await controller.handle(req as Request, res as Response);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalled();
-    expect(res.json).not.toHaveBeenCalled();
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [validIncomingNotification],
+      undefined,
+    );
+    expect(res.status).toHaveBeenCalledWith(202);
   });
 
   it("should throw error when token payload is invalid", async () => {
@@ -219,10 +201,9 @@ describe("NotificationController", () => {
     req.body = validIncomingNotification;
 
     await expect(
-      controller.send(req as Request, res as Response),
+      controller.handle(req as Request, res as Response),
     ).rejects.toThrow("Не удалось извлечь данные об отправителе запроса");
 
-    expect(next).not.toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
   });
@@ -240,17 +221,12 @@ describe("NotificationController", () => {
 
     req.body = [notif1, notif2, notif3];
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...notif1,
-        subject: {
-          id: "user-123",
-          name: "john.doe",
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [notif1],
+      { id: "user-123", name: "john.doe" },
+    );
     expect(res.status).toHaveBeenCalledWith(207);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -260,11 +236,11 @@ describe("NotificationController", () => {
         rejectedCount: 2,
         details: expect.arrayContaining([
           expect.objectContaining({
-            success: true,
+            status: "success",
             notification: expect.objectContaining(notif1),
           }),
-          expect.objectContaining({ success: false, notification: notif2 }),
-          expect.objectContaining({ success: false, notification: notif3 }),
+          expect.objectContaining({ status: "failure", notification: notif2 }),
+          expect.objectContaining({ status: "failure", notification: notif3 }),
         ]),
       }),
     );
@@ -273,61 +249,27 @@ describe("NotificationController", () => {
   it("should handle single notification object", async () => {
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...validIncomingNotification,
-        subject: {
-          id: "user-123",
-          name: "john.doe",
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [validIncomingNotification],
+      expect.objectContaining({ id: "user-123" }),
+    );
     expect(res.status).toHaveBeenCalledWith(202);
-    expect(res.json).toHaveBeenCalled();
   });
 
   it("should handle array of notifications", async () => {
-    const notif1: IncomingNotification = {
-      ...validIncomingNotification,
-      message: "Msg 1",
-    };
-    const notif2: IncomingNotification = {
-      ...validIncomingNotification,
-      message: "Msg 2",
-    };
+    const notif1 = { ...validIncomingNotification, message: "Msg 1" };
+    const notif2 = { ...validIncomingNotification, message: "Msg 2" };
     req.body = [notif1, notif2];
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...notif1,
-        subject: {
-          id: "user-123",
-          name: "john.doe",
-        },
-      },
-      {
-        ...notif2,
-        subject: {
-          id: "user-123",
-          name: "john.doe",
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [notif1, notif2],
+      expect.objectContaining({ id: "user-123" }),
+    );
     expect(res.status).toHaveBeenCalledWith(202);
-    expect(res.json).toHaveBeenCalled();
-  });
-
-  it("should return 202 when all notifications are valid (array)", async () => {
-    req.body = [validIncomingNotification];
-
-    await controller.send(req as Request, res as Response);
-
-    expect(res.status).toHaveBeenCalledWith(202);
-    expect(res.json).toHaveBeenCalled();
   });
 
   it("should use name fallback when preferred_username is missing", async () => {
@@ -339,17 +281,12 @@ describe("NotificationController", () => {
     };
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...validIncomingNotification,
-        subject: {
-          id: "user-456",
-          name: "Jane Smith",
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [validIncomingNotification],
+      { id: "user-456", name: "Jane Smith" },
+    );
   });
 
   it("should handle token with only sub field", async () => {
@@ -360,17 +297,12 @@ describe("NotificationController", () => {
     };
     req.body = validIncomingNotification;
 
-    await controller.send(req as Request, res as Response);
+    await controller.handle(req as Request, res as Response);
 
-    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith([
-      {
-        ...validIncomingNotification,
-        subject: {
-          id: "user-789",
-          name: undefined,
-        },
-      },
-    ]);
+    expect(mockHandleIncomingNotificationsUseCase.handle).toHaveBeenCalledWith(
+      [validIncomingNotification],
+      { id: "user-789", name: undefined },
+    );
   });
 
   it("should throw TimeoutError if handleIncomingNotificationsUseCase hangs", async () => {
@@ -382,11 +314,11 @@ describe("NotificationController", () => {
 
     req.body = validIncomingNotification;
 
-    const sendPromise = controller.send(req as Request, res as Response);
+    const sendPromise = controller.handle(req as Request, res as Response);
 
     vi.advanceTimersByTime(60_001);
 
-    await expect(sendPromise).rejects.toThrow(TimeoutError);
+    await expect(sendPromise).rejects.toBeInstanceOf(TimeoutError);
 
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();

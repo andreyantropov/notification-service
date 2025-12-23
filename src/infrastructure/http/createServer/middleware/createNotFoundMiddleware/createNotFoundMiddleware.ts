@@ -1,4 +1,4 @@
-import { Request, Response, RequestHandler } from "express";
+import type { Request, Response, RequestHandler } from "express";
 
 export const createNotFoundMiddleware = (): RequestHandler => {
   return (req: Request, res: Response): void => {

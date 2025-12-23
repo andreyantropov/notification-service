@@ -1,1 +1,1 @@
-export * from "./ProducerConfig.js";
+export type { ProducerConfig } from "./ProducerConfig.js";

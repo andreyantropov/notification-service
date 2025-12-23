@@ -2,7 +2,7 @@ import { AMQPClient } from "@cloudamqp/amqp-client";
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
 
 import { createBatchConsumer } from "./createBatchConsumer.js";
-import { BatchConsumerConfig } from "./interfaces/index.js";
+import type { BatchConsumerConfig } from "./interfaces/index.js";
 
 vi.mock("@cloudamqp/amqp-client");
 
@@ -35,8 +35,8 @@ interface TestAMQPClient {
 
 type Mocked<T> = {
   [K in keyof T]: T[K] extends (...args: infer A) => infer R
-    ? Mock<(...args: A) => R>
-    : T[K];
+  ? Mock<(...args: A) => R>
+  : T[K];
 };
 
 describe("RabbitMQConsumer", () => {
@@ -94,14 +94,14 @@ describe("RabbitMQConsumer", () => {
   };
 
   const createConsumer = <T>(
-    handler: (items: T[]) => Promise<Array<{ success: boolean }>>,
+    handler: (items: readonly T[]) => Promise<Array<{ status: "success" | "failure" }>>,
   ) => {
     return createBatchConsumer({ handler }, mockConfig);
   };
 
   describe("start", () => {
     it("should declare the queue and start consuming", async () => {
-      const handler = vi.fn().mockResolvedValue([{ success: true }]);
+      const handler = vi.fn().mockResolvedValue([{ status: "success" }]);
       const consumer = createConsumer<{ id: number }>(handler);
 
       await consumer.start();
@@ -157,7 +157,7 @@ describe("RabbitMQConsumer", () => {
     it("should handle batch processing and individual ack/nack", async () => {
       const handler = vi
         .fn()
-        .mockResolvedValue([{ success: true }, { success: false }]);
+        .mockResolvedValue([{ status: "success" }, { status: "failure" }]);
       const consumer = createConsumer<{ id: number }>(handler);
 
       await consumer.start();
@@ -176,7 +176,7 @@ describe("RabbitMQConsumer", () => {
     });
 
     it("should flush on shutdown if batch is not empty", async () => {
-      const handler = vi.fn().mockResolvedValue([{ success: true }]);
+      const handler = vi.fn().mockResolvedValue([{ status: "success" }]);
       const consumer = createConsumer<{ id: number }>(handler);
 
       await consumer.start();
@@ -208,7 +208,7 @@ describe("RabbitMQConsumer", () => {
     });
 
     it("should nack all items if handler returns wrong length", async () => {
-      const handler = vi.fn().mockResolvedValue([{ success: true }]);
+      const handler = vi.fn().mockResolvedValue([{ status: "success" }]);
       const consumer = createConsumer<{ id: number }>(handler);
 
       await consumer.start();

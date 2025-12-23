@@ -1,7 +1,7 @@
-import { RequestHandler, Request, Response, NextFunction } from "express";
+import type { RequestHandler, Request, Response, NextFunction } from "express";
 import { auth } from "express-oauth2-jwt-bearer";
 
-import { AuthenticationMiddlewareConfig } from "./interfaces/index.js";
+import type { AuthenticationMiddlewareConfig } from "./interfaces/index.js";
 
 export const createAuthenticationMiddleware = (
   config: AuthenticationMiddlewareConfig,

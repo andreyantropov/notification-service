@@ -1,6 +1,6 @@
-import { MeteredChannelDependencies } from "./interfaces/index.js";
-import { Channel } from "../../../../domain/ports/index.js";
-import { Contact } from "../../../../domain/types/index.js";
+import type { MeteredChannelDependencies } from "./interfaces/index.js";
+import type { Channel } from "../../../../domain/ports/index.js";
+import type { Contact } from "../../../../domain/types/index.js";
 
 export const createMeteredChannel = (
   dependencies: MeteredChannelDependencies,
@@ -11,23 +11,23 @@ export const createMeteredChannel = (
     const start = Date.now();
     try {
       await channel.send(contact, message);
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
 
-      meter.recordChannelLatency(duration, {
+      meter.recordChannelLatency(durationMs, {
         channel: channel.type,
         result: "success",
       });
 
-      meter.incrementNotificationsByChannel(channel.type, "success");
+      meter.incrementNotificationsProcessedByChannel(channel.type, "success");
     } catch (error) {
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
 
-      meter.recordChannelLatency(duration, {
+      meter.recordChannelLatency(durationMs, {
         channel: channel.type,
         result: "failure",
       });
 
-      meter.incrementNotificationsByChannel(channel.type, "failure");
+      meter.incrementNotificationsProcessedByChannel(channel.type, "failure");
 
       throw error;
     }

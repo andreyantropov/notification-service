@@ -1,4 +1,5 @@
-import { asFunction, AwilixContainer } from "awilix";
+import type { AwilixContainer } from "awilix";
+import { asFunction } from "awilix";
 
 import { EventType } from "../../application/enums/index.js";
 import {
@@ -6,7 +7,7 @@ import {
   producerConfig,
   retryConsumerConfig,
 } from "../../configs/index.js";
-import { Notification } from "../../domain/types/Notification.js";
+import type { Notification } from "../../domain/types/Notification.js";
 import {
   createBatchConsumer,
   createLoggedConsumer,
@@ -14,7 +15,7 @@ import {
   createLoggedProducer,
   createProducer,
 } from "../../infrastructure/queues/index.js";
-import { Container } from "../types/Container.js";
+import type { Container } from "../types/Container.js";
 
 export const registerQueue = (container: AwilixContainer<Container>) => {
   container.register({
@@ -30,9 +31,9 @@ export const registerQueue = (container: AwilixContainer<Container>) => {
 
       return loggedProducer;
     }).singleton(),
-    batchConsumer: asFunction(({ notificationDeliveryService, logger }) => {
+    batchConsumer: asFunction(({ deliveryService, logger }) => {
       const consumer = createBatchConsumer<Notification>(
-        { handler: notificationDeliveryService.send },
+        { handler: deliveryService.send },
         {
           ...batchConsumerConfig,
           onError: (error) =>
@@ -50,9 +51,9 @@ export const registerQueue = (container: AwilixContainer<Container>) => {
 
       return loggedConsumer;
     }).singleton(),
-    retryConsumer: asFunction(({ notificationRetryService, logger }) => {
+    retryConsumer: asFunction(({ retryService, logger }) => {
       const consumer = createRetryConsumer(
-        { handler: notificationRetryService.getQueueName },
+        { handler: retryService.getQueueName },
         {
           ...retryConsumerConfig,
           onError: (error) =>

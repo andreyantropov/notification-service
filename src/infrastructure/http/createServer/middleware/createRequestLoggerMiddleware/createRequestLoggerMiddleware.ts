@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response, RequestHandler } from "express";
+import type { NextFunction, Request, Response, RequestHandler } from "express";
 
-import { RequestLoggerMiddlewareDependencies } from "./interfaces/index.js";
+import type { RequestLoggerMiddlewareDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../../application/enums/index.js";
 
 export const createRequestLoggerMiddleware = (
@@ -12,7 +12,7 @@ export const createRequestLoggerMiddleware = (
     const start = Date.now();
 
     res.on("finish", async () => {
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
       const statusCode = res.statusCode;
 
       let eventType = EventType.Request;
@@ -43,7 +43,7 @@ export const createRequestLoggerMiddleware = (
       const logData = {
         message,
         eventType,
-        duration,
+        durationMs,
         details: {
           method: req.method,
           url: req.url,
@@ -62,12 +62,12 @@ export const createRequestLoggerMiddleware = (
 
     res.on("close", async () => {
       if (!res.headersSent) {
-        const duration = Date.now() - start;
+        const durationMs = Date.now() - start;
 
         logger.warning({
           message: `Запрос ${req.method} ${req.url} был прерван клиентом до завершения обработки`,
           eventType: EventType.Request,
-          duration,
+          durationMs,
           details: {
             method: req.method,
             url: req.url,

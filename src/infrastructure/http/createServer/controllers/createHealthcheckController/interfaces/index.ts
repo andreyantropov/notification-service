@@ -1,3 +1,3 @@
-export * from "./HealthCheckControllerDependencies.js";
-export * from "./HealthcheckController.js";
-export * from "./HealthcheckControllerConfig.js";
+export type { HealthCheckDependencies } from "./HealthCheckControllerDependencies.js";
+export type { HealthcheckController } from "./HealthcheckController.js";
+export type { HealthcheckControllerConfig } from "./HealthcheckControllerConfig.js";

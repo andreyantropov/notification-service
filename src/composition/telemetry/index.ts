@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./telemetry.js";
+export type { Telemetry, TelemetryConfig } from "./interfaces/index.js";
+export { telemetry } from "./telemetry.js";

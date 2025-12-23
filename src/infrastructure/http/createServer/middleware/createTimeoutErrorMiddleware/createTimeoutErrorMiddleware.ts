@@ -1,4 +1,9 @@
-import { ErrorRequestHandler, Request, Response, NextFunction } from "express";
+import type {
+  ErrorRequestHandler,
+  Request,
+  Response,
+  NextFunction,
+} from "express";
 import { TimeoutError } from "p-timeout";
 
 export const createTimeoutErrorMiddleware = (): ErrorRequestHandler => {

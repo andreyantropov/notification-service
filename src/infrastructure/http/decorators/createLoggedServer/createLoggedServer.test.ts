@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedServer } from "./createLoggedServer.js";
-import { LoggedServerDependencies } from "./interfaces/index.js";
+import type { LoggedServerDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Logger } from "../../../../application/ports/index.js";
-import { Server } from "../../interfaces/index.js";
+import type { Logger } from "../../../../application/ports/index.js";
+import type { Server } from "../../interfaces/index.js";
 
 const mockLoggerFn = (): Logger => ({
   debug: vi.fn() as Mock,
@@ -45,28 +45,28 @@ describe("createLoggedServer", () => {
       expect(mockServer.start).toHaveBeenCalled();
     });
 
-    it("should log debug with duration when start is successful", async () => {
+    it("should log debug with durationMs when start is successful", async () => {
       const loggedServer = createLoggedServer(dependencies);
       await loggedServer.start();
 
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "Сервер успешно запущен",
         eventType: EventType.Bootstrap,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
       });
     });
 
-    it("should log error with duration and rethrow when start fails", async () => {
+    it("should log error with durationMs and rethrow when start fails", async () => {
       const loggedServer = createLoggedServer(dependencies);
       const testError = new Error("Start failed");
       mockServer.start.mockRejectedValue(testError);
 
       await expect(loggedServer.start()).rejects.toThrow("Start failed");
 
-      expect(mockLogger.error).toHaveBeenCalledWith({
+      expect(mockLogger.critical).toHaveBeenCalledWith({
         message: "Не удалось запустить сервер",
         eventType: EventType.Bootstrap,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         error: testError,
       });
     });
@@ -80,18 +80,18 @@ describe("createLoggedServer", () => {
       expect(mockServer.shutdown).toHaveBeenCalled();
     });
 
-    it("should log debug with duration when shutdown is successful", async () => {
+    it("should log debug with durationMs when shutdown is successful", async () => {
       const loggedServer = createLoggedServer(dependencies);
       await loggedServer.shutdown();
 
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "Сервер успешно остановлен",
         eventType: EventType.Shutdown,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
       });
     });
 
-    it("should log error with duration and rethrow when shutdown fails", async () => {
+    it("should log error with durationMs and rethrow when shutdown fails", async () => {
       const loggedServer = createLoggedServer(dependencies);
       const testError = new Error("Shutdown failed");
       mockServer.shutdown.mockRejectedValue(testError);
@@ -101,7 +101,7 @@ describe("createLoggedServer", () => {
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Не удалось остановить сервер",
         eventType: EventType.Shutdown,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         error: testError,
       });
     });
@@ -140,14 +140,14 @@ describe("createLoggedServer", () => {
       });
     });
 
-    it("should log correct event types with duration for different operations", async () => {
+    it("should log correct event types with durationMs for different operations", async () => {
       const loggedServer = createLoggedServer(dependencies);
 
       await loggedServer.start();
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.Bootstrap,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
 
@@ -155,7 +155,7 @@ describe("createLoggedServer", () => {
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.Shutdown,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
     });

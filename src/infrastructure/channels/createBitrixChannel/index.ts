@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createBitrixChannel.js";
+export type { BitrixChannelConfig } from "./interfaces/index.js";
+export { createBitrixChannel } from "./createBitrixChannel.js";

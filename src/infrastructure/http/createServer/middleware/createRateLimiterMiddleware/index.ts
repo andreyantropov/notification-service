@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createRateLimiterMiddleware.js";
+export type { RateLimiterMiddlewareConfig } from "./interfaces/index.js";
+export { createRateLimiterMiddleware } from "./createRateLimiterMiddleware.js";

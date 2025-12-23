@@ -2,9 +2,10 @@ import axios from "axios";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createBitrixChannel } from "./createBitrixChannel.js";
-import { BitrixChannelConfig } from "./interfaces/index.js";
-import { Channel } from "../../../domain/ports/index.js";
-import { Contact, CHANNEL_TYPES } from "../../../domain/types/index.js";
+import type { BitrixChannelConfig } from "./interfaces/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import type { Channel } from "../../../domain/ports/index.js";
+import type { Contact } from "../../../domain/types/index.js";
 
 vi.mock("axios");
 

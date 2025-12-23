@@ -1,37 +1,32 @@
-import { asFunction, AwilixContainer } from "awilix";
+import type { AwilixContainer } from "awilix";
+import { asFunction } from "awilix";
 
-import { createCheckNotificationServiceHealthUseCase } from "../../application/useCases/createCheckNotificationServiceHealthUseCase/index.js";
+import { createCheckHealthUseCase } from "../../application/useCases/createCheckHealthUseCase/index.js";
 import { createHandleIncomingNotificationsUseCase } from "../../application/useCases/createHandleIncomingNotificationsUseCase/index.js";
-import { Container } from "../types/index.js";
+import type { Container } from "../types/index.js";
 
 export const registerUseCases = (container: AwilixContainer<Container>) => {
   container.register({
     handleIncomingNotificationsUseCase: asFunction(
-      ({ generator, producer, notificationDeliveryService }) => {
+      ({ generator, producer, deliveryService }) => {
         const hanldeIncomingNotificationUseCase =
           createHandleIncomingNotificationsUseCase({
             producer,
-            notificationDeliveryService,
+            deliveryService,
             idGenerator: generator,
           });
 
         return hanldeIncomingNotificationUseCase;
       },
     ).singleton(),
-    checkNotificationServiceHealthUseCase: asFunction(
-      ({
-        notificationDeliveryService,
-        producer,
-        batchConsumer,
-        retryConsumer,
-      }) => {
-        const checkNotificationServiceHealth =
-          createCheckNotificationServiceHealthUseCase({
-            notificationDeliveryService,
-            producer,
-            batchConsumer,
-            retryConsumer,
-          });
+    checkHealthUseCase: asFunction(
+      ({ deliveryService, producer, batchConsumer, retryConsumer }) => {
+        const checkNotificationServiceHealth = createCheckHealthUseCase({
+          deliveryService,
+          producer,
+          batchConsumer,
+          retryConsumer,
+        });
 
         return checkNotificationServiceHealth;
       },

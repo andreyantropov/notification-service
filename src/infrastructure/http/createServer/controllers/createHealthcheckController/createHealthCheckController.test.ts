@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 import { createHealthcheckController } from "./createHealthcheckController.js";
-import { CheckNotificationServiceHealthUseCase } from "../../../../../application/useCases/createCheckNotificationServiceHealthUseCase/index.js";
+import type { CheckHealthUseCase } from "../../../../../application/useCases/createCheckHealthUseCase/index.js";
 
 describe("HealthcheckController", () => {
   let mockReq: Partial<Request>;
@@ -19,10 +19,10 @@ describe("HealthcheckController", () => {
 
   describe("live", () => {
     it("should return 200 OK", async () => {
-      const mockUseCase = {} as CheckNotificationServiceHealthUseCase;
+      const mockUseCase = {} as CheckHealthUseCase;
 
       const controller = createHealthcheckController({
-        checkNotificationServiceHealthUseCase: mockUseCase,
+        checkHealthUseCase: mockUseCase,
       });
 
       await controller.live(mockReq as Request, mockRes as Response);
@@ -35,12 +35,12 @@ describe("HealthcheckController", () => {
   describe("ready", () => {
     it("should return 200 OK if checkHealth succeeds", async () => {
       const mockCheckHealth = vi.fn().mockResolvedValue(undefined);
-      const mockUseCase: CheckNotificationServiceHealthUseCase = {
+      const mockUseCase: CheckHealthUseCase = {
         checkHealth: mockCheckHealth,
       };
 
       const controller = createHealthcheckController({
-        checkNotificationServiceHealthUseCase: mockUseCase,
+        checkHealthUseCase: mockUseCase,
       });
 
       await controller.ready(mockReq as Request, mockRes as Response);
@@ -51,12 +51,12 @@ describe("HealthcheckController", () => {
     });
 
     it("should return 200 OK if checkHealth is not implemented (implicit success)", async () => {
-      const mockUseCase: CheckNotificationServiceHealthUseCase = {
+      const mockUseCase: CheckHealthUseCase = {
         checkHealth: vi.fn().mockResolvedValue(undefined),
       };
 
       const controller = createHealthcheckController({
-        checkNotificationServiceHealthUseCase: mockUseCase,
+        checkHealthUseCase: mockUseCase,
       });
 
       await controller.ready(mockReq as Request, mockRes as Response);
@@ -66,12 +66,12 @@ describe("HealthcheckController", () => {
     });
 
     it("should return 503 Service Unavailable if checkHealth fails", async () => {
-      const mockUseCase: CheckNotificationServiceHealthUseCase = {
+      const mockUseCase: CheckHealthUseCase = {
         checkHealth: vi.fn().mockRejectedValue(new Error("Delivery failed")),
       };
 
       const controller = createHealthcheckController({
-        checkNotificationServiceHealthUseCase: mockUseCase,
+        checkHealthUseCase: mockUseCase,
       });
 
       await controller.ready(mockReq as Request, mockRes as Response);
@@ -86,12 +86,12 @@ describe("HealthcheckController", () => {
     it("should return 503 Service Unavailable if checkHealth times out", async () => {
       vi.useFakeTimers();
 
-      const mockUseCase: CheckNotificationServiceHealthUseCase = {
+      const mockUseCase: CheckHealthUseCase = {
         checkHealth: vi.fn().mockReturnValue(new Promise(() => {})),
       };
 
       const controller = createHealthcheckController({
-        checkNotificationServiceHealthUseCase: mockUseCase,
+        checkHealthUseCase: mockUseCase,
       });
 
       const readyPromise = controller.ready(

@@ -1,1 +1,1 @@
-export * from "./Channel.js";
+export type { Channel } from "./Channel.js";

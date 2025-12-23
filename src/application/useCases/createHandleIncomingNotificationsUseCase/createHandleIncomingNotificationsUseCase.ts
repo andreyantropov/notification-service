@@ -1,48 +1,79 @@
-import { HandleIncomingNotificationsUseCase } from "./interfaces/HandleIncomingNotificationsUseCase.js";
-import { HandleIncomingNotificationsUseCaseDependencies } from "./interfaces/index.js";
-import { Notification } from "../../../domain/types/index.js";
-import { IncomingNotification } from "../../types/index.js";
+import type { HandleIncomingNotificationsUseCase } from "./interfaces/HandleIncomingNotificationsUseCase.js";
+import type {
+  CategorizedNotifications,
+  HandleIncomingNotificationsUseCaseDependencies,
+} from "./interfaces/index.js";
+import type { Notification, Subject } from "../../../domain/types/index.js";
+import type { IncomingNotification } from "../../types/index.js";
 
 export const createHandleIncomingNotificationsUseCase = (
   dependencies: HandleIncomingNotificationsUseCaseDependencies,
 ): HandleIncomingNotificationsUseCase => {
-  const { producer, notificationDeliveryService, idGenerator } = dependencies;
+  const { producer, deliveryService, idGenerator } = dependencies;
+
+  const enrichNotification = (
+    incoming: IncomingNotification,
+    subject?: Subject,
+  ): Notification => ({
+    id: idGenerator(),
+    createdAt: new Date().toISOString(),
+    ...incoming,
+    ...(subject && { subject }),
+  });
+
+  const categorizeNotifications = (
+    notifications: readonly Notification[],
+  ): CategorizedNotifications => {
+    const immediate: Notification[] = [];
+    const nonImmediate: Notification[] = [];
+
+    for (const notification of notifications) {
+      if (notification.isImmediate) {
+        immediate.push(notification);
+      } else {
+        nonImmediate.push(notification);
+      }
+    }
+
+    return { immediate, nonImmediate };
+  };
+
+  const sendImmediateNotifications = async (
+    notifications: readonly Notification[],
+  ): Promise<void> => {
+    if (notifications.length === 0) {
+      return;
+    }
+
+    const deliveryResults = await deliveryService.send(notifications);
+    const failedNotifications = deliveryResults
+      .filter((result) => result.status === "failure")
+      .map((result) => result.notification);
+
+    if (failedNotifications.length > 0) {
+      await producer.publish(failedNotifications);
+    }
+  };
+
+  const sendNonImmediateNotifications = async (
+    notifications: readonly Notification[],
+  ): Promise<void> => {
+    if (notifications.length > 0) {
+      await producer.publish(notifications);
+    }
+  };
 
   const handle = async (
     incomingNotifications: readonly IncomingNotification[],
+    subject?: Subject,
   ): Promise<Notification[]> => {
-    const notifications = incomingNotifications.map((incomingNotification) => ({
-      id: idGenerator(),
-      createdAt: new Date().toISOString(),
-      ...incomingNotification,
-    }));
+    const notifications = incomingNotifications.map((incomingNotification) =>
+      enrichNotification(incomingNotification, subject),
+    );
+    const { immediate, nonImmediate } = categorizeNotifications(notifications);
 
-    const urgentNotifications: Notification[] = [];
-    const unurgentNotifications: Notification[] = [];
-
-    for (const n of notifications) {
-      if (n.isImmediate) {
-        urgentNotifications.push(n);
-      } else {
-        unurgentNotifications.push(n);
-      }
-    }
-
-    if (unurgentNotifications.length > 0) {
-      await producer.publish(unurgentNotifications);
-    }
-
-    if (urgentNotifications.length > 0) {
-      const deliveryResults =
-        await notificationDeliveryService.send(urgentNotifications);
-      const notificationsToRetry = deliveryResults
-        .filter((result) => !result.success)
-        .map((result) => result.notification);
-
-      if (notificationsToRetry.length > 0) {
-        await producer.publish(notificationsToRetry);
-      }
-    }
+    await sendNonImmediateNotifications(nonImmediate);
+    await sendImmediateNotifications(immediate);
 
     return notifications;
   };

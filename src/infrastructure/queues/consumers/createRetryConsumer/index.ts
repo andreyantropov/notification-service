@@ -1,2 +1,5 @@
-export * from "./interfaces/index.js";
-export * from "./createRetryConsumer.js";
+export type {
+  RetryConsumerConfig,
+  RetryConsumerDependencies,
+} from "./interfaces/index.js";
+export { createRetryConsumer } from "./createRetryConsumer.js";

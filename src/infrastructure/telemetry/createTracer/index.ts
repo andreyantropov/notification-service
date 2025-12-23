@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createTracer.js";
+export type { TracerConfig } from "./interfaces/index.js";
+export { createTracer } from "./createTracer.js";

@@ -1,2 +1,1 @@
-export * from "./SubjectSchema.js";
-export * from "./IncomingNotificationSchema.js";
+export { IncomingNotificationSchema } from "./IncomingNotificationSchema.js";

@@ -1,11 +1,10 @@
+import type { Attributes, Counter } from "@opentelemetry/api";
 import { metrics } from "@opentelemetry/api";
 
-import { MeterConfig } from "./interfaces/index.js";
-import { Meter } from "../../../application/ports/index.js";
-import {
-  ChannelTypes,
-  DeliveryStrategies,
-} from "../../../domain/types/index.js";
+import type { MeterConfig } from "./interfaces/index.js";
+import type { Meter } from "../../../application/ports/index.js";
+import type { DeliveryStrategy } from "../../../domain/enums/index.js";
+import type { ChannelType } from "../../../domain/types/index.js";
 import { mapKeysToSnakeCase } from "../../../shared/utils/index.js";
 
 export const createMeter = (config: MeterConfig): Meter => {
@@ -13,7 +12,7 @@ export const createMeter = (config: MeterConfig): Meter => {
   const meter = metrics.getMeter(serviceName);
 
   const addWithSnakeCaseAttributes = (
-    counter: typeof processedByResultCounter,
+    counter: Counter<Attributes>,
     value: number,
     attributes?: Record<string, string | boolean>,
   ): void => {
@@ -24,14 +23,17 @@ export const createMeter = (config: MeterConfig): Meter => {
     }
   };
 
-  const totalNotificationsCounter = meter.createCounter("notifications_total", {
-    description: "Общее количество уведомлений, обработанных сервисом",
-  });
-  const incrementTotalNotifications = (): void => {
-    addWithSnakeCaseAttributes(totalNotificationsCounter, 1);
+  const notificationProcessedTotalCounter = meter.createCounter(
+    "notifications_processed_total",
+    {
+      description: "Общее количество уведомлений, обработанных сервисом",
+    },
+  );
+  const incrementNotificationsProcessedTotal = (): void => {
+    addWithSnakeCaseAttributes(notificationProcessedTotalCounter, 1);
   };
 
-  const processedByResultCounter = meter.createCounter(
+  const notificationProcessedByResultCounter = meter.createCounter(
     "notifications_processed_by_result_total",
     {
       description:
@@ -40,12 +42,14 @@ export const createMeter = (config: MeterConfig): Meter => {
   );
 
   const incrementNotificationsProcessedByResult = (
-    result: "success" | "failure",
+    status: "success" | "failure",
   ): void => {
-    addWithSnakeCaseAttributes(processedByResultCounter, 1, { result });
+    addWithSnakeCaseAttributes(notificationProcessedByResultCounter, 1, {
+      status,
+    });
   };
 
-  const processedBySubjectCounter = meter.createCounter(
+  const notificationProcessedBySubjectCounter = meter.createCounter(
     "notifications_processed_by_subject_total",
     {
       description: "Общее количество обработанных уведомлений по subject.id",
@@ -54,30 +58,48 @@ export const createMeter = (config: MeterConfig): Meter => {
   const incrementNotificationsProcessedBySubject = (
     subjectId: string,
   ): void => {
-    addWithSnakeCaseAttributes(processedBySubjectCounter, 1, { subjectId });
+    addWithSnakeCaseAttributes(notificationProcessedBySubjectCounter, 1, {
+      subjectId,
+    });
   };
 
-  const processedByStrategyCounter = meter.createCounter(
+  const notificationProcessedByStrategyCounter = meter.createCounter(
     "notifications_processed_by_strategy_total",
     {
       description: "Общее количество обработанных уведомлений по стратегии",
     },
   );
   const incrementNotificationsProcessedByStrategy = (
-    strategy: DeliveryStrategies,
+    strategy: DeliveryStrategy,
   ): void => {
-    addWithSnakeCaseAttributes(processedByStrategyCounter, 1, { strategy });
+    addWithSnakeCaseAttributes(notificationProcessedByStrategyCounter, 1, {
+      strategy,
+    });
   };
 
-  const processedByPriorityCounter = meter.createCounter(
+  const notificationProcessedByPriorityCounter = meter.createCounter(
     "notifications_processed_by_priority_total",
     {
       description:
         "Общее количество обработанных уведомлений по признаку срочности (isImmediate)",
     },
   );
-  const incrementNotificationsByPriority = (isImmediate: boolean): void => {
-    addWithSnakeCaseAttributes(processedByPriorityCounter, 1, { isImmediate });
+  const incrementNotificationsProcessedByPriority = (
+    isImmediate: boolean,
+  ): void => {
+    addWithSnakeCaseAttributes(notificationProcessedByPriorityCounter, 1, {
+      isImmediate,
+    });
+  };
+
+  const retryRoutingByQueueCounter = meter.createCounter(
+    "notifications_retry_routing_total",
+    {
+      description: "Количество сообщений, направленных в retry-очередь или DLQ",
+    },
+  );
+  const incrementRetryRoutingByQueue = (queue: string): void => {
+    addWithSnakeCaseAttributes(retryRoutingByQueueCounter, 1, { queue });
   };
 
   const channelLatencyHistogram = meter.createHistogram("channel_latency_ms", {
@@ -90,28 +112,32 @@ export const createMeter = (config: MeterConfig): Meter => {
     channelLatencyHistogram.record(latency, mapKeysToSnakeCase(attributes));
   };
 
-  const byChannelCounter = meter.createCounter(
-    "notifications_by_channel_total",
+  const notificationProcessedByChannelCounter = meter.createCounter(
+    "notifications_processed_by_channel_total",
     {
       description:
         "Общее количество уведомлений по каналу отправки и результату",
     },
   );
-  const incrementNotificationsByChannel = (
-    channel: ChannelTypes,
-    result: "success" | "failure",
+  const incrementNotificationsProcessedByChannel = (
+    channel: ChannelType,
+    status: "success" | "failure",
   ): void => {
-    addWithSnakeCaseAttributes(byChannelCounter, 1, { channel, result });
+    addWithSnakeCaseAttributes(notificationProcessedByChannelCounter, 1, {
+      channel,
+      status,
+    });
   };
 
   return {
-    incrementTotalNotifications,
+    incrementNotificationsProcessedTotal,
     incrementNotificationsProcessedByResult,
     incrementNotificationsProcessedBySubject,
     incrementNotificationsProcessedByStrategy,
-    incrementNotificationsByPriority,
+    incrementNotificationsProcessedByPriority,
+    incrementRetryRoutingByQueue,
 
     recordChannelLatency,
-    incrementNotificationsByChannel,
+    incrementNotificationsProcessedByChannel,
   };
 };

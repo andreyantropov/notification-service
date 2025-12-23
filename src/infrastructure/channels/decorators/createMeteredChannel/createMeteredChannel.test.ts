@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 
 import { createMeteredChannel } from "./createMeteredChannel.js";
-import { MeteredChannelDependencies } from "./interfaces/index.js";
-import { Channel } from "../../../../domain/ports/index.js";
-import { Contact, CHANNEL_TYPES } from "../../../../domain/types/index.js";
+import type { MeteredChannelDependencies } from "./interfaces/index.js";
+import { CHANNEL_TYPES } from "../../../../domain/constants/index.js";
+import type { Channel } from "../../../../domain/ports/index.js";
+import type { Contact } from "../../../../domain/types/index.js";
 
 const mockContact: Contact = {
   type: CHANNEL_TYPES.EMAIL,
@@ -20,13 +21,13 @@ const createMockChannel = (): Channel => ({
 
 const createMockMeter = () => ({
   recordChannelLatency: vi.fn(),
-  incrementNotificationsByChannel: vi.fn(),
+  incrementNotificationsProcessedByChannel: vi.fn(),
 
-  incrementTotalNotifications: vi.fn(),
+  incrementNotificationsProcessedTotal: vi.fn(),
   incrementNotificationsProcessedByResult: vi.fn(),
   incrementNotificationsProcessedBySubject: vi.fn(),
   incrementNotificationsProcessedByStrategy: vi.fn(),
-  incrementNotificationsByPriority: vi.fn(),
+  incrementNotificationsProcessedByPriority: vi.fn(),
 });
 
 describe("createMeteredChannel", () => {
@@ -68,10 +69,9 @@ describe("createMeteredChannel", () => {
       result: "success",
     });
 
-    expect(mockMeter.incrementNotificationsByChannel).toHaveBeenCalledWith(
-      CHANNEL_TYPES.EMAIL,
-      "success",
-    );
+    expect(
+      mockMeter.incrementNotificationsProcessedByChannel,
+    ).toHaveBeenCalledWith(CHANNEL_TYPES.EMAIL, "success");
   });
 
   it("should record failure metrics and rethrow error when channel send fails", async () => {
@@ -103,10 +103,9 @@ describe("createMeteredChannel", () => {
       result: "failure",
     });
 
-    expect(mockMeter.incrementNotificationsByChannel).toHaveBeenCalledWith(
-      CHANNEL_TYPES.EMAIL,
-      "failure",
-    );
+    expect(
+      mockMeter.incrementNotificationsProcessedByChannel,
+    ).toHaveBeenCalledWith(CHANNEL_TYPES.EMAIL, "failure");
   });
 
   it("should calculate latency correctly for successful operation", async () => {
@@ -222,9 +221,8 @@ describe("createMeteredChannel", () => {
       mockBitrixContact,
       mockMessage,
     );
-    expect(mockMeter.incrementNotificationsByChannel).toHaveBeenCalledWith(
-      CHANNEL_TYPES.BITRIX,
-      "success",
-    );
+    expect(
+      mockMeter.incrementNotificationsProcessedByChannel,
+    ).toHaveBeenCalledWith(CHANNEL_TYPES.BITRIX, "success");
   });
 });

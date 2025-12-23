@@ -1,1 +1,1 @@
-export * from "./TracerConfig.js";
+export type { TracerConfig } from "./TracerConfig.js";

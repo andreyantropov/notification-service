@@ -1,1 +1,1 @@
-export * from "./MessageQueueConfig.js";
+export type { MessageQueueConfig } from "./MessageQueueConfig.js";

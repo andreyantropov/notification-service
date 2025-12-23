@@ -2,11 +2,9 @@ import { metrics } from "@opentelemetry/api";
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createMeter } from "./createMeter.js";
-import { Meter } from "../../../application/ports/index.js";
-import {
-  CHANNEL_TYPES,
-  DELIVERY_STRATEGIES,
-} from "../../../domain/types/index.js";
+import type { Meter } from "../../../application/ports/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import { DeliveryStrategy } from "../../../domain/enums/DeliveryStrategy.js";
 import { mapKeysToSnakeCase } from "../../../shared/utils/index.js";
 
 vi.mock("@opentelemetry/api", () => ({
@@ -96,17 +94,17 @@ describe("createMeter", () => {
     });
   });
 
-  describe("incrementNotificationsByChannel", () => {
-    it("should increment counter with correct transformed channel and result attributes for success", () => {
+  describe("incrementNotificationsProcessedByChannel", () => {
+    it("should increment counter with correct transformed channel and status attributes for success", () => {
       const meter: Meter = createMeter(mockConfig);
       const channel = CHANNEL_TYPES.EMAIL;
-      const result = "success" as const;
-      const originalAttrs = { channel, result };
+      const status = "success" as const;
+      const originalAttrs = { channel, status };
 
-      meter.incrementNotificationsByChannel(channel, result);
+      meter.incrementNotificationsProcessedByChannel(channel, status);
 
       expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_by_channel_total",
+        "notifications_processed_by_channel_total",
         {
           description:
             "Общее количество уведомлений по каналу отправки и результату",
@@ -118,13 +116,13 @@ describe("createMeter", () => {
       );
     });
 
-    it("should increment counter with correct transformed channel and result attributes for failure", () => {
+    it("should increment counter with correct transformed channel and status attributes for failure", () => {
       const meter: Meter = createMeter(mockConfig);
       const channel = CHANNEL_TYPES.BITRIX;
-      const result = "failure" as const;
-      const originalAttrs = { channel, result };
+      const status = "failure" as const;
+      const originalAttrs = { channel, status };
 
-      meter.incrementNotificationsByChannel(channel, result);
+      meter.incrementNotificationsProcessedByChannel(channel, status);
 
       expect(mockCounter.add).toHaveBeenCalledWith(
         1,
@@ -135,16 +133,16 @@ describe("createMeter", () => {
     it("should handle different valid channels and results", () => {
       const meter: Meter = createMeter(mockConfig);
       const testCases = [
-        { channel: CHANNEL_TYPES.EMAIL, result: "success" as const },
-        { channel: CHANNEL_TYPES.BITRIX, result: "failure" as const },
-        { channel: CHANNEL_TYPES.EMAIL, result: "failure" as const },
-        { channel: CHANNEL_TYPES.BITRIX, result: "success" as const },
+        { channel: CHANNEL_TYPES.EMAIL, status: "success" as const },
+        { channel: CHANNEL_TYPES.BITRIX, status: "failure" as const },
+        { channel: CHANNEL_TYPES.EMAIL, status: "failure" as const },
+        { channel: CHANNEL_TYPES.BITRIX, status: "success" as const },
       ];
 
-      testCases.forEach(({ channel, result }) => {
-        const originalAttrs = { channel, result };
+      testCases.forEach(({ channel, status }) => {
+        const originalAttrs = { channel, status };
         mockCounter.add.mockClear();
-        meter.incrementNotificationsByChannel(channel, result);
+        meter.incrementNotificationsProcessedByChannel(channel, status);
         expect(mockCounter.add).toHaveBeenCalledWith(
           1,
           mapKeysToSnakeCase(originalAttrs),
@@ -153,12 +151,12 @@ describe("createMeter", () => {
     });
   });
 
-  describe("incrementTotalNotifications", () => {
+  describe("incrementNotificationsProcessedTotal", () => {
     it("should increment total notifications counter", () => {
       const meter: Meter = createMeter(mockConfig);
-      meter.incrementTotalNotifications();
+      meter.incrementNotificationsProcessedTotal();
       expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_total",
+        "notifications_processed_total",
         {
           description: "Общее количество уведомлений, обработанных сервисом",
         },
@@ -168,18 +166,18 @@ describe("createMeter", () => {
 
     it("should handle multiple increments", () => {
       const meter: Meter = createMeter(mockConfig);
-      meter.incrementTotalNotifications();
-      meter.incrementTotalNotifications();
-      meter.incrementTotalNotifications();
+      meter.incrementNotificationsProcessedTotal();
+      meter.incrementNotificationsProcessedTotal();
+      meter.incrementNotificationsProcessedTotal();
       expect(mockCounter.add).toHaveBeenCalledTimes(3);
     });
   });
 
   describe("incrementNotificationsProcessedByResult", () => {
-    it("should increment counter with correct transformed result attribute for success", () => {
+    it("should increment counter with correct transformed status attribute for success", () => {
       const meter: Meter = createMeter(mockConfig);
-      const result = "success" as const;
-      meter.incrementNotificationsProcessedByResult(result);
+      const status = "success" as const;
+      meter.incrementNotificationsProcessedByResult(status);
       expect(mockMeter.createCounter).toHaveBeenCalledWith(
         "notifications_processed_by_result_total",
         {
@@ -189,17 +187,17 @@ describe("createMeter", () => {
       );
       expect(mockCounter.add).toHaveBeenCalledWith(
         1,
-        mapKeysToSnakeCase({ result }),
+        mapKeysToSnakeCase({ status }),
       );
     });
 
     it("should handle different results", () => {
       const meter: Meter = createMeter(mockConfig);
       const results = ["success", "failure"] as const;
-      results.forEach((result) => {
-        const originalAttrs = { result };
+      results.forEach((status) => {
+        const originalAttrs = { status };
         mockCounter.add.mockClear();
-        meter.incrementNotificationsProcessedByResult(result);
+        meter.incrementNotificationsProcessedByResult(status);
         expect(mockCounter.add).toHaveBeenCalledWith(
           1,
           mapKeysToSnakeCase(originalAttrs),
@@ -244,7 +242,7 @@ describe("createMeter", () => {
   describe("incrementNotificationsProcessedByStrategy", () => {
     it("should increment counter with correct transformed strategy attribute", () => {
       const meter: Meter = createMeter(mockConfig);
-      const strategy = DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE;
+      const strategy = DeliveryStrategy.sendToFirstAvailable;
       meter.incrementNotificationsProcessedByStrategy(strategy);
       expect(mockMeter.createCounter).toHaveBeenCalledWith(
         "notifications_processed_by_strategy_total",
@@ -261,8 +259,8 @@ describe("createMeter", () => {
     it("should handle different valid strategies", () => {
       const meter: Meter = createMeter(mockConfig);
       const strategies = [
-        DELIVERY_STRATEGIES.SEND_TO_FIRST_AVAILABLE,
-        DELIVERY_STRATEGIES.SEND_TO_ALL_AVAILABLE,
+        DeliveryStrategy.sendToFirstAvailable,
+        DeliveryStrategy.sendToAllAvailable,
       ];
       strategies.forEach((strategy) => {
         const originalAttrs = { strategy };
@@ -276,11 +274,11 @@ describe("createMeter", () => {
     });
   });
 
-  describe("incrementNotificationsByPriority", () => {
+  describe("incrementNotificationsProcessedByPriority", () => {
     it("should increment counter with transformed isImmediate true for immediate notifications", () => {
       const meter: Meter = createMeter(mockConfig);
       const isImmediate = true;
-      meter.incrementNotificationsByPriority(isImmediate);
+      meter.incrementNotificationsProcessedByPriority(isImmediate);
       expect(mockMeter.createCounter).toHaveBeenCalledWith(
         "notifications_processed_by_priority_total",
         {
@@ -296,13 +294,13 @@ describe("createMeter", () => {
 
     it("should handle both priority types", () => {
       const meter: Meter = createMeter(mockConfig);
-      meter.incrementNotificationsByPriority(true);
+      meter.incrementNotificationsProcessedByPriority(true);
       expect(mockCounter.add).toHaveBeenCalledWith(
         1,
         mapKeysToSnakeCase({ isImmediate: true }),
       );
       mockCounter.add.mockClear();
-      meter.incrementNotificationsByPriority(false);
+      meter.incrementNotificationsProcessedByPriority(false);
       expect(mockCounter.add).toHaveBeenCalledWith(
         1,
         mapKeysToSnakeCase({ isImmediate: false }),
@@ -313,23 +311,75 @@ describe("createMeter", () => {
   it("should create all metrics instruments only once", () => {
     createMeter(mockConfig);
     expect(mockMeter.createHistogram).toHaveBeenCalledOnce();
-    expect(mockMeter.createCounter).toHaveBeenCalledTimes(6);
+    expect(mockMeter.createCounter).toHaveBeenCalledTimes(7);
   });
 
   it("should return all meter functions", () => {
     const meter: Meter = createMeter(mockConfig);
     const expectedMethods = [
       "recordChannelLatency",
-      "incrementNotificationsByChannel",
-      "incrementTotalNotifications",
+      "incrementNotificationsProcessedByChannel",
+      "incrementNotificationsProcessedTotal",
       "incrementNotificationsProcessedByResult",
       "incrementNotificationsProcessedBySubject",
       "incrementNotificationsProcessedByStrategy",
-      "incrementNotificationsByPriority",
+      "incrementNotificationsProcessedByPriority",
+      "incrementRetryRoutingByQueue",
     ] as const;
     expectedMethods.forEach((method) => {
       expect(meter).toHaveProperty(method);
       expect(typeof meter[method]).toBe("function");
+    });
+  });
+
+  describe("incrementRetryRoutingByQueue", () => {
+    it("should increment retry routing counter with correct transformed queue attribute", () => {
+      const meter: Meter = createMeter(mockConfig);
+      const queue = "notifications.retry.30m";
+
+      meter.incrementRetryRoutingByQueue(queue);
+
+      expect(mockMeter.createCounter).toHaveBeenCalledWith(
+        "notifications_retry_routing_total",
+        {
+          description:
+            "Количество сообщений, направленных в retry-очередь или DLQ",
+        },
+      );
+      expect(mockCounter.add).toHaveBeenCalledWith(
+        1,
+        mapKeysToSnakeCase({ queue }),
+      );
+    });
+
+    it("should handle different queue types including DLQ", () => {
+      const meter: Meter = createMeter(mockConfig);
+      const queues = [
+        "notifications.retry.30m",
+        "notifications.retry.2h",
+        "notifications.dlq",
+      ];
+
+      queues.forEach((queue) => {
+        mockCounter.add.mockClear();
+        meter.incrementRetryRoutingByQueue(queue);
+        expect(mockCounter.add).toHaveBeenCalledWith(
+          1,
+          mapKeysToSnakeCase({ queue }),
+        );
+      });
+    });
+
+    it("should treat queue name as string attribute without validation", () => {
+      const meter: Meter = createMeter(mockConfig);
+      const unknownQueue = "some.unknown.queue.name";
+
+      meter.incrementRetryRoutingByQueue(unknownQueue);
+
+      expect(mockCounter.add).toHaveBeenCalledWith(
+        1,
+        mapKeysToSnakeCase({ queue: unknownQueue }),
+      );
     });
   });
 });

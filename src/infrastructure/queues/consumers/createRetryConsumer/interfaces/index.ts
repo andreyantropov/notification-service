@@ -1,2 +1,2 @@
-export * from "./RetryConsumerConfig.js";
-export * from "./RetryConsumerDependencies.js";
+export type { RetryConsumerConfig } from "./RetryConsumerConfig.js";
+export type { RetryConsumerDependencies } from "./RetryConsumerDependencies.js";

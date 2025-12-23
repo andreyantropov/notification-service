@@ -1,9 +1,9 @@
 import z from "zod";
 
 import { EnvironmentType } from "../application/enums/index.js";
-import { ServiceConfig } from "../composition/types/index.js";
+import type { ServiceConfig } from "../composition/types/index.js";
 
-const serviceConfigSchema = z.object({
+const schema = z.object({
   name: z
     .string()
     .trim()
@@ -36,7 +36,7 @@ const serviceConfigSchema = z.object({
     .optional(),
 });
 
-export const serviceConfig: ServiceConfig = serviceConfigSchema.parse({
+const rawEnv = {
   name: process.env.SERVICE_NAME,
   version: process.env.SERVICE_VERSION,
   environment: process.env.SERVICE_ENVIRONMENT,
@@ -44,4 +44,6 @@ export const serviceConfig: ServiceConfig = serviceConfigSchema.parse({
   publicUrl: process.env.SERVICE_PUBLIC_URL,
   title: process.env.SERVICE_TITLE,
   description: process.env.SERVICE_DESCRIPTION,
-});
+};
+
+export const serviceConfig: ServiceConfig = schema.parse(rawEnv);

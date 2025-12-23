@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 
 export interface NotificationController {
-  readonly send: (req: Request, res: Response) => Promise<void>;
+  readonly handle: (req: Request, res: Response) => Promise<void>;
 }

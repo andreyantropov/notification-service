@@ -1,8 +1,8 @@
-import { Express } from "express";
+import type { Express } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createServer } from "./createServer.js";
-import { ServerConfig, ServerDependencies } from "./interfaces/index.js";
+import type { ServerConfig, ServerDependencies } from "./interfaces/index.js";
 
 type MockServer = {
   close: (cb?: (error?: Error) => void) => void;

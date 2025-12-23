@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 import { messageQueueConfig } from "./messageQueueConfig.js";
-import { ProducerConfig } from "../infrastructure/queues/index.js";
+import type { ProducerConfig } from "../infrastructure/queues/index.js";
 
 const { url } = messageQueueConfig;
 
-const producerConfigSchema = z.object({
+const schema = z.object({
   url: z
     .string()
     .trim()
@@ -21,9 +21,11 @@ const producerConfigSchema = z.object({
   healthcheckTimeoutMs: z.coerce.number().int().positive().optional(),
 });
 
-export const producerConfig: ProducerConfig = producerConfigSchema.parse({
+const rawEnv = {
   url,
   queue: process.env.PRODUCER_QUEUE,
   publishTimeoutMs: process.env.PRODUCER_PUBLISH_TIMEOUT_MS,
   healthcheckTimeoutMs: process.env.PRODUCER_HEALTHCHECK_TIMEOUT_MS,
-});
+};
+
+export const producerConfig: ProducerConfig = schema.parse(rawEnv);

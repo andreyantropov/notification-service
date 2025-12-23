@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { MessageQueueConfig } from "../infrastructure/queues/index.js";
+import type { MessageQueueConfig } from "../infrastructure/queues/index.js";
 
-const messageQueueConfigSchema = z.object({
+const schema = z.object({
   url: z
     .string()
     .trim()
@@ -11,7 +11,8 @@ const messageQueueConfigSchema = z.object({
     ),
 });
 
-export const messageQueueConfig: MessageQueueConfig =
-  messageQueueConfigSchema.parse({
-    url: process.env.RABBITMQ_URL,
-  });
+const rawEnv = {
+  url: process.env.RABBITMQ_URL,
+};
+
+export const messageQueueConfig: MessageQueueConfig = schema.parse(rawEnv);

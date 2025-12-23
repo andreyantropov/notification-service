@@ -1,19 +1,18 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import pTimeout from "p-timeout";
 
-import {
+import { DEFAULT_READY_TIMEOUT_MS } from "./constants/index.js";
+import type {
   HealthcheckController,
   HealthcheckControllerConfig,
   HealthCheckDependencies,
 } from "./interfaces/index.js";
 
-const DEFAULT_READY_TIMEOUT_MS = 5_000;
-
 export const createHealthcheckController = (
   dependencies: HealthCheckDependencies,
   config?: HealthcheckControllerConfig,
 ): HealthcheckController => {
-  const { checkNotificationServiceHealthUseCase } = dependencies;
+  const { checkHealthUseCase } = dependencies;
   const { readyTimeoutMs = DEFAULT_READY_TIMEOUT_MS } = config ?? {};
 
   const live = async (req: Request, res: Response): Promise<void> => {
@@ -23,7 +22,7 @@ export const createHealthcheckController = (
 
   const ready = async (req: Request, res: Response): Promise<void> => {
     try {
-      await pTimeout(checkNotificationServiceHealthUseCase.checkHealth(), {
+      await pTimeout(checkHealthUseCase.checkHealth(), {
         milliseconds: readyTimeoutMs,
         message: "Превышено время ожидания проверки готовности сервиса",
       });

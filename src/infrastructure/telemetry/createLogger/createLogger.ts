@@ -4,8 +4,8 @@ import { v4 } from "uuid";
 import winston from "winston";
 
 import { LogLevel, TriggerType } from "../../../application/enums/index.js";
-import { Logger } from "../../../application/ports/index.js";
-import { Log } from "../../../application/types/index.js";
+import type { Logger } from "../../../application/ports/index.js";
+import type { Log } from "../../../application/types/index.js";
 import { mapKeysToSnakeCase } from "../../../shared/utils/index.js";
 
 export const createLogger = (): Logger => {
@@ -38,12 +38,12 @@ export const createLogger = (): Logger => {
     transports: [new OpenTelemetryTransportV3({})],
   });
 
-  const prepareMeta = ({ eventType, duration, details, error }: Log) => {
+  const prepareMeta = ({ eventType, durationMs, details, error }: Log) => {
     const meta = {
       id: v4(),
       trigger: TriggerType.Api,
       event_type: eventType,
-      duration: duration || 0,
+      durationMs: durationMs || 0,
       ...(details ? mapKeysToSnakeCase(details) : undefined),
       ...(error ? mapKeysToSnakeCase(serializeError(error)) : undefined),
     };

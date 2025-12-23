@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { EmailChannelConfig } from "../infrastructure/channels/index.js";
+import type { EmailChannelConfig } from "../infrastructure/channels/index.js";
 
-const emailChannelConfigSchema = z.object({
+const schema = z.object({
   host: z
     .string()
     .trim()
@@ -32,17 +32,22 @@ const emailChannelConfigSchema = z.object({
   healthcheckTimeoutMs: z.coerce.number().int().positive().optional(),
 });
 
-export const emailChannelConfig: EmailChannelConfig =
-  emailChannelConfigSchema.parse({
-    host: process.env.EMAIL_CHANNEL_HOST,
-    port: process.env.EMAIL_CHANNEL_PORT,
-    secure: process.env.EMAIL_CHANNEL_SECURE,
-    auth: {
-      user: process.env.EMAIL_CHANNEL_LOGIN,
-      pass: process.env.EMAIL_CHANNEL_PASSWORD,
-    },
-    fromEmail: process.env.EMAIL_CHANNEL_FROM_EMAIL,
-    greetingTimeoutMs: process.env.EMAIL_CHANNEL_GREETING_TIMEOUT_MS,
-    sendTimeoutMs: process.env.EMAIL_CHANNEL_SEND_TIMEOUT_MS,
-    healthcheckTimeoutMs: process.env.EMAIL_CHANNEL_HEALTHCHECK_TIMEOUT_MS,
-  });
+const rawEnv = {
+  host: process.env.EMAIL_CHANNEL_HOST,
+  port: process.env.EMAIL_CHANNEL_PORT,
+  secure: process.env.EMAIL_CHANNEL_SECURE,
+  auth: {
+    user: process.env.EMAIL_CHANNEL_LOGIN,
+    pass: process.env.EMAIL_CHANNEL_PASSWORD,
+  },
+  fromEmail: process.env.EMAIL_CHANNEL_FROM_EMAIL,
+  greetingTimeoutMs: process.env.EMAIL_CHANNEL_GREETING_TIMEOUT_MS,
+  sendTimeoutMs: process.env.EMAIL_CHANNEL_SEND_TIMEOUT_MS,
+  healthcheckTimeoutMs: process.env.EMAIL_CHANNEL_HEALTHCHECK_TIMEOUT_MS,
+};
+
+const isEnabled = process.env.EMAIL_CHANNEL_IS_ENABLED !== "false";
+
+export const emailChannelConfig: EmailChannelConfig | null = isEnabled
+  ? schema.parse(rawEnv)
+  : null;

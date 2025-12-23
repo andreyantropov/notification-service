@@ -28,8 +28,7 @@ import {
   ATTR_SERVER_PORT,
 } from "@opentelemetry/semantic-conventions";
 
-import { Telemetry } from "./interfaces/index.js";
-import { EnvironmentType } from "../../application/enums/index.js";
+import type { Telemetry } from "./interfaces/index.js";
 import { serviceConfig, telemetryConfig } from "../../configs/index.js";
 
 let instance: NodeSDK | null = null;
@@ -50,22 +49,19 @@ const resource = resourceFromAttributes({
   "deployment.environment": environment,
 });
 
-const traceExporter =
-  environment === EnvironmentType.Development
-    ? new ConsoleSpanExporter()
-    : new OTLPTraceExporter({ url: tracesExporterUrl });
+const traceExporter = tracesExporterUrl
+  ? new OTLPTraceExporter({ url: tracesExporterUrl })
+  : new ConsoleSpanExporter();
 const spanProcessor = new BatchSpanProcessor(traceExporter);
 
-const logExporter =
-  environment === EnvironmentType.Development
-    ? new ConsoleLogRecordExporter()
-    : new OTLPLogExporter({ url: logsExporterUrl });
+const logExporter = logsExporterUrl
+  ? new OTLPLogExporter({ url: logsExporterUrl })
+  : new ConsoleLogRecordExporter();
 const logRecordProcessor = new BatchLogRecordProcessor(logExporter);
 
-const metricExporter =
-  environment === EnvironmentType.Development
-    ? new ConsoleMetricExporter()
-    : new OTLPMetricExporter({ url: metricsExporterUrl });
+const metricExporter = metricsExporterUrl
+  ? new OTLPMetricExporter({ url: metricsExporterUrl })
+  : new ConsoleMetricExporter();
 
 const metricReader = new PeriodicExportingMetricReader({
   exporter: metricExporter,

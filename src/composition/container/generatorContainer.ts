@@ -1,7 +1,8 @@
-import { AwilixContainer, asFunction } from "awilix";
+import type { AwilixContainer } from "awilix";
+import { asFunction } from "awilix";
 
 import { createGenerator } from "../../infrastructure/generators/index.js";
-import { Container } from "../types/Container.js";
+import type { Container } from "../types/Container.js";
 
 export const registerGenerator = (container: AwilixContainer<Container>) => {
   container.register({

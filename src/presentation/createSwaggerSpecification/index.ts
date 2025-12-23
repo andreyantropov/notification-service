@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createSwaggerSpecification.js";
+export type { SwaggerSpecificationConfig } from "./interfaces/index.js";
+export { createSwaggerSpecification } from "./createSwaggerSpecification.js";

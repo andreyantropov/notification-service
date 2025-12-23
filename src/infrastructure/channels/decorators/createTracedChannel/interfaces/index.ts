@@ -1,1 +1,1 @@
-export * from "./TracedChannelDependencies.js";
+export type { TrasedChannelDependencies } from "./TracedChannelDependencies.js";

@@ -1,1 +1,1 @@
-export * from "./LoggedServerDependencies.js";
+export type { LoggedServerDependencies } from "./LoggedServerDependencies.js";

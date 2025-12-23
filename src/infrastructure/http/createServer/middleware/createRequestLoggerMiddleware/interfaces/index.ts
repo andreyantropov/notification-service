@@ -1,1 +1,1 @@
-export * from "./RequestLoggerMiddlewareDependencies.js";
+export type { RequestLoggerMiddlewareDependencies } from "./RequestLoggerMiddlewareDependencies.js";

@@ -1,2 +1,6 @@
-export * from "./interfaces/index.js";
-export * from "./createHealthcheckController.js";
+export type {
+  HealthCheckDependencies,
+  HealthcheckController,
+  HealthcheckControllerConfig,
+} from "./interfaces/index.js";
+export { createHealthcheckController } from "./createHealthcheckController.js";

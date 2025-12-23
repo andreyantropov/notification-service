@@ -1,18 +1,25 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import pTimeout from "p-timeout";
 
-import {
+import { DEFAULT_SEND_TIMEOUT_MS } from "./constants/index.js";
+import type {
   NotificationController,
   NotificationControllerConfig,
   NotificationControllerDependencies,
-  ReceiptBatch,
+  ResponseBody,
 } from "./interfaces/index.js";
-import { IncomingNotificationSchema, SubjectSchema } from "./schemas/index.js";
-import { Receipt, ValidationOutcome } from "./types/index.js";
-import { IncomingNotification } from "../../../../../application/types/index.js";
-import { Subject, Notification } from "../../../../../domain/types/index.js";
-
-const DEFAULT_SEND_TIMEOUT_MS = 60_000;
+import { IncomingNotificationSchema } from "./schemas/index.js";
+import type { Detail } from "./types/index.js";
+import type { IncomingNotification } from "../../../../../application/types/index.js";
+import type { Notification } from "../../../../../domain/types/index.js";
+import type {
+  ValidationResult,
+  ValidationError,
+} from "../../../../../shared/utils/index.js";
+import {
+  extractSubjectFromToken,
+  validateBatch,
+} from "../../../../../shared/utils/index.js";
 
 export const createNotificationController = (
   dependencies: NotificationControllerDependencies,
@@ -21,65 +28,41 @@ export const createNotificationController = (
   const { handleIncomingNotificationsUseCase } = dependencies;
   const { sendTimeoutMs = DEFAULT_SEND_TIMEOUT_MS } = config ?? {};
 
-  const validateNotificationRequest = (body: unknown): ValidationOutcome => {
-    const valid: IncomingNotification[] = [];
-    const invalid: { item: unknown; error: unknown }[] = [];
-
+  const validateRequestBody = (
+    body: unknown,
+  ): ValidationResult<IncomingNotification> => {
     let items: unknown[];
     if (Array.isArray(body)) {
       items = body;
     } else if (body != null && typeof body === "object") {
       items = [body];
     } else {
-      invalid.push({
-        item: body,
-        error: [
+      return {
+        valid: [],
+        invalid: [
           {
-            code: "invalid_type",
-            message: "Ожидается объект или массив объектов уведомлений",
-            path: [],
-            expected: "object",
-            received: typeof body,
+            item: body,
+            error: [
+              {
+                code: "invalid_type",
+                message: "Ожидается объект или массив объектов уведомлений",
+                path: [],
+                expected: "object",
+                received: typeof body,
+              },
+            ],
           },
         ],
-      });
-      return { valid, invalid };
+      };
     }
 
-    for (const item of items) {
-      const result = IncomingNotificationSchema.safeParse(item);
-      if (result.success) {
-        valid.push(result.data);
-      } else {
-        invalid.push({
-          item,
-          error: result.error.errors,
-        });
-      }
-    }
-
-    return { valid, invalid };
+    return validateBatch(items, IncomingNotificationSchema);
   };
 
-  const extractSubjectFromToken = (payload: unknown): Subject => {
-    const parsed = SubjectSchema.safeParse(payload);
-    if (!parsed.success) {
-      throw new Error(
-        `Не удалось извлечь данные об отправителе запроса: ${parsed.error.message}`,
-      );
-    }
-
-    const { sub, preferred_username, name } = parsed.data;
-    return {
-      id: sub,
-      name: preferred_username || name,
-    };
-  };
-
-  const buildReceiptBatch = (
+  const buildResponseBody = (
     accepted: readonly Notification[],
-    rejected: readonly { item: unknown; error: unknown }[],
-  ): ReceiptBatch => {
+    rejected: readonly ValidationError[],
+  ): ResponseBody => {
     const acceptedCount = accepted.length;
     const rejectedCount = rejected.length;
     const totalCount = accepted.length + rejected.length;
@@ -93,16 +76,16 @@ export const createNotificationController = (
       message = `Уведомления приняты частично: ${acceptedCount} принято, ${rejectedCount} отклонено`;
     }
 
-    const details: Receipt[] = [
+    const details: Detail[] = [
       ...accepted.map(
-        (elem): Receipt => ({
-          success: true,
+        (elem): Detail => ({
+          status: "success",
           notification: elem,
         }),
       ),
       ...rejected.map(
-        (elem): Receipt => ({
-          success: false,
+        (elem): Detail => ({
+          status: "failure",
           notification: elem.item,
           error: elem.error,
         }),
@@ -118,8 +101,8 @@ export const createNotificationController = (
     };
   };
 
-  const send = async (req: Request, res: Response): Promise<void> => {
-    const { valid: accepted, invalid: rejected } = validateNotificationRequest(
+  const handle = async (req: Request, res: Response): Promise<void> => {
+    const { valid: accepted, invalid: rejected } = validateRequestBody(
       req.body,
     );
 
@@ -132,36 +115,28 @@ export const createNotificationController = (
       return;
     }
 
-    if (!req.auth) {
-      throw new Error(
-        `Контроллер вызван без предварительной проверки аутентификации.`,
-      );
-    }
-
-    const subject = extractSubjectFromToken(req.auth.payload);
-    const notifications = accepted.map((item) => ({
-      ...item,
-      subject,
-    }));
+    const subject = req.auth
+      ? extractSubjectFromToken(req.auth.payload)
+      : undefined;
 
     const result = await pTimeout(
-      handleIncomingNotificationsUseCase.handle(notifications),
+      handleIncomingNotificationsUseCase.handle(accepted, subject),
       {
         milliseconds: sendTimeoutMs,
         message: "Превышено время ожидания ответа от внешних систем доставки.",
       },
     );
 
-    const receiptBatch = buildReceiptBatch(result, rejected);
+    const body = buildResponseBody(result, rejected);
 
     if (rejected.length === 0) {
-      res.status(202).json(receiptBatch);
+      res.status(202).json(body);
       return;
     } else {
-      res.status(207).json(receiptBatch);
+      res.status(207).json(body);
       return;
     }
   };
 
-  return { send };
+  return { handle };
 };

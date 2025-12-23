@@ -1,8 +1,8 @@
 import z from "zod";
 
-import { AuthenticationMiddlewareConfig } from "../infrastructure/http/index.js";
+import type { AuthenticationMiddlewareConfig } from "../infrastructure/http/index.js";
 
-const authenticationMiddlewareConfigSchema = z.object({
+const schema = z.object({
   issuer: z
     .string()
     .trim()
@@ -25,10 +25,14 @@ const authenticationMiddlewareConfigSchema = z.object({
     .default("RS256"),
 });
 
-export const authenticationMiddlewareConfig: AuthenticationMiddlewareConfig =
-  authenticationMiddlewareConfigSchema.parse({
-    issuer: process.env.AUTHENTICATION_MIDDLEWARE_ISSUER,
-    jwksUri: process.env.AUTHENTICATION_MIDDLEWARE_JWKS_URI,
-    audience: process.env.AUTHENTICATION_MIDDLEWARE_AUDIENCE,
-    tokenSigningAlg: process.env.AUTHENTICATION_MIDDLEWARE_TOKEN_SIGNING_ALG,
-  });
+const rawEnv = {
+  issuer: process.env.AUTHENTICATION_MIDDLEWARE_ISSUER,
+  jwksUri: process.env.AUTHENTICATION_MIDDLEWARE_JWKS_URI,
+  audience: process.env.AUTHENTICATION_MIDDLEWARE_AUDIENCE,
+  tokenSigningAlg: process.env.AUTHENTICATION_MIDDLEWARE_TOKEN_SIGNING_ALG,
+};
+
+const isEnabled = process.env.AUTHENTICATION_MIDDLEWARE_IS_ENABLED !== "false";
+
+export const authenticationMiddlewareConfig: AuthenticationMiddlewareConfig | null =
+  isEnabled ? schema.parse(rawEnv) : null;

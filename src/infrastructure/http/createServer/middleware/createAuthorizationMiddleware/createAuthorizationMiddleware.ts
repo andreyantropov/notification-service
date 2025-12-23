@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response, RequestHandler } from "express";
+import type { NextFunction, Request, Response, RequestHandler } from "express";
 
-import { AuthorizationMiddlewareConfig } from "./interfaces/index.js";
+import type { AuthorizationMiddlewareConfig } from "./interfaces/index.js";
 
 export const createAuthorizationMiddleware = (
   config: AuthorizationMiddlewareConfig,
@@ -9,11 +9,7 @@ export const createAuthorizationMiddleware = (
 
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.auth) {
-      return next(
-        new Error(
-          `Нарушение зависимости middleware авторизации: middleware аутентификации должно быть вызвано первым.`,
-        ),
-      );
+      return next(new Error(`Запрос не был авторизован`));
     }
 
     const resourceAccess = req.auth.payload.resource_access as

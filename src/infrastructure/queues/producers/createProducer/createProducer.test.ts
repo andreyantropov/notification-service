@@ -2,7 +2,7 @@ import { AMQPClient } from "@cloudamqp/amqp-client";
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
 
 import { createProducer } from "./createProducer.js";
-import { ProducerConfig } from "./interfaces/index.js";
+import type { ProducerConfig } from "./interfaces/index.js";
 
 vi.mock("@cloudamqp/amqp-client");
 

@@ -1,1 +1,1 @@
-export * from "./AMQPConnection.js";
+export type { AMQPConnection } from "./AMQPConnection.js";
