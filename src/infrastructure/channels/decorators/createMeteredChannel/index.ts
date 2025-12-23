@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createMeteredChannel.js";
+export type { MeteredChannelDependencies } from "./interfaces/index.js";
+export { createMeteredChannel } from "./createMeteredChannel.js";

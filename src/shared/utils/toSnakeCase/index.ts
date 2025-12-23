@@ -1,1 +1,1 @@
-export * from "./toSnakeCase.js";
+export { mapKeysToSnakeCase, toSnakeCase } from "./toSnakeCase.js";

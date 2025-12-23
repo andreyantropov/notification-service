@@ -1,2 +1,2 @@
-export * from "./Container.js";
-export * from "./ServiceConfig.js";
+export type { Container } from "./Container.js";
+export type { ServiceConfig } from "./ServiceConfig.js";

@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createMeter.js";
+export type { MeterConfig } from "./interfaces/index.js";
+export { createMeter } from "./createMeter.js";

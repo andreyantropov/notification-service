@@ -1,6 +1,6 @@
-import { Contact } from "./Contact.js";
-import { DeliveryStrategies } from "./DeliveryStrategies.js";
-import { Subject } from "./Subject.js";
+import type { Contact } from "./Contact.js";
+import type { Subject } from "./Subject.js";
+import { DeliveryStrategy } from "../enums/index.js";
 
 export interface Notification {
   readonly id: string;
@@ -8,6 +8,6 @@ export interface Notification {
   readonly contacts: readonly Contact[];
   readonly message: string;
   readonly isImmediate?: boolean;
-  readonly strategy?: DeliveryStrategies;
+  readonly strategy?: DeliveryStrategy;
   readonly subject?: Subject;
 }

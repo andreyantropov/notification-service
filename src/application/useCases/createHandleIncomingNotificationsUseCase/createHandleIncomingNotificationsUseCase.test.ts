@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createHandleIncomingNotificationsUseCase } from "./createHandleIncomingNotificationsUseCase.js";
-import { Notification, CHANNEL_TYPES } from "../../../domain/types/index.js";
-import { Producer } from "../../ports/index.js";
-import {
-  NotificationDeliveryService,
-  DeliveryResult,
-} from "../../services/createNotificationDeliveryService/index.js";
-import { IncomingNotification } from "../../types/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import type { Notification, Subject } from "../../../domain/types/index.js";
+import type { Producer } from "../../ports/index.js";
+import type {
+  DeliveryService,
+  Result,
+} from "../../services/createDeliveryService/index.js";
+import type { IncomingNotification } from "../../types/index.js";
 
 const createIncomingNotification = (
   message: string,
@@ -22,38 +23,44 @@ const mockProducer = (): Producer<Notification> => ({
   start: vi.fn(),
   publish: vi.fn(),
   shutdown: vi.fn(),
-});
-
-const mockDeliveryService = (): NotificationDeliveryService => ({
-  send: vi.fn(),
   checkHealth: vi.fn(),
 });
 
-const expectNotification = (id: string, incoming: IncomingNotification) =>
-  expect.objectContaining({
+const expectNotification = (
+  id: string,
+  incoming: IncomingNotification,
+  subject?: Subject,
+) => {
+  const expected: Partial<Notification> = {
     id,
     createdAt: expect.stringMatching(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/,
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
     ),
     ...incoming,
-  });
+    ...(subject && { subject }),
+  };
+  return expect.objectContaining(expected);
+};
 
 describe("createHandleIncomingNotificationsUseCase", () => {
   let producer: Producer<Notification>;
-  let deliveryService: NotificationDeliveryService;
 
   beforeEach(() => {
     producer = mockProducer();
-    deliveryService = mockDeliveryService();
     vi.clearAllMocks();
   });
 
   describe("handle", () => {
     it("should do nothing when notifications array is empty", async () => {
       const idGenerator = vi.fn();
+      const deliveryService: DeliveryService = {
+        send: vi.fn(),
+        checkHealth: vi.fn(),
+      };
+
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -69,9 +76,14 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const notif2 = createIncomingNotification("Non-urgent 2", false);
 
       const idGenerator = vi.fn().mockReturnValue("test-id");
+      const deliveryService: DeliveryService = {
+        send: vi.fn(),
+        checkHealth: vi.fn(),
+      };
+
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -94,9 +106,9 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("id1")
         .mockReturnValueOnce("id2");
 
-      const deliveryResults: DeliveryResult[] = [
+      const results: Result[] = [
         {
-          success: true,
+          status: "success",
           notification: {
             id: "id1",
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -104,7 +116,7 @@ describe("createHandleIncomingNotificationsUseCase", () => {
           },
         },
         {
-          success: true,
+          status: "success",
           notification: {
             id: "id2",
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -113,11 +125,14 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         },
       ];
 
-      deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockResolvedValue(results),
+        checkHealth: vi.fn(),
+      };
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -139,9 +154,9 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("id1")
         .mockReturnValueOnce("id2");
 
-      const deliveryResults: DeliveryResult[] = [
+      const results: Result[] = [
         {
-          success: true,
+          status: "success",
           notification: {
             id: "id1",
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -149,7 +164,7 @@ describe("createHandleIncomingNotificationsUseCase", () => {
           },
         },
         {
-          success: false,
+          status: "failure",
           notification: {
             id: "id2",
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -158,11 +173,14 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         },
       ];
 
-      deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockResolvedValue(results),
+        checkHealth: vi.fn(),
+      };
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -183,9 +201,9 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         .mockReturnValueOnce("urgent-id")
         .mockReturnValueOnce("nonurgent-id");
 
-      const deliveryResults: DeliveryResult[] = [
+      const results: Result[] = [
         {
-          success: true,
+          status: "success",
           notification: {
             id: "urgent-id",
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -194,11 +212,14 @@ describe("createHandleIncomingNotificationsUseCase", () => {
         },
       ];
 
-      deliveryService.send = vi.fn().mockResolvedValue(deliveryResults);
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockResolvedValue(results),
+        checkHealth: vi.fn(),
+      };
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -217,12 +238,23 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const nonUrgent = createIncomingNotification("Non-urgent", false);
       const error = new Error("batcher failed");
 
-      producer.publish = vi.fn().mockRejectedValue(error);
+      const publishMock = vi.fn().mockRejectedValue(error);
+      const producer: Producer<Notification> = {
+        start: vi.fn(),
+        publish: publishMock,
+        shutdown: vi.fn(),
+        checkHealth: vi.fn(),
+      };
+
       const idGenerator = vi.fn().mockReturnValue("test-id");
+      const deliveryService: DeliveryService = {
+        send: vi.fn(),
+        checkHealth: vi.fn(),
+      };
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -233,12 +265,15 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const urgent = createIncomingNotification("Urgent", true);
       const error = new Error("Send failed");
 
-      deliveryService.send = vi.fn().mockRejectedValue(error);
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockRejectedValue(error),
+        checkHealth: vi.fn(),
+      };
       const idGenerator = vi.fn().mockReturnValue("test-id");
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -249,18 +284,21 @@ describe("createHandleIncomingNotificationsUseCase", () => {
       const notif = createIncomingNotification("Test", true);
       const idGenerator = vi.fn().mockReturnValue("returned-id");
 
-      deliveryService.send = vi.fn().mockImplementation((notifications) =>
-        Promise.resolve(
-          notifications.map((n: Notification) => ({
-            success: true,
-            notification: n,
-          })),
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockImplementation((notifications) =>
+          Promise.resolve(
+            notifications.map((n: Notification) => ({
+              status: "success",
+              notification: n,
+            })),
+          ),
         ),
-      );
+        checkHealth: vi.fn(),
+      };
 
       const { handle } = createHandleIncomingNotificationsUseCase({
         producer,
-        notificationDeliveryService: deliveryService,
+        deliveryService,
         idGenerator,
       });
 
@@ -274,10 +312,91 @@ describe("createHandleIncomingNotificationsUseCase", () => {
           message: "Test",
           isImmediate: true,
           createdAt: expect.stringMatching(
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/,
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
           ),
         }),
       );
+    });
+
+    it("should enrich notifications with subject when provided", async () => {
+      const notif = createIncomingNotification("Test with subject");
+      const subject: Subject = { id: "user-123", name: "john.doe" };
+      const idGenerator = vi.fn().mockReturnValue("test-id");
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockResolvedValue([]),
+        checkHealth: vi.fn(),
+      };
+
+      const { handle } = createHandleIncomingNotificationsUseCase({
+        producer,
+        deliveryService,
+        idGenerator,
+      });
+
+      const result = await handle([notif], subject);
+
+      expect(result[0]).toEqual(expectNotification("test-id", notif, subject));
+      expect(producer.publish).toHaveBeenCalledWith([
+        expectNotification("test-id", notif, subject),
+      ]);
+    });
+
+    it("should not include subject field when not provided", async () => {
+      const notif = createIncomingNotification("Test without subject");
+      const idGenerator = vi.fn().mockReturnValue("test-id");
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockResolvedValue([]),
+        checkHealth: vi.fn(),
+      };
+
+      const { handle } = createHandleIncomingNotificationsUseCase({
+        producer,
+        deliveryService,
+        idGenerator,
+      });
+
+      const result = await handle([notif]);
+
+      expect(Object.hasOwn(result[0], "subject")).toBe(false);
+      expect(result[0]).toEqual(
+        expectNotification("test-id", notif, undefined),
+      );
+    });
+
+    it("should handle mixed urgent/non-urgent with subject correctly", async () => {
+      const urgent = createIncomingNotification("Urgent", true);
+      const nonUrgent = createIncomingNotification("Non-urgent", false);
+      const subject: Subject = { id: "user-456", name: "jane.smith" };
+
+      const idGenerator = vi
+        .fn()
+        .mockReturnValueOnce("urgent-id")
+        .mockReturnValueOnce("nonurgent-id");
+
+      const deliveryService: DeliveryService = {
+        send: vi.fn().mockResolvedValue([
+          {
+            status: "success",
+            notification: expectNotification("urgent-id", urgent, subject),
+          },
+        ]),
+        checkHealth: vi.fn(),
+      };
+
+      const { handle } = createHandleIncomingNotificationsUseCase({
+        producer,
+        deliveryService,
+        idGenerator,
+      });
+
+      await handle([urgent, nonUrgent], subject);
+
+      expect(deliveryService.send).toHaveBeenCalledWith([
+        expectNotification("urgent-id", urgent, subject),
+      ]);
+      expect(producer.publish).toHaveBeenCalledWith([
+        expectNotification("nonurgent-id", nonUrgent, subject),
+      ]);
     });
   });
 });

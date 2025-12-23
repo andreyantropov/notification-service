@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware.js";
@@ -82,7 +82,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.info).toHaveBeenCalledWith({
       message: "Запрос POST /api/test обработан",
       eventType: EventType.Request,
-      duration: 150,
+      durationMs: 150,
       details: {
         method: "POST",
         url: "/api/test",
@@ -126,7 +126,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.info).toHaveBeenCalledWith({
       message: "Требуется аутентификация: GET /api/protected",
       eventType: EventType.AuthAttempt,
-      duration: 100,
+      durationMs: 100,
       details: {
         method: "GET",
         url: "/api/protected",
@@ -170,7 +170,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.info).toHaveBeenCalledWith({
       message: "Доступ запрещен: POST /api/admin",
       eventType: EventType.AccessDenied,
-      duration: 120,
+      durationMs: 120,
       details: {
         method: "POST",
         url: "/api/admin",
@@ -214,7 +214,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.info).toHaveBeenCalledWith({
       message: "Ресурс не найден: GET /api/not-found",
       eventType: EventType.Request,
-      duration: 80,
+      durationMs: 80,
       details: {
         method: "GET",
         url: "/api/not-found",
@@ -258,7 +258,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.info).toHaveBeenCalledWith({
       message: "Слишком много запросов: POST /api/rate-limited",
       eventType: EventType.Request,
-      duration: 90,
+      durationMs: 90,
       details: {
         method: "POST",
         url: "/api/rate-limited",
@@ -302,7 +302,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.error).toHaveBeenCalledWith({
       message: "Серверная ошибка: GET /api/fail",
       eventType: EventType.Request,
-      duration: 200,
+      durationMs: 200,
       details: {
         method: "GET",
         url: "/api/fail",
@@ -346,7 +346,7 @@ describe("RequestLoggerMiddleware", () => {
     expect(mockLogger.error).toHaveBeenCalledWith({
       message: "Серверная ошибка: GET /api/gateway",
       eventType: EventType.Request,
-      duration: 250,
+      durationMs: 250,
       details: {
         method: "GET",
         url: "/api/gateway",
@@ -391,7 +391,7 @@ describe("RequestLoggerMiddleware", () => {
       message:
         "Запрос GET /api/test был прерван клиентом до завершения обработки",
       eventType: EventType.Request,
-      duration: 100,
+      durationMs: 100,
       details: {
         method: "GET",
         url: "/api/test",

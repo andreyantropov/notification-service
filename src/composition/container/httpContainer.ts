@@ -1,4 +1,5 @@
-import { asFunction, AwilixContainer } from "awilix";
+import type { AwilixContainer } from "awilix";
+import { asFunction } from "awilix";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import swaggerUi from "swagger-ui-express";
@@ -25,7 +26,7 @@ import {
 } from "../../infrastructure/http/index.js";
 import { createLoggedServer } from "../../infrastructure/http/index.js";
 import { createSwaggerSpecification } from "../../presentation/createSwaggerSpecification/index.js";
-import { Container } from "../types/index.js";
+import type { Container } from "../types/index.js";
 
 export const registerHttp = (container: AwilixContainer<Container>) => {
   container.register({
@@ -40,20 +41,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
       const requestLoggerMiddleware = createRequestLoggerMiddleware({ logger });
 
       return requestLoggerMiddleware;
-    }).singleton(),
-    authenticationMiddleware: asFunction(() => {
-      const authenticationMiddleware = createAuthenticationMiddleware(
-        authenticationMiddlewareConfig,
-      );
-
-      return authenticationMiddleware;
-    }).singleton(),
-    authorizationMiddleware: asFunction(() => {
-      const authorizationMiddleware = createAuthorizationMiddleware(
-        authorizationMiddlewareConfig,
-      );
-
-      return authorizationMiddleware;
     }).singleton(),
     notFoundMiddleware: asFunction(() => {
       const notFoundMiddleware = createNotFoundMiddleware();
@@ -70,16 +57,24 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
 
       return internalServerMiddleware;
     }).singleton(),
-    healthcheckController: asFunction(
-      ({ checkNotificationServiceHealthUseCase }) => {
-        const healthcheckController = createHealthcheckController(
-          { checkNotificationServiceHealthUseCase },
-          healthcheckControllerConfig,
-        );
+    authenticationMiddleware: asFunction(() => {
+      return authenticationMiddlewareConfig
+        ? createAuthenticationMiddleware(authenticationMiddlewareConfig)
+        : undefined;
+    }).singleton(),
+    authorizationMiddleware: asFunction(() => {
+      return authorizationMiddlewareConfig
+        ? createAuthorizationMiddleware(authorizationMiddlewareConfig)
+        : undefined;
+    }).singleton(),
+    healthcheckController: asFunction(({ checkHealthUseCase }) => {
+      const healthcheckController = createHealthcheckController(
+        { checkHealthUseCase },
+        healthcheckControllerConfig,
+      );
 
-        return healthcheckController;
-      },
-    ).singleton(),
+      return healthcheckController;
+    }).singleton(),
     notificationController: asFunction(
       ({ handleIncomingNotificationsUseCase }) => {
         const notificationController = createNotificationController(
@@ -108,9 +103,9 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
       ({
         rateLimiterMiddleware,
         requestLoggerMiddleware,
-        healthcheckController,
         authenticationMiddleware,
         authorizationMiddleware,
+        healthcheckController,
         notificationController,
         swaggerSpecification,
         notFoundMiddleware,
@@ -133,11 +128,18 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
           expressAsyncHandler(healthcheckController.ready),
         );
 
+        const notificationMiddleware: express.RequestHandler[] = [];
+        if (authenticationMiddleware) {
+          notificationMiddleware.push(authenticationMiddleware);
+        }
+        if (authorizationMiddleware) {
+          notificationMiddleware.push(authorizationMiddleware);
+        }
+
         app.post(
           "/api/v1/notifications",
-          authenticationMiddleware,
-          authorizationMiddleware,
-          expressAsyncHandler(notificationController.send),
+          ...notificationMiddleware,
+          expressAsyncHandler(notificationController.handle),
         );
 
         app.use(
@@ -151,13 +153,7 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
         app.use(internalServerErrorMiddleware);
 
         const { port } = serviceConfig;
-
-        const server = createServer(
-          { app },
-          {
-            port,
-          },
-        );
+        const server = createServer({ app }, { port });
         const loggerServer = createLoggedServer({ server, logger });
 
         return loggerServer;

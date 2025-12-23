@@ -1,2 +1,3 @@
-export * from "./HandleIncomingNotificationsUseCase.js";
-export * from "./HandleIncomingNotificationsUseCaseDependencies.js";
+export type { HandleIncomingNotificationsUseCase } from "./HandleIncomingNotificationsUseCase.js";
+export type { HandleIncomingNotificationsUseCaseDependencies } from "./HandleIncomingNotificationsUseCaseDependencies.js";
+export type { CategorizedNotifications } from "./CategorizedNotifications.js";

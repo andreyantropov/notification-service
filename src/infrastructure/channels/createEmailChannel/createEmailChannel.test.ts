@@ -2,9 +2,10 @@ import nodemailer from "nodemailer";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { createEmailChannel } from "./createEmailChannel.js";
-import { EmailChannelConfig } from "./interfaces/index.js";
-import { Channel } from "../../../domain/ports/index.js";
-import { Contact, CHANNEL_TYPES } from "../../../domain/types/index.js";
+import type { EmailChannelConfig } from "./interfaces/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import type { Channel } from "../../../domain/ports/index.js";
+import type { Contact } from "../../../domain/types/index.js";
 import { noop } from "../../../shared/utils/index.js";
 
 vi.mock("nodemailer");

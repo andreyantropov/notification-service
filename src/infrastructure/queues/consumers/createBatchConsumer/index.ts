@@ -1,2 +1,6 @@
-export * from "./interfaces/index.js";
-export * from "./createBatchConsumer.js";
+export type {
+  BatchConsumerConfig,
+  BatchConsumerDependencies,
+  HandlerResult,
+} from "./interfaces/index.js";
+export { createBatchConsumer } from "./createBatchConsumer.js";

@@ -1,2 +1,5 @@
-export * from "./interfaces/index.js";
-export * from "./createHandleIncomingNotificationsUseCase.js";
+export type {
+  HandleIncomingNotificationsUseCase,
+  HandleIncomingNotificationsUseCaseDependencies,
+} from "./interfaces/index.js";
+export { createHandleIncomingNotificationsUseCase } from "./createHandleIncomingNotificationsUseCase.js";

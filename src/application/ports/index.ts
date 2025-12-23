@@ -1,5 +1,5 @@
-export * from "./Consumer.js";
-export * from "./Logger.js";
-export * from "./Meter.js";
-export * from "./Producer.js";
-export * from "./Tracer.js";
+export type { Consumer } from "./Consumer.js";
+export type { Logger } from "./Logger.js";
+export type { Meter } from "./Meter.js";
+export type { Producer } from "./Producer.js";
+export type { Tracer } from "./Tracer.js";

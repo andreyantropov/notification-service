@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { TimeoutError } from "p-timeout";
 import { describe, it, expect, vi } from "vitest";
 

@@ -1,1 +1,1 @@
-export * from "./SwaggerSpecificationConfig.js";
+export type { SwaggerSpecificationConfig } from "./SwaggerSpecificationConfig.js";

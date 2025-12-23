@@ -1,16 +1,15 @@
 import axios from "axios";
 import pTimeout from "p-timeout";
 
-import { BitrixChannelConfig } from "./interfaces/index.js";
-import { Channel } from "../../../domain/ports/index.js";
 import {
-  Contact,
-  isContactOfType,
-  CHANNEL_TYPES,
-} from "../../../domain/types/index.js";
-
-const DEFAULT_SEND_TIMEOUT_MS = 10_000;
-const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 5_000;
+  DEFAULT_HEALTHCHECK_TIMEOUT_MS,
+  DEFAULT_SEND_TIMEOUT_MS,
+} from "./constants/index.js";
+import type { BitrixChannelConfig } from "./interfaces/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import type { Channel } from "../../../domain/ports/index.js";
+import type { Contact } from "../../../domain/types/index.js";
+import { isContactOfType } from "../../../domain/types/index.js";
 
 export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
   const {

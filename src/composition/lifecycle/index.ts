@@ -1,2 +1,2 @@
-export * from "./start.js";
-export * from "./shutdown.js";
+export { start } from "./start.js";
+export { shutdown } from "./shutdown.js";

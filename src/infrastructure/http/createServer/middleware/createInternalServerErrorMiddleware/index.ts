@@ -1,1 +1,1 @@
-export * from "./createInternalServerErrorMiddleware.js";
+export { createInternalServerErrorMiddleware } from "./createInternalServerErrorMiddleware.js";

@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response, RequestHandler } from "express";
-import rateLimit, { Options } from "express-rate-limit";
+import type { NextFunction, Request, Response, RequestHandler } from "express";
+import type { Options } from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
 
-import { RateLimiterMiddlewareConfig } from "./interfaces/index.js";
+import type { RateLimiterMiddlewareConfig } from "./interfaces/index.js";
 
 export const createRateLimiterMiddleware = (
   config: RateLimiterMiddlewareConfig,

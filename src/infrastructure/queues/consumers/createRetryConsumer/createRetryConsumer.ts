@@ -1,21 +1,18 @@
-import {
-  AMQPClient,
-  AMQPMessage,
-  AMQPChannel,
-  Field,
-} from "@cloudamqp/amqp-client";
+import { AMQPClient, AMQPMessage, AMQPChannel } from "@cloudamqp/amqp-client";
+import type { Field } from "@cloudamqp/amqp-client";
 import pTimeout from "p-timeout";
 
-import { RetryConsumerConfig } from "./interfaces/index.js";
-import { RetryConsumerDependencies } from "./interfaces/RetryConsumerDependencies.js";
-import { Consumer } from "../../../../application/ports/index.js";
+import {
+  CHECK_SHUTDOWN_TIMEOUT_MS,
+  DEFAULT_HEALTHCHECK_TIMEOUT_MS,
+  DEFAULT_RETRY_PUBLISH_TIMEOUT_MS,
+  PERSISTENT,
+} from "./constants/index.js";
+import type { RetryConsumerConfig } from "./interfaces/index.js";
+import type { RetryConsumerDependencies } from "./interfaces/RetryConsumerDependencies.js";
+import type { Consumer } from "../../../../application/ports/index.js";
 import { noop } from "../../../../shared/utils/index.js";
-import { AMQPConnection } from "../../types/index.js";
-
-const PERSISTENT = 2;
-const CHECK_SHUTDOWN_TIMEOUT_MS = 100;
-const DEFAULT_RETRY_PUBLISH_TIMEOUT_MS = 10_000;
-const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 5_000;
+import type { AMQPConnection } from "../../types/index.js";
 
 export const createRetryConsumer = (
   dependencies: RetryConsumerDependencies,

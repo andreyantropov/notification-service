@@ -1,5 +1,5 @@
-import { Server } from "../interfaces/index.js";
-import { ServerDependencies, ServerConfig } from "./interfaces/index.js";
+import type { Server } from "../interfaces/index.js";
+import type { ServerDependencies, ServerConfig } from "./interfaces/index.js";
 
 export const createServer = (
   dependencies: ServerDependencies,

@@ -1,15 +1,14 @@
 import { AMQPClient, AMQPChannel } from "@cloudamqp/amqp-client";
 import pTimeout from "p-timeout";
 
-import { ProducerConfig } from "./interfaces/index.js";
-import { Producer } from "../../../../application/ports/index.js";
-
-const PERSISTENT = 2;
-const DEFAULT_PUBLISH_TIMEOUT_MS = 10_000;
-const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 5_000;
-
-type AMQPConnection =
-  ReturnType<AMQPClient["connect"]> extends Promise<infer T> ? T : never;
+import {
+  DEFAULT_PUBLISH_TIMEOUT_MS,
+  DEFAULT_HEALTHCHECK_TIMEOUT_MS,
+  PERSISTENT,
+} from "./constants/index.js";
+import type { ProducerConfig } from "./interfaces/index.js";
+import type { Producer } from "../../../../application/ports/index.js";
+import type { AMQPConnection } from "../../types/index.js";
 
 export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
   const {

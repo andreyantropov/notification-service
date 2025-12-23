@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { auth } from "express-oauth2-jwt-bearer";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 

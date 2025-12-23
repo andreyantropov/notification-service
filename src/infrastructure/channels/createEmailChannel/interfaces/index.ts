@@ -1,1 +1,1 @@
-export * from "./EmailChannelConfig.js";
+export type { EmailChannelConfig } from "./EmailChannelConfig.js";

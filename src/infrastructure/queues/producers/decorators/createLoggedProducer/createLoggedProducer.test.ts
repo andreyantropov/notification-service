@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Mock } from "vitest";
+import type { Mock } from "vitest";
 
 import { createLoggedProducer } from "./createLoggedProducer.js";
-import { LoggedProducerDependencies } from "./interfaces/LoggedProducerDependencies.js";
+import type { LoggedProducerDependencies } from "./interfaces/LoggedProducerDependencies.js";
 import { EventType } from "../../../../../application/enums/index.js";
-import { Producer, Logger } from "../../../../../application/ports/index.js";
+import type {
+  Producer,
+  Logger,
+} from "../../../../../application/ports/index.js";
 
 type MockLogger = {
   readonly [K in keyof Logger]: Mock<
@@ -54,7 +57,7 @@ describe("createLoggedProducer", () => {
       expect(mockProducer.publish).toHaveBeenCalledWith(testItems);
     });
 
-    it("should log debug with item count and duration when publish is successful", async () => {
+    it("should log debug with item count and durationMs when publish is successful", async () => {
       const loggedProducer = createLoggedProducer(dependencies);
       await loggedProducer.publish(testItems);
 
@@ -62,7 +65,7 @@ describe("createLoggedProducer", () => {
         expect.objectContaining({
           message: "5 сообщений опубликовано в очередь",
           eventType: EventType.MessagePublish,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           details: {
             count: 5,
           },
@@ -70,7 +73,7 @@ describe("createLoggedProducer", () => {
       );
     });
 
-    it("should log error with duration, count, and rethrow when publish fails", async () => {
+    it("should log error with durationMs, count, and rethrow when publish fails", async () => {
       const loggedProducer = createLoggedProducer(dependencies);
       const testError = new Error("Publish failed");
       mockProducer.publish.mockRejectedValue(testError);
@@ -83,7 +86,7 @@ describe("createLoggedProducer", () => {
         expect.objectContaining({
           message: "Не удалось опубликовать сообщения",
           eventType: EventType.MessagePublish,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           details: {
             count: 5,
           },
@@ -103,7 +106,7 @@ describe("createLoggedProducer", () => {
         expect.objectContaining({
           message: "0 сообщений опубликовано в очередь",
           eventType: EventType.MessagePublish,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           details: {
             count: 0,
           },
@@ -161,7 +164,7 @@ describe("createLoggedProducer", () => {
       expect(mockCheckHealth).toHaveBeenCalledOnce();
     });
 
-    it("should log debug with duration when checkHealth succeeds", async () => {
+    it("should log debug with durationMs when checkHealth succeeds", async () => {
       const mockCheckHealth = vi.fn();
       const producerWithHealthCheck = {
         ...mockProducer,
@@ -179,12 +182,12 @@ describe("createLoggedProducer", () => {
         expect.objectContaining({
           message: "Producer готов к работе",
           eventType: EventType.HealthCheck,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
     });
 
-    it("should log error with duration and rethrow when checkHealth fails", async () => {
+    it("should log error with durationMs and rethrow when checkHealth fails", async () => {
       const healthCheckError = new Error("Health check failed");
       const mockCheckHealth = vi.fn().mockRejectedValue(healthCheckError);
       const producerWithHealthCheck = {
@@ -206,7 +209,7 @@ describe("createLoggedProducer", () => {
         expect.objectContaining({
           message: "Producer недоступен",
           eventType: EventType.HealthCheck,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           error: healthCheckError,
         }),
       );
@@ -279,7 +282,7 @@ describe("createLoggedProducer", () => {
       const loggedProducer = createLoggedProducer(dependencies);
       await expect(loggedProducer.start()).rejects.toThrow("Start failed");
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.critical).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "Не удалось запустить producer",
           eventType: EventType.Bootstrap,

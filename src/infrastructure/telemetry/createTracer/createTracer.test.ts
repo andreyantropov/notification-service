@@ -2,9 +2,9 @@ import { trace } from "@opentelemetry/api";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createTracer } from "./createTracer.js";
-import { TracerConfig } from "./interfaces/index.js";
-import { Tracer } from "../../../application/ports/index.js";
-import { CHANNEL_TYPES } from "../../../domain/types/index.js";
+import type { TracerConfig } from "./interfaces/index.js";
+import type { Tracer } from "../../../application/ports/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
 import {
   mapKeysToSnakeCase,
   toSnakeCase,

@@ -1,4 +1,4 @@
-import { Log } from "../types/Log.js";
+import type { Log } from "../types/Log.js";
 
 export interface Logger {
   readonly debug: (log: Log) => Promise<void>;

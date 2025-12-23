@@ -1,38 +1,54 @@
-import { asFunction, AwilixContainer } from "awilix";
+import type { AwilixContainer } from "awilix";
+import { asFunction } from "awilix";
 
 import {
-  createMeteredNotificationDeliveryService,
-  createNotificationDeliveryService,
-  createLoggedNotificationDeliveryService,
-} from "../../application/services/createNotificationDeliveryService/index.js";
-import { createNotificationRetryService } from "../../application/services/createNotificationRetryService/index.js";
-import { Container } from "../types/index.js";
+  createMeteredDeliveryService,
+  createDeliveryService,
+  createLoggedDeliveryService,
+} from "../../application/services/createDeliveryService/index.js";
+import {
+  createLoggedRetryService,
+  createMeteredRetryService,
+  createRetryService,
+} from "../../application/services/createRetryService/index.js";
+import type { Container } from "../types/index.js";
 
 export const registerServices = (container: AwilixContainer<Container>) => {
   container.register({
-    notificationDeliveryService: asFunction(
+    deliveryService: asFunction(
       ({ bitrixChannel, emailChannel, logger, meter }) => {
-        const notificationDeliveryService = createNotificationDeliveryService({
-          channels: [bitrixChannel, emailChannel],
-        });
-        const loggedNotificationDeliveryService =
-          createLoggedNotificationDeliveryService({
-            notificationDeliveryService,
-            logger,
-          });
-        const meteredLoggedNotificationDeliveryService =
-          createMeteredNotificationDeliveryService({
-            notificationDeliveryService: loggedNotificationDeliveryService,
-            meter,
-          });
+        const channels = [bitrixChannel, emailChannel].filter(
+          (channel): channel is NonNullable<typeof channel> =>
+            channel != undefined,
+        );
 
-        return meteredLoggedNotificationDeliveryService;
+        const deliveryService = createDeliveryService({
+          channels,
+        });
+        const loggedDeliveryService = createLoggedDeliveryService({
+          deliveryService,
+          logger,
+        });
+        const meteredLoggedDeliveryService = createMeteredDeliveryService({
+          deliveryService: loggedDeliveryService,
+          meter,
+        });
+
+        return meteredLoggedDeliveryService;
       },
     ).singleton(),
-    notificationRetryService: asFunction(() => {
-      const notificationRetryService = createNotificationRetryService();
+    retryService: asFunction(({ logger, meter }) => {
+      const retryService = createRetryService();
+      const loggedRetryService = createLoggedRetryService({
+        retryService,
+        logger,
+      });
+      const meteredLoggedRetryService = createMeteredRetryService({
+        retryService: loggedRetryService,
+        meter,
+      });
 
-      return notificationRetryService;
+      return meteredLoggedRetryService;
     }).singleton(),
   });
 };

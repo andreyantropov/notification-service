@@ -1,7 +1,8 @@
-import { trace, SpanKind, SpanStatusCode, Exception } from "@opentelemetry/api";
+import type { Exception } from "@opentelemetry/api";
+import { trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 
-import { TracerConfig } from "./interfaces/index.js";
-import { Tracer } from "../../../application/ports/index.js";
+import type { TracerConfig } from "./interfaces/index.js";
+import type { Tracer } from "../../../application/ports/index.js";
 import {
   mapKeysToSnakeCase,
   toSnakeCase,

@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 import { messageQueueConfig } from "./messageQueueConfig.js";
-import { BatchConsumerConfig } from "../infrastructure/queues/index.js";
+import type { BatchConsumerConfig } from "../infrastructure/queues/index.js";
 
 const { url } = messageQueueConfig;
 
-const batchConsumerConfigSchema = z.object({
+const schema = z.object({
   url: z
     .string()
     .trim()
@@ -29,16 +29,17 @@ const batchConsumerConfigSchema = z.object({
   healthcheckTimeoutMs: z.coerce.number().int().positive().optional(),
 });
 
-export const batchConsumerConfig: BatchConsumerConfig =
-  batchConsumerConfigSchema.parse({
-    url,
-    queue: process.env.BATCH_CONSUMER_QUEUE,
-    maxBatchSize: process.env.BATCH_CONSUMER_MAX_BATCH_SIZE,
-    batchFlushTimeoutMs: process.env.BATCH_CONSUMER_BATCH_FLUSH_TIMEOUT_MS,
-    nackOptions: {
-      requeue: process.env.BATCH_CONSUMER_REQUEUE,
-      multiple: process.env.BATCH_CONSUMER_MULTIPLE,
-    },
-    flushTimeoutMs: process.env.BATCH_CONSUMER_FLUSH_TIMEOUT_MS,
-    healthcheckTimeoutMs: process.env.BATCH_CONSUMER_HEALTHCHECK_TIMEOUT_MS,
-  });
+const rawEnv = {
+  url,
+  queue: process.env.BATCH_CONSUMER_QUEUE,
+  maxBatchSize: process.env.BATCH_CONSUMER_MAX_BATCH_SIZE,
+  batchFlushTimeoutMs: process.env.BATCH_CONSUMER_BATCH_FLUSH_TIMEOUT_MS,
+  nackOptions: {
+    requeue: process.env.BATCH_CONSUMER_REQUEUE,
+    multiple: process.env.BATCH_CONSUMER_MULTIPLE,
+  },
+  flushTimeoutMs: process.env.BATCH_CONSUMER_FLUSH_TIMEOUT_MS,
+  healthcheckTimeoutMs: process.env.BATCH_CONSUMER_HEALTHCHECK_TIMEOUT_MS,
+};
+
+export const batchConsumerConfig: BatchConsumerConfig = schema.parse(rawEnv);

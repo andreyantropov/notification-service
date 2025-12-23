@@ -1,1 +1,1 @@
-export * from "./noop.js";
+export { noop } from "./noop.js";

@@ -1,6 +1,6 @@
-import { OpenAPIV3_1 } from "openapi-types";
+import type { OpenAPIV3_1 } from "openapi-types";
 
-import { SwaggerSpecificationConfig } from "./interfaces/index.js";
+import type { SwaggerSpecificationConfig } from "./interfaces/index.js";
 
 export const createSwaggerSpecification = (
   config: SwaggerSpecificationConfig,
@@ -70,10 +70,9 @@ export const createSwaggerSpecification = (
           },
         },
 
-        Notification: {
+        IncomingNotification: {
           type: "object",
-          description:
-            "Уведомление: содержит список контактов одного получателя, сообщение и опциональный флаг isImmediate",
+          description: "Уведомление, передаваемое клиентом",
           required: ["contacts", "message"],
           properties: {
             contacts: {
@@ -87,7 +86,7 @@ export const createSwaggerSpecification = (
             message: {
               type: "string",
               minLength: 1,
-              example: "Ваш заказ готов!",
+              example: "Hello World!",
               description: "Текст уведомления",
             },
             isImmediate: {
@@ -106,42 +105,22 @@ export const createSwaggerSpecification = (
           },
         },
 
-        NotificationRequest: {
-          description:
-            "Тело запроса: может быть одним уведомлением или массивом уведомлений (от 1 до 100)",
-          oneOf: [
-            {
-              $ref: "#/components/schemas/Notification",
-            },
-            {
-              type: "array",
-              items: {
-                $ref: "#/components/schemas/Notification",
-              },
-              minItems: 1,
-              maxItems: 100,
-            },
-          ],
-        },
-
-        NotificationResponse: {
+        Notification: {
           type: "object",
-          description:
-            "Уведомление с серверным ID и временной меткой создания (возвращается в ответе)",
+          description: "Уведомление с серверными метаданными (возвращается в ответе)",
           required: ["id", "createdAt", "contacts", "message"],
           properties: {
             id: {
               type: "string",
               format: "uuid",
               example: "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
-              description:
-                "Уникальный идентификатор уведомления, сгенерированный сервером",
+              description: "Уникальный идентификатор, сгенерированный сервером",
             },
             createdAt: {
               type: "string",
               format: "date-time",
               example: "2025-11-09T12:57:25.938Z",
-              description: "Время создания уведомления в формате ISO 8601",
+              description: "Время создания в формате ISO 8601",
             },
             contacts: {
               type: "array",
@@ -152,7 +131,7 @@ export const createSwaggerSpecification = (
             },
             message: {
               type: "string",
-              example: "Ваш заказ готов!",
+              example: "Hello World!",
             },
             isImmediate: {
               type: "boolean",
@@ -161,7 +140,6 @@ export const createSwaggerSpecification = (
             strategy: {
               type: "string",
               enum: ["send_to_first_available", "send_to_all_available"],
-              description: "Стратегия доставки уведомления",
               example: "send_to_first_available",
             },
             subject: {
@@ -170,7 +148,7 @@ export const createSwaggerSpecification = (
                 id: {
                   type: "string",
                   example: "user-123",
-                  description: "Идентификатор отправителя (обычно из JWT)",
+                  description: "Идентификатор отправителя (из JWT)",
                 },
                 name: {
                   type: "string",
@@ -179,144 +157,121 @@ export const createSwaggerSpecification = (
                 },
               },
               required: ["id"],
-              description: "Информация об отправителе уведомления",
+              description: "Информация об отправителе",
             },
           },
         },
 
-        Receipt: {
-          type: "object",
-          properties: {
-            success: {
-              type: "boolean",
-              example: true,
-              description:
-                "true — уведомление принято в обработку, false — не прошло валидацию",
+        NotificationRequestBody: {
+          description:
+            "Тело запроса: может быть одним уведомлением или массивом уведомлений (от 1 до 100)",
+          oneOf: [
+            {
+              $ref: "#/components/schemas/IncomingNotification",
             },
-            notification: {
-              oneOf: [
-                {
-                  $ref: "#/components/schemas/NotificationResponse",
-                  description: "Валидное уведомление с серверным ID",
-                },
-                {
-                  type: "object",
-                  description:
-                    "Сырой объект из запроса (если не прошёл валидацию)",
-                  additionalProperties: true,
-                },
-              ],
-            },
-            error: {
+            {
               type: "array",
-              description: "Ошибки валидации (Zod) при success: false",
               items: {
-                type: "object",
-                properties: {
-                  code: {
-                    type: "string",
-                    example: "too_small",
-                  },
-                  message: {
-                    type: "string",
-                    example: "List must contain at least 1 element(s)",
-                  },
-                  path: {
-                    type: "array",
-                    items: {
-                      type: ["string", "number"],
-                    },
-                    example: ["contacts"],
-                  },
-                  expected: { type: "string" },
-                  received: { type: "string" },
-                },
-                required: ["code", "message", "path"],
+                $ref: "#/components/schemas/IncomingNotification",
               },
+              minItems: 1,
+              maxItems: 100,
             },
-          },
-          required: ["success", "notification"],
+          ],
         },
 
-        ReceiptBatch: {
+        NotificationResponseBody: {
           type: "object",
-          description: "Ответ при частичной обработке (207 Multi-Status)",
+          description: "Полный ответ на запрос обработки уведомлений",
+          required: ["message", "totalCount", "acceptedCount", "rejectedCount", "details"],
           properties: {
             message: {
               type: "string",
-              example: "Уведомления приняты частично: 2 принято, 1 отклонено",
-              description: "Сообщение о результате обработки запроса",
+              example: "Все уведомления приняты в обработку",
             },
             totalCount: {
               type: "integer",
-              example: 3,
               minimum: 0,
-              description: "Общее количество уведомлений в запросе",
+              example: 2,
             },
             acceptedCount: {
               type: "integer",
-              example: 2,
               minimum: 0,
-              description: "Количество уведомлений, принятых в обработку",
+              example: 2,
             },
             rejectedCount: {
               type: "integer",
-              example: 1,
               minimum: 0,
-              description:
-                "Количество уведомлений, отклонённых из-за ошибок валидации",
+              example: 0,
             },
             details: {
               type: "array",
-              description: "Результат обработки каждого уведомления",
               items: {
-                $ref: "#/components/schemas/Receipt",
+                oneOf: [
+                  {
+                    type: "object",
+                    required: ["status", "notification"],
+                    properties: {
+                      status: {
+                        type: "string",
+                        enum: ["success"],
+                      },
+                      notification: {
+                        $ref: "#/components/schemas/Notification",
+                      },
+                    },
+                    additionalProperties: false,
+                  },
+                  {
+                    type: "object",
+                    required: ["status", "notification", "error"],
+                    properties: {
+                      status: {
+                        type: "string",
+                        enum: ["failure"],
+                      },
+                      notification: {
+                        type: "object",
+                        description: "Сырой объект из запроса",
+                        additionalProperties: true,
+                      },
+                      error: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            code: { type: "string" },
+                            message: { type: "string" },
+                            path: {
+                              type: "array",
+                              items: {
+                                oneOf: [{ type: "string" }, { type: "number" }],
+                              },
+                            },
+                            expected: { type: "string" },
+                            received: { type: "string" },
+                          },
+                          required: ["code", "message", "path"],
+                        },
+                      },
+                    },
+                    additionalProperties: false,
+                  },
+                ],
               },
             },
           },
-          required: [
-            "message",
-            "totalCount",
-            "acceptedCount",
-            "rejectedCount",
-            "details",
-          ],
         },
       },
     },
     paths: {
-      "/health/live": {
-        get: {
-          summary: "Liveness проверка",
-          description: "Проверяет, запущен ли сервис.",
-          tags: ["Healthcheck"],
-          responses: {
-            200: { description: "OK" },
-          },
-        },
-      },
-      "/health/ready": {
-        get: {
-          summary: "Readiness проверка",
-          description: "Проверяет, готов ли сервис принимать запросы.",
-          tags: ["Healthcheck"],
-          responses: {
-            200: { description: "Готов" },
-            503: { description: "Не готов" },
-          },
-        },
-      },
       "/v1/notifications": {
         post: {
           summary: "Отправка уведомления",
           description:
-            "Принимает одно уведомление или массив (от 1 до 100). Уведомления с `isImmediate: true` отправляются немедленно. Остальные — буферизуются и отправляются пачкой.\n\n" +
-            "**Важно:** API не возвращает статус доставки, только подтверждение приёма уведомлений в обработку.\n\n" +
-            "Возвращает:\n" +
-            "- `202`: все уведомления валидны и приняты в обработку\n" +
-            "- `207`: часть уведомлений не прошла валидацию\n" +
-            "- `400`: ни одно не прошло валидацию\n" +
-            "- `500`: внутренняя ошибка",
+            "Принимает одно уведомление или массив (от 1 до 100).\n\n" +
+            "Уведомления с `isImmediate: true` отправляются немедленно. Остальные — буферизуются и отправляются пачкой.\n\n" +
+            "**Важно:** API не возвращает статус доставки, только подтверждение приёма уведомлений в обработку.\n\n",
           tags: ["Notifications"],
           security: [
             {
@@ -328,7 +283,7 @@ export const createSwaggerSpecification = (
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/NotificationRequest",
+                  $ref: "#/components/schemas/NotificationRequestBody",
                 },
                 examples: {
                   single: {
@@ -340,7 +295,7 @@ export const createSwaggerSpecification = (
                           value: "user@example.com",
                         },
                       ],
-                      message: "Срочное: заказ отправлен!",
+                      message: "Hello World!",
                       isImmediate: true,
                     },
                   },
@@ -354,7 +309,7 @@ export const createSwaggerSpecification = (
                             value: "user1@example.com",
                           },
                         ],
-                        message: "Ваш заказ готов",
+                        message: "Hello World!",
                         isImmediate: true,
                       },
                       {
@@ -375,12 +330,11 @@ export const createSwaggerSpecification = (
           },
           responses: {
             202: {
-              description:
-                "Все уведомления приняты в обработку (включая буферизацию)",
+              description: "Все уведомления приняты в обработку",
               content: {
                 "application/json": {
                   schema: {
-                    $ref: "#/components/schemas/ReceiptBatch",
+                    $ref: "#/components/schemas/NotificationResponseBody",
                   },
                   example: {
                     message: "Все уведомления приняты в обработку",
@@ -389,7 +343,7 @@ export const createSwaggerSpecification = (
                     rejectedCount: 0,
                     details: [
                       {
-                        success: true,
+                        status: "success",
                         notification: {
                           id: "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
                           createdAt: "2025-11-09T12:57:25.938Z",
@@ -399,7 +353,7 @@ export const createSwaggerSpecification = (
                               value: "user1@example.com",
                             },
                           ],
-                          message: "Ваш заказ готов",
+                          message: "Hello World!",
                           isImmediate: true,
                           subject: {
                             id: "user-123",
@@ -408,7 +362,7 @@ export const createSwaggerSpecification = (
                         },
                       },
                       {
-                        success: true,
+                        status: "success",
                         notification: {
                           id: "b2c3d4e5-f6g7-8901-h2i3-j4k5l6m7n8o9",
                           contacts: [
@@ -430,22 +384,20 @@ export const createSwaggerSpecification = (
               },
             },
             207: {
-              description:
-                "Частичная обработка: некоторые уведомления не прошли валидацию.",
+              description: "Частичная обработка",
               content: {
                 "application/json": {
                   schema: {
-                    $ref: "#/components/schemas/ReceiptBatch",
+                    $ref: "#/components/schemas/NotificationResponseBody",
                   },
                   example: {
-                    message:
-                      "Уведомления приняты частично: 2 принято, 1 отклонено",
+                    message: "Уведомления приняты частично: 2 принято, 1 отклонено",
                     totalCount: 3,
                     acceptedCount: 2,
                     rejectedCount: 1,
                     details: [
                       {
-                        success: true,
+                        status: "success",
                         notification: {
                           id: "c3d4e5f6-g7h8-9012-i3j4-k5l6m7n8o9p0",
                           createdAt: "2025-11-09T12:57:25.938Z",
@@ -462,7 +414,7 @@ export const createSwaggerSpecification = (
                         },
                       },
                       {
-                        success: false,
+                        status: "failure",
                         notification: {
                           contacts: [],
                           message: "",
@@ -476,7 +428,7 @@ export const createSwaggerSpecification = (
                         ],
                       },
                       {
-                        success: true,
+                        status: "success",
                         notification: {
                           id: "d4e5f6g7-h8i9-0123-j4k5-l6m7n8o9p0q1",
                           contacts: [
@@ -498,31 +450,20 @@ export const createSwaggerSpecification = (
               },
             },
             400: {
-              description:
-                "Ни одно уведомление не прошло валидацию. Ответ содержит список невалидных элементов.",
+              description: "Ни одно уведомление не прошло валидацию",
               content: {
                 "application/json": {
                   schema: {
                     type: "object",
                     properties: {
-                      error: {
-                        type: "string",
-                        example: "HTTP 400 Bad Request",
-                      },
-                      message: {
-                        type: "string",
-                        example: "Ни одно уведомление не прошло валидацию",
-                      },
+                      error: { type: "string", example: "HTTP 400 Bad Request" },
+                      message: { type: "string", example: "Ни одно уведомление не прошло валидацию" },
                       details: {
                         type: "array",
                         items: {
                           type: "object",
                           properties: {
-                            item: {
-                              type: "object",
-                              description: "Сырой объект из запроса",
-                              additionalProperties: true,
-                            },
+                            item: { type: "object", additionalProperties: true },
                             error: {
                               type: "array",
                               items: {
@@ -579,6 +520,25 @@ export const createSwaggerSpecification = (
                   example: {
                     error: "HTTP 500 Internal Server Error",
                     message: "Не удалось отправить уведомление",
+                  },
+                },
+              },
+            },
+            504: {
+              description: "Таймаут обработки запроса",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: { type: "string" },
+                      message: { type: "string" },
+                    },
+                    required: ["error", "message"],
+                  },
+                  example: {
+                    error: "HTTP 504 Gateway Timeout",
+                    message: "Превышено время ожидания обработки запроса",
                   },
                 },
               },

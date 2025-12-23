@@ -1,25 +1,28 @@
-import { ChannelTypes } from "../../domain/types/ChannelTypes.js";
-import { DeliveryStrategies } from "../../domain/types/DeliveryStrategies.js";
+import type { DeliveryStrategy } from "../../domain/enums/index.js";
+import type { ChannelType } from "../../domain/types/ChannelType.js";
 
 export interface Meter {
-  readonly incrementTotalNotifications: () => void;
+  readonly incrementNotificationsProcessedTotal: () => void;
   readonly incrementNotificationsProcessedByResult: (
-    result: "success" | "failure",
+    status: "success" | "failure",
   ) => void;
   readonly incrementNotificationsProcessedBySubject: (
     subjectId: string,
   ) => void;
   readonly incrementNotificationsProcessedByStrategy: (
-    strategy: DeliveryStrategies,
+    strategy: DeliveryStrategy,
   ) => void;
-  readonly incrementNotificationsByPriority: (isImmediate: boolean) => void;
+  readonly incrementNotificationsProcessedByPriority: (
+    isImmediate: boolean,
+  ) => void;
+  readonly incrementRetryRoutingByQueue: (queue: string) => void;
 
   readonly recordChannelLatency: (
     latency: number,
     attributes: Record<string, string | boolean>,
   ) => void;
-  readonly incrementNotificationsByChannel: (
-    contactType: ChannelTypes,
-    result: "success" | "failure",
+  readonly incrementNotificationsProcessedByChannel: (
+    channel: ChannelType,
+    status: "success" | "failure",
   ) => void;
 }

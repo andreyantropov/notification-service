@@ -1,7 +1,7 @@
-import { LoggedChannelDependencies } from "./interfaces/index.js";
+import type { LoggedChannelDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Channel } from "../../../../domain/ports/index.js";
-import { Contact } from "../../../../domain/types/index.js";
+import type { Channel } from "../../../../domain/ports/index.js";
+import type { Contact } from "../../../../domain/types/index.js";
 
 export const createLoggedChannel = (
   dependencies: LoggedChannelDependencies,
@@ -12,19 +12,19 @@ export const createLoggedChannel = (
     const start = Date.now();
     try {
       await channel.send(contact, message);
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
       logger.info({
         message: `Уведомление успешно отправлено по каналу ${channel.type}`,
         eventType: EventType.MessagePublish,
-        duration,
+        durationMs,
         details: { channelType: channel.type, contactType: contact.type },
       });
     } catch (error) {
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
       logger.error({
         message: `Не удалось отправить уведомление по каналу ${channel.type}`,
         eventType: EventType.MessagePublish,
-        duration,
+        durationMs,
         details: { channelType: channel.type, contactType: contact.type },
         error,
       });
@@ -37,19 +37,19 @@ export const createLoggedChannel = (
         const start = Date.now();
         try {
           await channel.checkHealth!();
-          const duration = Date.now() - start;
+          const durationMs = Date.now() - start;
           logger.debug({
             message: `Канал ${channel.type} готов к работе`,
             eventType: EventType.HealthCheck,
-            duration,
+            durationMs,
             details: { channelType: channel.type },
           });
         } catch (error) {
-          const duration = Date.now() - start;
+          const durationMs = Date.now() - start;
           logger.error({
             message: `Канал ${channel.type} не отвечает`,
             eventType: EventType.HealthCheck,
-            duration,
+            durationMs,
             details: { channelType: channel.type },
             error,
           });

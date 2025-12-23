@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
 
 import { EventType, TriggerType } from "../../../application/enums/index.js";
-import { Logger } from "../../../application/ports/index.js";
-import { Log } from "../../../application/types/index.js";
+import type { Logger } from "../../../application/ports/index.js";
+import type { Log } from "../../../application/types/index.js";
 
 describe("createLogger", () => {
   let logger: Logger;
@@ -68,7 +68,7 @@ describe("createLogger", () => {
       expect.objectContaining({
         id: "test-uuid-123",
         event_type: EventType.InfrastructureFailure,
-        duration: 0,
+        durationMs: 0,
         trigger: TriggerType.Api,
       }),
     );
@@ -93,7 +93,7 @@ describe("createLogger", () => {
         name: "Error",
         stack: expect.stringContaining("Error: DB connection failed"),
         event_type: EventType.DependencyFailure,
-        duration: 0,
+        durationMs: 0,
         trigger: TriggerType.Api,
       }),
     );
@@ -142,7 +142,7 @@ describe("createLogger", () => {
     const logData: Log = {
       message: "Cache miss",
       eventType: EventType.CacheOperation,
-      duration: 15,
+      durationMs: 15,
     };
     logger.debug(logData);
 
@@ -151,7 +151,7 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        duration: 15,
+        durationMs: 15,
         event_type: EventType.CacheOperation,
         trigger: TriggerType.Api,
       }),
@@ -172,7 +172,7 @@ describe("createLogger", () => {
         id: "test-uuid-123",
         event_type: EventType.HealthCheck,
         trigger: TriggerType.Api,
-        duration: 0,
+        durationMs: 0,
       }),
     );
 
@@ -217,9 +217,9 @@ describe("createLogger", () => {
     );
   });
 
-  it("should set duration to 0 when duration is undefined", () => {
+  it("should set durationMs to 0 when durationMs is undefined", () => {
     const logData: Log = {
-      message: "No duration",
+      message: "No durationMs",
       eventType: EventType.CronJob,
     };
     logger.info(logData);
@@ -229,18 +229,18 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        duration: 0,
+        durationMs: 0,
         event_type: EventType.CronJob,
         trigger: TriggerType.Api,
       }),
     );
   });
 
-  it("should preserve provided duration value", () => {
+  it("should preserve provided durationMs value", () => {
     const logData: Log = {
       message: "Query took time",
       eventType: EventType.Query,
-      duration: 250,
+      durationMs: 250,
     };
     logger.info(logData);
 
@@ -249,18 +249,18 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        duration: 250,
+        durationMs: 250,
         event_type: EventType.Query,
         trigger: TriggerType.Api,
       }),
     );
   });
 
-  it("should preserve duration value when duration is 0", () => {
+  it("should preserve durationMs value when durationMs is 0", () => {
     const logData: Log = {
       message: "Query took no time",
       eventType: EventType.Query,
-      duration: 0,
+      durationMs: 0,
     };
     logger.info(logData);
 
@@ -269,7 +269,7 @@ describe("createLogger", () => {
       logData.message,
       expect.objectContaining({
         id: "test-uuid-123",
-        duration: 0,
+        durationMs: 0,
         event_type: EventType.Query,
         trigger: TriggerType.Api,
       }),
@@ -293,7 +293,7 @@ describe("createLogger", () => {
       expect.objectContaining({
         id: "test-uuid-123",
         event_type: undefined,
-        duration: 0,
+        durationMs: 0,
         trigger: TriggerType.Api,
       }),
     );

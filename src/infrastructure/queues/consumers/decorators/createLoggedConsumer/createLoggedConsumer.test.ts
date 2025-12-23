@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Mock } from "vitest";
+import type { Mock } from "vitest";
 
 import { createLoggedConsumer } from "./createLoggedConsumer.js";
-import { LoggedConsumerDependencies } from "./interfaces/index.js";
+import type { LoggedConsumerDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../../application/enums/index.js";
-import { Consumer, Logger } from "../../../../../application/ports/index.js";
+import type {
+  Consumer,
+  Logger,
+} from "../../../../../application/ports/index.js";
 
 type MockLogger = {
   readonly [K in keyof Logger]: Mock<
@@ -59,7 +62,7 @@ describe("createLoggedConsumer", () => {
         expect.objectContaining({
           message: "Consumer успешно запущен",
           eventType: EventType.Bootstrap,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
     });
@@ -71,11 +74,11 @@ describe("createLoggedConsumer", () => {
       const loggedConsumer = createLoggedConsumer(dependencies);
       await expect(loggedConsumer.start()).rejects.toThrow("Start failed");
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.critical).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "Не удалось запустить consumer",
           eventType: EventType.Bootstrap,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           error: startError,
         }),
       );
@@ -97,7 +100,7 @@ describe("createLoggedConsumer", () => {
         expect.objectContaining({
           message: "Consumer успешно остановлен",
           eventType: EventType.Shutdown,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
     });
@@ -115,7 +118,7 @@ describe("createLoggedConsumer", () => {
         expect.objectContaining({
           message: "Ошибка при остановке consumer",
           eventType: EventType.Shutdown,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           error: shutdownError,
         }),
       );
@@ -160,7 +163,7 @@ describe("createLoggedConsumer", () => {
       expect(mockCheckHealth).toHaveBeenCalledOnce();
     });
 
-    it("should log debug with duration when checkHealth succeeds", async () => {
+    it("should log debug with durationMs when checkHealth succeeds", async () => {
       const mockCheckHealth = vi.fn();
       const consumerWithHealthCheck = {
         ...mockConsumer,
@@ -178,12 +181,12 @@ describe("createLoggedConsumer", () => {
         expect.objectContaining({
           message: "Consumer готов к работе",
           eventType: EventType.HealthCheck,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
     });
 
-    it("should log error with duration and rethrow when checkHealth fails", async () => {
+    it("should log error with durationMs and rethrow when checkHealth fails", async () => {
       const healthCheckError = new Error("Health check failed");
       const mockCheckHealth = vi.fn().mockRejectedValue(healthCheckError);
       const consumerWithHealthCheck = {
@@ -204,7 +207,7 @@ describe("createLoggedConsumer", () => {
         expect.objectContaining({
           message: "Consumer недоступен",
           eventType: EventType.HealthCheck,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
           error: healthCheckError,
         }),
       );

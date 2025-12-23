@@ -1,1 +1,1 @@
-export * from "./RateLimiterMiddlewareConfig.js";
+export type { RateLimiterMiddlewareConfig } from "./RateLimiterMiddlewareConfig.js";

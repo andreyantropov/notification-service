@@ -1,40 +1,40 @@
-import { ErrorRequestHandler, RequestHandler } from "express";
-import { OpenAPIV3_1 } from "openapi-types";
+import type { ErrorRequestHandler, RequestHandler } from "express";
+import type { OpenAPIV3_1 } from "openapi-types";
 
-import {
+import type {
   Consumer,
   Logger,
   Meter,
   Producer,
   Tracer,
 } from "../../application/ports/index.js";
-import { NotificationDeliveryService } from "../../application/services/createNotificationDeliveryService/index.js";
-import { NotificationRetryService } from "../../application/services/createNotificationRetryService/index.js";
-import { Generator } from "../../application/types/index.js";
-import { CheckNotificationServiceHealthUseCase } from "../../application/useCases/createCheckNotificationServiceHealthUseCase/index.js";
-import { HandleIncomingNotificationsUseCase } from "../../application/useCases/createHandleIncomingNotificationsUseCase/index.js";
-import { Channel } from "../../domain/ports/index.js";
-import { Notification } from "../../domain/types/index.js";
-import {
+import type { DeliveryService } from "../../application/services/createDeliveryService/index.js";
+import type { RetryService } from "../../application/services/createRetryService/index.js";
+import type { Generator } from "../../application/types/index.js";
+import type { CheckHealthUseCase } from "../../application/useCases/createCheckHealthUseCase/index.js";
+import type { HandleIncomingNotificationsUseCase } from "../../application/useCases/createHandleIncomingNotificationsUseCase/index.js";
+import type { Channel } from "../../domain/ports/index.js";
+import type { Notification } from "../../domain/types/index.js";
+import type {
   Server,
   HealthcheckController,
   NotificationController,
 } from "../../infrastructure/http/index.js";
 
 export type Container = {
-  readonly notificationDeliveryService: NotificationDeliveryService;
-  readonly notificationRetryService: NotificationRetryService;
+  readonly deliveryService: DeliveryService;
+  readonly retryService: RetryService;
 
   readonly handleIncomingNotificationsUseCase: HandleIncomingNotificationsUseCase;
-  readonly checkNotificationServiceHealthUseCase: CheckNotificationServiceHealthUseCase;
+  readonly checkHealthUseCase: CheckHealthUseCase;
 
-  readonly bitrixChannel: Channel;
-  readonly emailChannel: Channel;
+  readonly bitrixChannel?: Channel;
+  readonly emailChannel?: Channel;
 
   readonly rateLimiterMiddleware: RequestHandler;
   readonly requestLoggerMiddleware: RequestHandler;
-  readonly authenticationMiddleware: RequestHandler;
-  readonly authorizationMiddleware: RequestHandler;
+  readonly authenticationMiddleware?: RequestHandler;
+  readonly authorizationMiddleware?: RequestHandler;
   readonly notFoundMiddleware: RequestHandler;
   readonly timeoutErrorMiddleware: ErrorRequestHandler;
   readonly internalServerErrorMiddleware: ErrorRequestHandler;

@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createRequestLoggerMiddleware.js";
+export type { RequestLoggerMiddlewareDependencies } from "./interfaces/index.js";
+export { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware.js";

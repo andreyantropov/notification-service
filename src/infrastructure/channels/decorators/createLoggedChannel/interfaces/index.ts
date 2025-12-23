@@ -1,1 +1,1 @@
-export * from "./LoggedChannelDependencies.js";
+export type { LoggedChannelDependencies } from "./LoggedChannelDependencies.js";

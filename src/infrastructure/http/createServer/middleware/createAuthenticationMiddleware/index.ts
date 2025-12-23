@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createAuthenticationMiddleware.js";
+export type { AuthenticationMiddlewareConfig } from "./interfaces/index.js";
+export { createAuthenticationMiddleware } from "./createAuthenticationMiddleware.js";

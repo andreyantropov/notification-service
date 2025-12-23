@@ -2,18 +2,21 @@ import { AMQPClient, AMQPMessage, AMQPChannel } from "@cloudamqp/amqp-client";
 import pTimeout from "p-timeout";
 
 import {
+  DEFAULT_MAX_BATCH_SIZE,
+  DEFAULT_BATCH_FLUSH_TIMEOUT_MS,
+  DEFAULT_FLUSH_TIMEOUT_MS,
+  DEFAULT_HEALTHCHECK_TIMEOUT_MS,
+  CHECK_SHUTDOWN_TIMEOUT_MS,
+} from "./constants/index.js";
+import type {
   BatchConsumerDependencies,
   BatchConsumerConfig,
+  HandlerResult,
+  BatchItem,
 } from "./interfaces/index.js";
-import { Consumer } from "../../../../application/ports/index.js";
+import type { Consumer } from "../../../../application/ports/index.js";
 import { noop } from "../../../../shared/utils/index.js";
-import { AMQPConnection } from "../../types/index.js";
-
-const DEFAULT_MAX_BATCH_SIZE = 1_000;
-const DEFAULT_BATCH_FLUSH_TIMEOUT_MS = 60_000;
-const CHECK_SHUTDOWN_TIMEOUT_MS = 100;
-const DEFAULT_FLUSH_TIMEOUT_MS = 30_000;
-const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 5_000;
+import type { AMQPConnection } from "../../types/index.js";
 
 export const createBatchConsumer = <T>(
   dependencies: BatchConsumerDependencies<T>,
@@ -41,7 +44,32 @@ export const createBatchConsumer = <T>(
   let isStarting = false;
   let isShuttingDown = false;
 
-  const batch: Array<{ item: T; msg: AMQPMessage }> = [];
+  const batch: BatchItem<T>[] = [];
+
+  const processBatch = async (
+    currentBatch: readonly BatchItem<T>[],
+  ): Promise<void> => {
+    let results: HandlerResult[] = [];
+    try {
+      results = await handler(currentBatch.map((batchItem) => batchItem.item));
+      if (results.length !== currentBatch.length) {
+        throw new Error("Handler вернул некорректное количество результатов");
+      }
+    } catch {
+      results = currentBatch.map(() => ({ status: "failure" }));
+    }
+
+    for (let i = 0; i < currentBatch.length; i++) {
+      const { msg } = currentBatch[i];
+      const { status } = results[i];
+
+      if (status === "success") {
+        await msg.ack();
+      } else {
+        await msg.nack(nackOptions.requeue, nackOptions.multiple);
+      }
+    }
+  };
 
   const flush = async (): Promise<void> => {
     if (isFlushing || batch.length === 0 || !ch) {
@@ -54,28 +82,7 @@ export const createBatchConsumer = <T>(
 
     try {
       await pTimeout(
-        (async () => {
-          let results: Array<{ success: boolean }>;
-          try {
-            results = await handler(currentBatch.map((b) => b.item));
-            if (results.length !== currentBatch.length) {
-              results = currentBatch.map(() => ({ success: false }));
-            }
-          } catch {
-            results = currentBatch.map(() => ({ success: false }));
-          }
-
-          for (let i = 0; i < currentBatch.length; i++) {
-            const { msg } = currentBatch[i];
-            const { success } = results[i];
-
-            if (success) {
-              await msg.ack();
-            } else {
-              await msg.nack(nackOptions.requeue, nackOptions.multiple);
-            }
-          }
-        })(),
+        processBatch(currentBatch),
         {
           milliseconds: flushTimeoutMs,
           message: "Таймаут при обработке и подтверждении батча сообщений",
@@ -112,7 +119,7 @@ export const createBatchConsumer = <T>(
       let item: T;
       try {
         const bodyStr = Buffer.from(msg.body).toString();
-        item = JSON.parse(bodyStr) as T;
+        item = JSON.parse(bodyStr);
       } catch {
         await msg.nack(nackOptions.requeue, nackOptions.multiple);
         return;

@@ -1,5 +1,5 @@
-import { Meter } from "../../../../../application/ports/index.js";
-import { Channel } from "../../../../../domain/ports/index.js";
+import type { Meter } from "../../../../../application/ports/index.js";
+import type { Channel } from "../../../../../domain/ports/index.js";
 
 export interface MeteredChannelDependencies {
   readonly channel: Channel;

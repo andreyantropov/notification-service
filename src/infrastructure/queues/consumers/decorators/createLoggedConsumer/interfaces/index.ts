@@ -1,1 +1,1 @@
-export * from "./LoggedConsumerDependencies.js";
+export type { LoggedConsumerDependencies } from "./LoggedConsumerDependencies.js";

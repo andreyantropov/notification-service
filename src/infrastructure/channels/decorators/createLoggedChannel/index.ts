@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createLoggedChannel.js";
+export type { LoggedChannelDependencies } from "./interfaces/index.js";
+export { createLoggedChannel } from "./createLoggedChannel.js";

@@ -1,1 +1,1 @@
-export * from "./AuthenticationMiddlewareConfig.js";
+export type { AuthenticationMiddlewareConfig } from "./AuthenticationMiddlewareConfig.js";

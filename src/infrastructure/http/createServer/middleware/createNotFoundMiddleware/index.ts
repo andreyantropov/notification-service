@@ -1,1 +1,1 @@
-export * from "./createNotFoundMiddleware.js";
+export { createNotFoundMiddleware } from "./createNotFoundMiddleware.js";

@@ -1,6 +1,6 @@
-import { LoggedServerDependencies } from "./interfaces/index.js";
+import type { LoggedServerDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Server } from "../../interfaces/index.js";
+import type { Server } from "../../interfaces/index.js";
 
 export const createLoggedServer = (
   dependencies: LoggedServerDependencies,
@@ -11,18 +11,18 @@ export const createLoggedServer = (
     const start = Date.now();
     try {
       await server.start();
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
       logger.debug({
         message: "Сервер успешно запущен",
         eventType: EventType.Bootstrap,
-        duration,
+        durationMs,
       });
     } catch (error) {
-      const duration = Date.now() - start;
-      logger.error({
+      const durationMs = Date.now() - start;
+      logger.critical({
         message: "Не удалось запустить сервер",
         eventType: EventType.Bootstrap,
-        duration,
+        durationMs,
         error,
       });
       throw error;
@@ -33,18 +33,18 @@ export const createLoggedServer = (
     const start = Date.now();
     try {
       await server.shutdown();
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
       logger.debug({
         message: "Сервер успешно остановлен",
         eventType: EventType.Shutdown,
-        duration,
+        durationMs,
       });
     } catch (error) {
-      const duration = Date.now() - start;
+      const durationMs = Date.now() - start;
       logger.error({
         message: "Не удалось остановить сервер",
         eventType: EventType.Shutdown,
-        duration,
+        durationMs,
         error,
       });
       throw error;

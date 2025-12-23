@@ -1,13 +1,20 @@
 import z from "zod";
 
+import { DeliveryStrategy } from "../../../../../../domain/enums/index.js";
+
 const BitrixContactSchema = z.object({
   type: z.literal("bitrix"),
-  value: z.number().int(),
+  value: z.coerce.number().int().positive(),
 });
 
 const EmailContactSchema = z.object({
   type: z.literal("email"),
-  value: z.string().email(),
+  value: z
+    .string()
+    .trim()
+    .email()
+    .min(8, "value (email адрес) должен быть не короче 8 символов")
+    .max(256, "value (email адрес) не должен превышать 256 символов"),
 });
 
 const ContactSchema = z.discriminatedUnion("type", [
@@ -15,14 +22,18 @@ const ContactSchema = z.discriminatedUnion("type", [
   BitrixContactSchema,
 ]);
 
-const NotificationStrategySchema = z.enum([
-  "send_to_first_available",
-  "send_to_all_available",
-]);
+const NotificationStrategySchema = z.nativeEnum(DeliveryStrategy);
 
 export const IncomingNotificationSchema = z.object({
-  contacts: z.array(ContactSchema),
-  message: z.string().min(1, "Сообщение не может быть пустым"),
-  isImmediate: z.boolean().optional(),
+  contacts: z
+    .array(ContactSchema)
+    .min(1, "Должен быть указан хотя бы один контакт")
+    .max(100, "Количество контактов не должно превышать 100"),
+  message: z
+    .string()
+    .trim()
+    .min(1, "message не может быть пустым")
+    .max(10_000, "message не должно превышать 10 000 символов"),
+  isImmediate: z.coerce.boolean().optional(),
   strategy: NotificationStrategySchema.optional(),
 });

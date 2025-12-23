@@ -1,5 +1,5 @@
-import { CheckNotificationServiceHealthUseCase } from "../../../../../../application/useCases/createCheckNotificationServiceHealthUseCase/index.js";
+import type { CheckHealthUseCase } from "../../../../../../application/useCases/createCheckHealthUseCase/index.js";
 
 export interface HealthCheckDependencies {
-  readonly checkNotificationServiceHealthUseCase: CheckNotificationServiceHealthUseCase;
+  readonly checkHealthUseCase: CheckHealthUseCase;
 }

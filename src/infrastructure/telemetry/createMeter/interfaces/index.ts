@@ -1,1 +1,1 @@
-export * from "./MeterConfig.js";
+export type { MeterConfig } from "./MeterConfig.js";

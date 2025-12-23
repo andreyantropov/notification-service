@@ -1,1 +1,1 @@
-export * from "./BitrixChannelConfig.js";
+export type { BitrixChannelConfig } from "./BitrixChannelConfig.js";

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { AuthorizationMiddlewareConfig } from "../infrastructure/http/index.js";
+import type { AuthorizationMiddlewareConfig } from "../infrastructure/http/index.js";
 
-const authorizationMiddlewareConfigSchema = z.object({
+const schema = z.object({
   serviceClientId: z
     .string()
     .trim()
@@ -32,8 +32,12 @@ const authorizationMiddlewareConfigSchema = z.object({
     ),
 });
 
-export const authorizationMiddlewareConfig: AuthorizationMiddlewareConfig =
-  authorizationMiddlewareConfigSchema.parse({
-    serviceClientId: process.env.AUTHORIZATION_MIDDLEWARE_SERVICE_CLIENT_ID,
-    requiredRoles: process.env.AUTHORIZATION_MIDDLEWARE_REQUIRED_ROLES,
-  });
+const rawEnv = {
+  serviceClientId: process.env.AUTHORIZATION_MIDDLEWARE_SERVICE_CLIENT_ID,
+  requiredRoles: process.env.AUTHORIZATION_MIDDLEWARE_REQUIRED_ROLES,
+};
+
+const isEnabled = process.env.AUTHORIZATION_MIDDLEWARE_IS_ENABLED !== "false";
+
+export const authorizationMiddlewareConfig: AuthorizationMiddlewareConfig | null =
+  isEnabled ? schema.parse(rawEnv) : null;

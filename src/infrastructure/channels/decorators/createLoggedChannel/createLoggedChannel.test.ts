@@ -1,15 +1,12 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedChannel } from "./createLoggedChannel.js";
-import { LoggedChannelDependencies } from "./interfaces/index.js";
+import type { LoggedChannelDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../application/enums/index.js";
-import { Logger } from "../../../../application/ports/index.js";
-import { Channel } from "../../../../domain/ports/index.js";
-import {
-  Contact,
-  CHANNEL_TYPES,
-  ChannelTypes,
-} from "../../../../domain/types/index.js";
+import type { Logger } from "../../../../application/ports/index.js";
+import { CHANNEL_TYPES } from "../../../../domain/constants/index.js";
+import type { Channel } from "../../../../domain/ports/index.js";
+import type { Contact, ChannelType } from "../../../../domain/types/index.js";
 
 const mockLoggerFn = (): Logger => ({
   debug: vi.fn() as Mock,
@@ -21,7 +18,7 @@ const mockLoggerFn = (): Logger => ({
 
 describe("createLoggedChannel", () => {
   let mockChannel: {
-    type: ChannelTypes;
+    type: ChannelType;
     isSupports: Mock;
     send: Mock;
     checkHealth?: Mock;
@@ -61,14 +58,14 @@ describe("createLoggedChannel", () => {
       expect(mockChannel.send).toHaveBeenCalledWith(contact, message);
     });
 
-    it("should log info with duration when send is successful", async () => {
+    it("should log info with durationMs when send is successful", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       await loggedChannel.send(contact, message);
 
       expect(mockLogger.info).toHaveBeenCalledWith({
         message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         details: {
           channelType: CHANNEL_TYPES.BITRIX,
           contactType: CHANNEL_TYPES.EMAIL,
@@ -76,7 +73,7 @@ describe("createLoggedChannel", () => {
       });
     });
 
-    it("should log error with duration and rethrow when send fails", async () => {
+    it("should log error with durationMs and rethrow when send fails", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       const testError = new Error("Send failed");
       mockChannel.send.mockRejectedValue(testError);
@@ -88,7 +85,7 @@ describe("createLoggedChannel", () => {
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         details: {
           channelType: CHANNEL_TYPES.BITRIX,
           contactType: CHANNEL_TYPES.EMAIL,
@@ -97,7 +94,7 @@ describe("createLoggedChannel", () => {
       });
     });
 
-    it("should include contact and message details in success log with duration", async () => {
+    it("should include contact and message details in success log with durationMs", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       const customContact: Contact = {
         type: CHANNEL_TYPES.BITRIX,
@@ -110,7 +107,7 @@ describe("createLoggedChannel", () => {
       expect(mockLogger.info).toHaveBeenCalledWith({
         message: "Уведомление успешно отправлено по каналу bitrix",
         eventType: EventType.MessagePublish,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         details: {
           channelType: CHANNEL_TYPES.BITRIX,
           contactType: CHANNEL_TYPES.BITRIX,
@@ -118,7 +115,7 @@ describe("createLoggedChannel", () => {
       });
     });
 
-    it("should include contact and message details in error log with duration", async () => {
+    it("should include contact and message details in error log with durationMs", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       const testError = new Error("Send failed");
       const customContact: Contact = {
@@ -136,7 +133,7 @@ describe("createLoggedChannel", () => {
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Не удалось отправить уведомление по каналу bitrix",
         eventType: EventType.MessagePublish,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         details: {
           channelType: CHANNEL_TYPES.BITRIX,
           contactType: CHANNEL_TYPES.BITRIX,
@@ -168,19 +165,19 @@ describe("createLoggedChannel", () => {
       expect(loggedChannel.checkHealth).toBeUndefined();
     });
 
-    it("should log debug with duration when health check is successful", async () => {
+    it("should log debug with durationMs when health check is successful", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       await loggedChannel.checkHealth!();
 
       expect(mockLogger.debug).toHaveBeenCalledWith({
         message: "Канал bitrix готов к работе",
         eventType: EventType.HealthCheck,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         details: { channelType: CHANNEL_TYPES.BITRIX },
       });
     });
 
-    it("should log error with duration and rethrow when health check fails", async () => {
+    it("should log error with durationMs and rethrow when health check fails", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
       const testError = new Error("Health check failed");
       mockChannel.checkHealth!.mockRejectedValue(testError);
@@ -192,7 +189,7 @@ describe("createLoggedChannel", () => {
       expect(mockLogger.error).toHaveBeenCalledWith({
         message: "Канал bitrix не отвечает",
         eventType: EventType.HealthCheck,
-        duration: expect.any(Number),
+        durationMs: expect.any(Number),
         details: { channelType: CHANNEL_TYPES.BITRIX },
         error: testError,
       });
@@ -281,14 +278,14 @@ describe("createLoggedChannel", () => {
       });
     });
 
-    it("should log correct event types with duration for different operations", async () => {
+    it("should log correct event types with durationMs for different operations", async () => {
       const loggedChannel = createLoggedChannel(dependencies);
 
       await loggedChannel.send(contact, message);
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.MessagePublish,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
 
@@ -296,7 +293,7 @@ describe("createLoggedChannel", () => {
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: EventType.HealthCheck,
-          duration: expect.any(Number),
+          durationMs: expect.any(Number),
         }),
       );
     });

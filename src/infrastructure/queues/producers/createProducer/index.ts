@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createProducer.js";
+export type { ProducerConfig } from "./interfaces/index.js";
+export { createProducer } from "./createProducer.js";

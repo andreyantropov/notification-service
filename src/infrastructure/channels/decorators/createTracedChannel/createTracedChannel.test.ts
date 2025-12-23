@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, Mocked } from "vitest";
 
 import { createTracedChannel } from "./createTracedChannel.js";
-import { TrasedChannelDependencies } from "./interfaces/index.js";
-import { Tracer } from "../../../../application/ports/index.js";
-import { Channel } from "../../../../domain/ports/index.js";
-import { Contact, CHANNEL_TYPES } from "../../../../domain/types/index.js";
+import type { TrasedChannelDependencies } from "./interfaces/index.js";
+import type { Tracer } from "../../../../application/ports/index.js";
+import { CHANNEL_TYPES } from "../../../../domain/constants/index.js";
+import type { Channel } from "../../../../domain/ports/index.js";
+import type { Contact } from "../../../../domain/types/index.js";
 
 describe("createTracedChannel", () => {
   let mockChannel: Mocked<Channel>;

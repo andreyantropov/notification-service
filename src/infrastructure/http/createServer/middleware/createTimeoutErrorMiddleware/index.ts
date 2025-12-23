@@ -1,1 +1,1 @@
-export * from "./createTimeoutErrorMiddleware.js";
+export { createTimeoutErrorMiddleware } from "./createTimeoutErrorMiddleware.js";

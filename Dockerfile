@@ -1,4 +1,5 @@
-FROM node:23.11.0-alpine
+# === BUILD STAGE ===
+FROM node:23.11.0-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +11,15 @@ COPY . ./
 
 RUN npm run build
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# === PRODUCTION STAGE ===
+FROM node:23.11.0-alpine
 
-ENTRYPOINT ["/entrypoint.sh"]
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci --only=production
+
+COPY --from=builder /app/dist ./dist
+
+CMD ["node", "dist/index.js"]

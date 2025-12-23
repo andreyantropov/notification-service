@@ -1,2 +1,6 @@
-export * from "./interfaces/index.js";
-export * from "./createNotificationController.js";
+export type {
+  NotificationController,
+  NotificationControllerConfig,
+  NotificationControllerDependencies,
+} from "./interfaces/index.js";
+export { createNotificationController } from "./createNotificationController.js";

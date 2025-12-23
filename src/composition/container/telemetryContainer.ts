@@ -1,4 +1,5 @@
-import { asFunction, AwilixContainer } from "awilix";
+import type { AwilixContainer } from "awilix";
+import { asFunction } from "awilix";
 
 import { serviceConfig } from "../../configs/index.js";
 import {
@@ -6,7 +7,7 @@ import {
   createMeter,
   createTracer,
 } from "../../infrastructure/telemetry/index.js";
-import { Container } from "../types/Container.js";
+import type { Container } from "../types/Container.js";
 
 export const registerTelemetry = (container: AwilixContainer<Container>) => {
   container.register({

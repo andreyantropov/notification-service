@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { describe, it, expect, vi } from "vitest";
 
 import { createAuthorizationMiddleware } from "./createAuthorizationMiddleware.js";
@@ -168,8 +168,7 @@ describe("createAuthorizationMiddleware", () => {
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message:
-          "Нарушение зависимости middleware авторизации: middleware аутентификации должно быть вызвано первым.",
+        message: "Запрос не был авторизован",
       }),
     );
   });
@@ -184,8 +183,7 @@ describe("createAuthorizationMiddleware", () => {
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message:
-          "Нарушение зависимости middleware авторизации: middleware аутентификации должно быть вызвано первым.",
+        message: "Запрос не был авторизован",
       }),
     );
   });
@@ -200,8 +198,7 @@ describe("createAuthorizationMiddleware", () => {
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message:
-          "Нарушение зависимости middleware авторизации: middleware аутентификации должно быть вызвано первым.",
+        message: "Запрос не был авторизован",
       }),
     );
   });

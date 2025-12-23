@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createLoggedConsumer.js";
+export type { LoggedConsumerDependencies } from "./interfaces/index.js";
+export { createLoggedConsumer } from "./createLoggedConsumer.js";

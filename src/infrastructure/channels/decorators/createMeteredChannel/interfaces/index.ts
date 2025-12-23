@@ -1,1 +1,1 @@
-export * from "./MeteredChannelDependencies.js";
+export type { MeteredChannelDependencies } from "./MeteredChannelDependencies.js";

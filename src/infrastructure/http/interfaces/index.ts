@@ -1,1 +1,1 @@
-export * from "./Server.js";
+export type { Server } from "./Server.js";

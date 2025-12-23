@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createNotFoundMiddleware } from "./createNotFoundMiddleware.js";

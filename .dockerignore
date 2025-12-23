@@ -30,3 +30,6 @@ scripts/
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# dotenv
+.env*

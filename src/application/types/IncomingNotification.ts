@@ -1,3 +1,6 @@
-import { Notification } from "../../domain/types/index.js";
+import type { Notification } from "../../domain/types/index.js";
 
-export type IncomingNotification = Omit<Notification, "id" | "createdAt">;
+export type IncomingNotification = Omit<
+  Notification,
+  "id" | "createdAt" | "subject"
+>;

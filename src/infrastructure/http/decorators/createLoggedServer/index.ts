@@ -1,2 +1,2 @@
-export * from "./interfaces/index.js";
-export * from "./createLoggedServer.js";
+export type { LoggedServerDependencies } from "./interfaces/index.js";
+export { createLoggedServer } from "./createLoggedServer.js";
