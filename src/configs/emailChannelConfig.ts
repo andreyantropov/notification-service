@@ -9,7 +9,12 @@ const schema = z.object({
     .min(3, "host должен быть не короче 3 символов")
     .max(256, "host не должен превышать 256 символов"),
   port: z.coerce.number().int().positive().default(25),
-  secure: z.coerce.boolean().default(false),
+  secure: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .transform((s) => s === "true")
+    .default("false"),
   auth: z.object({
     user: z
       .string()

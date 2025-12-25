@@ -19,8 +19,18 @@ const schema = z.object({
     .max(256, "queue не должен превышать 256 символов"),
   nackOptions: z
     .object({
-      requeue: z.coerce.boolean().optional(),
-      multiple: z.coerce.boolean().optional(),
+      requeue: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .transform((s) => s === "true")
+        .optional(),
+      multiple: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .transform((s) => s === "true")
+        .optional(),
     })
     .optional(),
   retryPublishTimeoutMs: z.coerce.number().int().positive().optional(),

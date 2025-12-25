@@ -21,8 +21,18 @@ const schema = z.object({
   batchFlushTimeoutMs: z.coerce.number().int().positive().optional(),
   nackOptions: z
     .object({
-      requeue: z.coerce.boolean().optional(),
-      multiple: z.coerce.boolean().optional(),
+      requeue: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .transform((s) => s === "true")
+        .optional(),
+      multiple: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .transform((s) => s === "true")
+        .optional(),
     })
     .optional(),
   flushTimeoutMs: z.coerce.number().int().positive().optional(),
