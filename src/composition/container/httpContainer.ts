@@ -9,11 +9,9 @@ import {
   authorizationMiddlewareConfig,
   healthcheckControllerConfig,
   serviceConfig,
-  rateLimiterMiddlewareConfig,
   notificationControllerConfig,
 } from "../../configs/index.js";
 import {
-  createRateLimiterMiddleware,
   createRequestLoggerMiddleware,
   createAuthenticationMiddleware,
   createAuthorizationMiddleware,
@@ -30,13 +28,6 @@ import type { Container } from "../types/index.js";
 
 export const registerHttp = (container: AwilixContainer<Container>) => {
   container.register({
-    rateLimiterMiddleware: asFunction(() => {
-      const rateLimiterMiddleware = createRateLimiterMiddleware(
-        rateLimiterMiddlewareConfig,
-      );
-
-      return rateLimiterMiddleware;
-    }).singleton(),
     requestLoggerMiddleware: asFunction(({ logger }) => {
       const requestLoggerMiddleware = createRequestLoggerMiddleware({ logger });
 
@@ -101,7 +92,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
     }).singleton(),
     server: asFunction(
       ({
-        rateLimiterMiddleware,
         requestLoggerMiddleware,
         authenticationMiddleware,
         authorizationMiddleware,
@@ -116,7 +106,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
         const app = express();
 
         app.use(express.json());
-        app.use(rateLimiterMiddleware);
         app.use(requestLoggerMiddleware);
 
         app.get(
