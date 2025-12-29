@@ -107,7 +107,8 @@ export const createSwaggerSpecification = (
 
         Notification: {
           type: "object",
-          description: "Уведомление с серверными метаданными (возвращается в ответе)",
+          description:
+            "Уведомление с серверными метаданными (возвращается в ответе)",
           required: ["id", "createdAt", "contacts", "message"],
           properties: {
             id: {
@@ -183,7 +184,13 @@ export const createSwaggerSpecification = (
         NotificationResponseBody: {
           type: "object",
           description: "Полный ответ на запрос обработки уведомлений",
-          required: ["message", "totalCount", "acceptedCount", "rejectedCount", "details"],
+          required: [
+            "message",
+            "totalCount",
+            "acceptedCount",
+            "rejectedCount",
+            "details",
+          ],
           properties: {
             message: {
               type: "string",
@@ -391,7 +398,8 @@ export const createSwaggerSpecification = (
                     $ref: "#/components/schemas/NotificationResponseBody",
                   },
                   example: {
-                    message: "Уведомления приняты частично: 2 принято, 1 отклонено",
+                    message:
+                      "Уведомления приняты частично: 2 принято, 1 отклонено",
                     totalCount: 3,
                     acceptedCount: 2,
                     rejectedCount: 1,
@@ -456,14 +464,23 @@ export const createSwaggerSpecification = (
                   schema: {
                     type: "object",
                     properties: {
-                      error: { type: "string", example: "HTTP 400 Bad Request" },
-                      message: { type: "string", example: "Ни одно уведомление не прошло валидацию" },
+                      error: {
+                        type: "string",
+                        example: "HTTP 400 Bad Request",
+                      },
+                      message: {
+                        type: "string",
+                        example: "Ни одно уведомление не прошло валидацию",
+                      },
                       details: {
                         type: "array",
                         items: {
                           type: "object",
                           properties: {
-                            item: { type: "object", additionalProperties: true },
+                            item: {
+                              type: "object",
+                              additionalProperties: true,
+                            },
                             error: {
                               type: "array",
                               items: {
@@ -501,6 +518,31 @@ export const createSwaggerSpecification = (
                         ],
                       },
                     ],
+                  },
+                },
+              },
+            },
+            401: {
+              description:
+                "Отсутствует, недействителен или просрочен JWT-токен.",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      error: {
+                        type: "string",
+                      },
+                      message: {
+                        type: "string",
+                      },
+                    },
+                    required: ["error", "message"],
+                  },
+                  example: {
+                    error: "HTTP 401 Unauthorized",
+                    message:
+                      "Требуется действительный JWT-токен для доступа к ресурсу",
                   },
                 },
               },

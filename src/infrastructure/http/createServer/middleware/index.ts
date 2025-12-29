@@ -1,7 +1,5 @@
 export { createInternalServerErrorMiddleware } from "./createInternalServerErrorMiddleware/index.js";
 export { createNotFoundMiddleware } from "./createNotFoundMiddleware/index.js";
-export type { RateLimiterMiddlewareConfig } from "./createRateLimiterMiddleware/index.js";
-export { createRateLimiterMiddleware } from "./createRateLimiterMiddleware/index.js";
 export type { RequestLoggerMiddlewareDependencies } from "./createRequestLoggerMiddleware/index.js";
 export { createRequestLoggerMiddleware } from "./createRequestLoggerMiddleware/index.js";
 export type { AuthenticationMiddlewareConfig } from "./createAuthenticationMiddleware/index.js";

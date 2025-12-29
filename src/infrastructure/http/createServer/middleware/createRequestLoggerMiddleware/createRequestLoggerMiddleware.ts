@@ -30,9 +30,6 @@ export const createRequestLoggerMiddleware = (
         case 404:
           message = `Ресурс не найден: ${req.method} ${req.url}`;
           break;
-        case 429:
-          message = `Слишком много запросов: ${req.method} ${req.url}`;
-          break;
         case 500:
         case 502:
         case 503:
