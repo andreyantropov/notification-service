@@ -15,13 +15,11 @@ export {
 export type {
   AuthenticationMiddlewareConfig,
   AuthorizationMiddlewareConfig,
-  RateLimiterMiddlewareConfig,
   RequestLoggerMiddlewareDependencies,
 } from "./middleware/index.js";
 export {
   createAuthenticationMiddleware,
   createAuthorizationMiddleware,
-  createRateLimiterMiddleware,
   createRequestLoggerMiddleware,
   createNotFoundMiddleware,
   createInternalServerErrorMiddleware,

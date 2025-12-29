@@ -4,7 +4,6 @@ export { authenticationMiddlewareConfig } from "./authenticationMiddlewareConfig
 export { authorizationMiddlewareConfig } from "./authorizationMiddlewareConfig.js";
 export { healthcheckControllerConfig } from "./healthcheckControllerConfig.js";
 export { notificationControllerConfig } from "./notificationControllerConfig.js";
-export { rateLimiterMiddlewareConfig } from "./rateLimiterMiddlewareConfig.js";
 export { telemetryConfig } from "./telemetryConfig.js";
 export { messageQueueConfig } from "./messageQueueConfig.js";
 export { producerConfig } from "./producerConfig.js";

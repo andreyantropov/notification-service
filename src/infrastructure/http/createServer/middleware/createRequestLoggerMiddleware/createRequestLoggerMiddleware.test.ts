@@ -225,50 +225,6 @@ describe("RequestLoggerMiddleware", () => {
     });
   });
 
-  it("should log 429 with custom message and info level", () => {
-    const mockFinishCallback = vi.fn();
-    const req = {
-      method: "POST",
-      url: "/api/rate-limited",
-      ip: "192.168.1.1",
-      get: vi.fn().mockReturnValue("TestAgent"),
-    } as unknown as Request;
-
-    const res = {
-      statusCode: 429,
-      on: vi.fn((event: string, callback: () => void) => {
-        if (event === "finish") {
-          mockFinishCallback.mockImplementation(callback);
-        }
-      }),
-      headersSent: true,
-    } as unknown as Response;
-
-    const next = vi.fn();
-
-    const startTime = Date.now();
-    vi.setSystemTime(startTime);
-
-    middleware(req, res, next);
-
-    vi.setSystemTime(startTime + 90);
-
-    mockFinishCallback();
-
-    expect(mockLogger.info).toHaveBeenCalledWith({
-      message: "Слишком много запросов: POST /api/rate-limited",
-      eventType: EventType.Request,
-      durationMs: 90,
-      details: {
-        method: "POST",
-        url: "/api/rate-limited",
-        statusCode: 429,
-        ip: "192.168.1.1",
-        userAgent: "TestAgent",
-      },
-    });
-  });
-
   it("should log 500 as error with custom message", () => {
     const mockFinishCallback = vi.fn();
     const req = {

@@ -31,7 +31,6 @@ export type Container = {
   readonly bitrixChannel?: Channel;
   readonly emailChannel?: Channel;
 
-  readonly rateLimiterMiddleware: RequestHandler;
   readonly requestLoggerMiddleware: RequestHandler;
   readonly authenticationMiddleware?: RequestHandler;
   readonly authorizationMiddleware?: RequestHandler;
