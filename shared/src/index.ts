@@ -5,3 +5,5 @@ export type { ChannelType, Contact, Notification, Subject } from "./domain/types
 export type { Consumer, Producer, Logger, Meter, Tracer } from "./application/ports/index.js";
 export { EnvironmentType, EventType, LogLevel, TriggerType } from "./application/enums/index.js";
 export type { Log } from "./application/types/index.js";
+
+export type { Server } from "./infrastracture/ports/index.js";
