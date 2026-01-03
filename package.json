@@ -1,5 +1,5 @@
 {
-  "name": "notification-service",
+  "name": "notification-platform",
   "version": "1.0.0",
   "description": "Сервис рассылки уведомлений через различные каналы связи (Bitrix24, Email).",
   "main": "index.js",
@@ -16,6 +16,11 @@
     "lint:fix": "eslint --fix --ext .ts,.tsx .",
     "lint:format": "prettier . --write"
   },
+  "workspaces": [
+    "shared",
+    "packages/*",
+    "services/*"
+  ],
   "keywords": [
     "notification-service",
     "bitrix24",

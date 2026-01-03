@@ -1,0 +1,29 @@
+{
+  "name": "@notification-platform/http",
+  "version": "1.0.0",
+  "description": "HTTP-утилиты для @notification-platform: graceful shutdown, middleware, декораторы.",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@notification-platform/shared": "1.0.0"
+  },
+  "peerDependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "typescript": "^5.9.3"
+  }
+}
