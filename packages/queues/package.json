@@ -1,7 +1,7 @@
 {
-  "name": "@notification-platform/http",
+  "name": "@notification-platform/queues",
   "version": "1.0.0",
-  "description": "HTTP-утилиты для @notification-platform: graceful shutdown, middleware, декораторы.",
+  "description": "Реализации и декораторы для работы с очередями сообщений (RabbitMQ) в @notification-platform.",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -17,14 +17,11 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@notification-platform/shared": "1.0.0"
-  },
-  "peerDependencies": {
-    "express": "^5.1.0"
+    "@notification-platform/shared": "1.0.0",
+    "@cloudamqp/amqp-client": "^3.3.2",
+    "p-timeout": "^6.1.4"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "express-oauth2-jwt-bearer": "^1.7.1",
     "typescript": "^5.9.3"
   }
 }

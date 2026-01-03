@@ -11,7 +11,7 @@ import {
 } from "./constants/index.js";
 import type { RetryConsumerConfig } from "./interfaces/index.js";
 import type { RetryConsumerDependencies } from "./interfaces/RetryConsumerDependencies.js";
-import type { Consumer } from "../../../../application/ports/index.js";
+import type { Consumer } from "@notification-platform/shared";
 
 export const createRetryConsumer = (
   dependencies: RetryConsumerDependencies,

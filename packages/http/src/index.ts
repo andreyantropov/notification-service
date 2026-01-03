@@ -1,20 +1,12 @@
 export type {
   AuthenticationMiddlewareConfig,
   AuthorizationMiddlewareConfig,
-  HealthCheckDependencies,
-  HealthcheckController,
-  HealthcheckControllerConfig,
-  NotificationController,
-  NotificationControllerConfig,
-  NotificationControllerDependencies,
   RequestLoggerMiddlewareDependencies,
   ServerConfig,
   ServerDependencies,
 } from "./createServer/index.js";
 export {
   createServer,
-  createHealthcheckController,
-  createNotificationController,
   createAuthenticationMiddleware,
   createAuthorizationMiddleware,
   createRequestLoggerMiddleware,

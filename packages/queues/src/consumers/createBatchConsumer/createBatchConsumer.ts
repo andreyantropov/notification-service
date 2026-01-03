@@ -15,7 +15,7 @@ import type {
   HandlerResult,
   BatchItem,
 } from "./interfaces/index.js";
-import type { Consumer } from "../../../../application/ports/index.js";
+import type { Consumer } from "@notification-platform/shared";
 
 export const createBatchConsumer = <T>(
   dependencies: BatchConsumerDependencies<T>,

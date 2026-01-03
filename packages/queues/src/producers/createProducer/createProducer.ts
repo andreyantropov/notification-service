@@ -8,7 +8,7 @@ import {
   PERSISTENT,
 } from "./constants/index.js";
 import type { ProducerConfig } from "./interfaces/index.js";
-import type { Producer } from "../../../../application/ports/index.js";
+import type { Producer } from "@notification-platform/shared";
 
 export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
   const {
