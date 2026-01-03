@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { HealthcheckControllerConfig } from "../infrastructure/http/index.js";
+import type { HealthcheckControllerConfig } from "../infrastracture/http/index.js";
 
 const schema = z.object({
   readyTimeoutMs: z.coerce.number().int().positive().optional(),

@@ -1,16 +1,17 @@
-import type { MeteredRetryServiceConfig } from "./interfaces/MeteredRetryServiceConfig.js";
+import type { MeteredRetryServiceDependencies } from "./interfaces/MeteredRetryServiceDependencies.js";
 import type { RetryService } from "../../interfaces/RetryService.js";
+import { NOTIFICATIONS_RETRY_ROUTING_TOTAL } from "./constants/index.js";
 
 export const createMeteredRetryService = (
-  config: MeteredRetryServiceConfig,
+  dependencies: MeteredRetryServiceDependencies,
 ): RetryService => {
-  const { retryService, meter } = config;
+  const { retryService, meter } = dependencies;
 
   const getRetryQueue = (retryCount: number): string => {
-    const result = retryService.getRetryQueue(retryCount);
-    meter.incrementRetryRoutingByQueue(result);
+    const retryQueue = retryService.getRetryQueue(retryCount);
+    meter.increment(NOTIFICATIONS_RETRY_ROUTING_TOTAL, { retryQueue });
 
-    return result;
+    return retryQueue;
   };
 
   return { getRetryQueue };

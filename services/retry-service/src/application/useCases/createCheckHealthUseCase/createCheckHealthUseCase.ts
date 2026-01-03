@@ -6,23 +6,11 @@ import type {
 export const createCheckHealthUseCase = (
   dependencies: CheckHealthUseCaseDependencies,
 ): CheckHealthUseCase => {
-  const { deliveryService, producer, batchConsumer, retryConsumer } =
+  const { retryConsumer } =
     dependencies;
 
   const checkHealth = async (): Promise<void> => {
     const promises: Promise<void>[] = [];
-
-    if (deliveryService.checkHealth) {
-      promises.push(deliveryService.checkHealth());
-    }
-
-    if (producer.checkHealth) {
-      promises.push(producer.checkHealth());
-    }
-
-    if (batchConsumer.checkHealth) {
-      promises.push(batchConsumer.checkHealth());
-    }
 
     if (retryConsumer.checkHealth) {
       promises.push(retryConsumer.checkHealth());

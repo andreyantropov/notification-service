@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { EnvironmentType } from "../application/enums/index.js";
+import { EnvironmentType } from "@notification-platform/shared";
 import type { ServiceConfig } from "../composition/types/index.js";
 
 const schema = z.object({

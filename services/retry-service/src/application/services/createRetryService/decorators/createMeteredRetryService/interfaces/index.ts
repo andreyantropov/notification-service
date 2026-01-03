@@ -1,1 +1,1 @@
-export type { MeteredRetryServiceConfig } from "./MeteredRetryServiceConfig.js";
+export type { MeteredRetryServiceDependencies } from "./MeteredRetryServiceDependencies.js";
