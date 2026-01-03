@@ -1,73 +1,70 @@
-# HTTP Utilities
+# Telemetry
 
-Набор утилит для HTTP-сервера платформы уведомлений:  
-корректное управление жизненным циклом, middleware и декораторы.
+Набор утилит телеметрии для платформы уведомлений:  
+структурированное логирование, распределённая трассировка и метрики на основе OpenTelemetry.
 
-> ⚠️ **Этот пакет не запускает Express сам.**  
-> Он предоставляет **инструменты поверх Express**, который должен быть передан из хост-приложения.
+> ⚠️ **Этот пакет не запускает OpenTelemetry SDK.**  
+> Он предоставляет **адаптеры поверх OpenTelemetry API**, которые должны быть инициализированы в хост-приложении.
 
 ## 📦 Содержимое
 
-### 🔄 Жизненный цикл сервера
-- **`createServer`** — обёртка над `app.listen()` с поддержкой:
-  - graceful shutdown,
-  - защиты от повторного запуска/остановки,
-  - состояния (`isStarting`, `isShuttingDown`).
+### 📝 Логирование
+- **`createLogger`** — реализация `Logger` из `@notification-platform/shared`:
+  - вывод в stdout через `winston`,
+  - автоматическая сериализация ошибок (`serialize-error`),
+  - автоматическое преобразование имён и атрибутов в `snake_case`,
+  - экспорт в OpenTelemetry Logs через `@opentelemetry/winston-transport`,
+  - унифицированный формат: `traceId`, `spanId`, `service.name`, `level`, `timestamp`.
 
-### 🧵 Middleware
-- **`createAuthenticationMiddleware`** — проверка JWT-токена (ожидает `req.auth` от `express-oauth2-jwt-bearer`).
-- **`createAuthorizationMiddleware`** — проверка ролей в `resource_access` токена Keycloak.
-- **`createRequestLoggerMiddleware`** — логирование входящих запросов.
-- **`createInternalServerErrorMiddleware`** — централизованная обработка ошибок.
-- **`createNotFoundMiddleware`** — обработка 404.
-- **`createTimeoutErrorMiddleware`** — обработка таймаутов (`p-timeout`).
+### 🔍 Трассировка
+- **`createTracer`** — реализация `Tracer` из `@notification-platform/shared`:
+  - автоматическое преобразование имён и атрибутов в `snake_case`,
+  - поддержка всех видов span'ов (`SERVER`, `CLIENT`, `PRODUCER` и т.д.),
+  - обработка исключений и установка статуса спана.
 
-### 🎯 Декораторы
-- **`createLoggedServer`** — логирует запуск и остановку сервера через `Logger` из `@notification-platform/shared`.
+### 📊 Метрики
+- **`createMeter`** — реализация `Meter` из `@notification-platform/shared`:
+  - поддержка счётчиков (`increment`) и гистограмм (`record`),
+  - кэширование метрик по имени,
+  - автоматическое преобразование меток в `snake_case`.
 
 ## 🧩 Требования
 
-- **Express ≥5.1.0** (предоставляется хост-приложением).
-- **`req.auth`** — должен быть добавлен до `createAuthorizationMiddleware` (например, через `express-oauth2-jwt-bearer`).
+- **OpenTelemetry SDK** должен быть инициализирован в хост-приложении:
+  ```ts
+  import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+  import { NodeSDK } from '@opentelemetry/sdk-node';
+  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
+  
+  const sdk = new NodeSDK({ /* ... */ });
+  sdk.start();
+  ```
+- Все компоненты используют **публичный OpenTelemetry API** (`@opentelemetry/api`), а не реализацию.
 
 ## 🚀 Использование
 
 ```ts
 // В вашем сервисе
-import express from 'express';
-import {
-  createServer,
-  createAuthenticationMiddleware,
-  createAuthorizationMiddleware,
-  createRequestLoggerMiddleware,
-  withServerLifecycleLogging,
-} from '@notification-platform/http';
-import { Logger } from '@notification-platform/shared';
+import { createLogger, createTracer, createMeter } from '@notification-platform/telemetry';
+import { Logger, Tracer, Meter } from '@notification-platform/shared';
 
-const app = express();
+const logger: Logger = createLogger();
+const tracer: Tracer = createTracer({ serviceName: 'notification-service' });
+const meter: Meter = createMeter({ serviceName: 'notification-service' });
 
-// Middleware
-app.use(createRequestLoggerMiddleware(logger));
-app.use(createAuthenticationMiddleware());
-app.use(createAuthorizationMiddleware({ serviceClientId: 'notification-service', requiredRoles: ['notify'] }));
+// Логирование
+logger.info({
+  message: 'Notification sent',
+  eventType: 'notification_sent',
+  details: { channelId: 'email' },
+});
 
-// Маршруты
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+// Трассировка
+await tracer.startActiveSpan('send_notification', { kind: 'PRODUCER' }, async (span) => {
+  // ... логика отправки
+});
 
-// Сервер
-const server = createLoggedServer(
-  createServer({ app }, { port: 3000 }),
-  logger
-);
-
-await server.start();
+// Метрики
+meter.increment('notifications_processed_total', { channel: 'email' });
+meter.record('channel_latency_ms', 150, { channel: 'email' });
 ```
-
-## 📁 Архитектура
-
-- **Зависит от**:  
-  `@notification-platform/shared` (порты `Logger`, `Server`).
-- **Peer-зависимости**:  
-  `express` (предоставляется сервисом).
-- **Не содержит**:  
-  реализации логгера, HTTP-клиентов, репозиториев — только **интеграционные утилиты**.
