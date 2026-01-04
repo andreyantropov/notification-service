@@ -1,1 +1,1 @@
-export const RETRY_ROUTING = "retry_routing";
+export const NOTIFICATIONS_RETRY_ROUTING_TOTAL = "notifications_retry_routing_total";

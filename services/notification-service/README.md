@@ -51,8 +51,6 @@ npm run prod
 | `npm run dev`           | Запуск в режиме разработки (с nodemon и .env.dev)  |
 | `npm run build`         | Сборка TypeScript-кода в директорию `dist/`        |
 | `npm run start`         | Запуск production-версии из `dist/index.js`        |
-| `npm run migrate:dev`   | Применение миграций с использованием `.env.dev`    |
-| `npm run migrate:prod`  | Применение миграций (требует переменных окружения) |
 | `npm run test`          | Запуск unit- и интеграционных тестов (Vitest)      |
 | `npm run test:coverage` | Запуск тестов с генерацией отчёта о покрытии       |
 | `npm run lint`          | Проверка кода с помощью ESLint                     |

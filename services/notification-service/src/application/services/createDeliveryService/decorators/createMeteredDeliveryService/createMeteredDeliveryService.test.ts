@@ -8,10 +8,10 @@ import type { Notification } from "@notification-platform/shared";
 import type { Result, DeliveryService } from "../../interfaces/index.js";
 import {
   NOTIFICATIONS_PROCESSED_TOTAL,
-  NOTIFICATIONS_PROCESSED_BY_STATUS,
-  NOTIFICATIONS_PROCESSED_BY_SUBJECT,
-  NOTIFICATIONS_PROCESSED_BY_STRATEGY,
-  NOTIFICATIONS_PROCESSED_BY_PRIORITY,
+  NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL,
+  NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL,
+  NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL,
+  NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
   DEFAULT_SUBJECT,
   DEFAULT_STRATEGY,
   DEFAULT_IS_IMMEDIATE,
@@ -93,10 +93,10 @@ describe("createMeteredDeliveryService", () => {
       expect(dependencies.meter.increment).toHaveBeenCalledTimes(5);
 
       expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_TOTAL, undefined);
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS, { status: "success" });
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT, { subjectId: "user-123" });
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY, { strategy: DeliveryStrategy.sendToAllAvailable });
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY, { isImmediate: "true" });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: "success" });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL, { subjectId: "user-123" });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL, { strategy: DeliveryStrategy.sendToAllAvailable });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL, { isImmediate: "true" });
     });
 
     it("should handle notifications with missing optional fields", async () => {
@@ -114,9 +114,9 @@ describe("createMeteredDeliveryService", () => {
       await meteredService.send(notifications);
 
       expect(dependencies.meter.increment).toHaveBeenCalledTimes(5);
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT, { subjectId: DEFAULT_SUBJECT });
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY, { strategy: DEFAULT_STRATEGY });
-      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY, { isImmediate: String(DEFAULT_IS_IMMEDIATE) });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL, { subjectId: DEFAULT_SUBJECT });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL, { strategy: DEFAULT_STRATEGY });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL, { isImmediate: String(DEFAULT_IS_IMMEDIATE) });
     });
 
     it("should handle mixed success and failure results", async () => {
@@ -136,11 +136,11 @@ describe("createMeteredDeliveryService", () => {
       expect(dependencies.meter.increment).toHaveBeenCalledTimes(10);
 
       const incrementCalls = (dependencies.meter.increment as ReturnType<typeof vi.fn>).mock.calls;
-      const resultCalls = incrementCalls.filter(call => call[0] === NOTIFICATIONS_PROCESSED_BY_STATUS);
+      const resultCalls = incrementCalls.filter(call => call[0] === NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL);
 
       expect(resultCalls).toEqual([
-        [NOTIFICATIONS_PROCESSED_BY_STATUS, { status: "success" }],
-        [NOTIFICATIONS_PROCESSED_BY_STATUS, { status: "failure" }],
+        [NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: "success" }],
+        [NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: "failure" }],
       ]);
     });
 

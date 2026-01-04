@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { z } from "zod";
 
 import type {
-  BatchValidationResult,
+  ValidationResult,
   ValidationError,
 } from "./interfaces/index.js";
 import { validateBatch } from "./validateBatch.js";
@@ -21,7 +21,7 @@ describe("validateBatch", () => {
       { name: "Bob", age: 25 },
     ];
 
-    const result: BatchValidationResult<TestItem> = validateBatch(
+    const result: ValidationResult<TestItem> = validateBatch(
       items,
       testSchema,
     );
@@ -42,7 +42,7 @@ describe("validateBatch", () => {
       "not an object",
     ];
 
-    const result: BatchValidationResult<TestItem> = validateBatch(
+    const result: ValidationResult<TestItem> = validateBatch(
       items,
       testSchema,
     );
@@ -75,7 +75,7 @@ describe("validateBatch", () => {
       { name: "Bob", age: -5 },
     ];
 
-    const result: BatchValidationResult<TestItem> = validateBatch(
+    const result: ValidationResult<TestItem> = validateBatch(
       items,
       testSchema,
     );
@@ -95,7 +95,7 @@ describe("validateBatch", () => {
   it("should return empty valid and invalid arrays when input array is empty", () => {
     const items: unknown[] = [];
 
-    const result: BatchValidationResult<TestItem> = validateBatch(
+    const result: ValidationResult<TestItem> = validateBatch(
       items,
       testSchema,
     );
@@ -113,7 +113,7 @@ describe("validateBatch", () => {
       { name: "C", age: 35, another: "field" },
     ];
 
-    const result: BatchValidationResult<z.infer<typeof looseSchema>> =
+    const result: ValidationResult<z.infer<typeof looseSchema>> =
       validateBatch(items, looseSchema);
 
     const expectedValid = [
@@ -141,7 +141,7 @@ describe("validateBatch", () => {
       { name: "Charlie", age: "abc" },
     ];
 
-    const result: BatchValidationResult<z.infer<typeof coercedSchema>> =
+    const result: ValidationResult<z.infer<typeof coercedSchema>> =
       validateBatch(items, coercedSchema);
 
     const expectedValid = [

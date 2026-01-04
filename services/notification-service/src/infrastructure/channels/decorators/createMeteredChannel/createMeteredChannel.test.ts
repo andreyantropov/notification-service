@@ -6,8 +6,8 @@ import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../../domain/ports/index.js";
 import type { Contact } from "@notification-platform/shared";
 import {
-  CHANNEL_LATENCY_MS,
-  NOTIFICATIONS_PROCESSED_BY_CHANNEL,
+  NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
+  NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
 } from "./constants/index.js";
 
 const mockContact: Contact = {
@@ -66,13 +66,13 @@ describe("createMeteredChannel", () => {
     expect(mockChannel.send).toHaveBeenCalledWith(mockContact, mockMessage);
 
     expect(mockMeter.record).toHaveBeenCalledWith(
-      CHANNEL_LATENCY_MS,
+      NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
       expect.any(Number),
       { channel: CHANNEL_TYPES.EMAIL, status: "success" }
     );
 
     expect(mockMeter.increment).toHaveBeenCalledWith(
-      NOTIFICATIONS_PROCESSED_BY_CHANNEL,
+      NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
       { status: "success" }
     );
   });
@@ -95,13 +95,13 @@ describe("createMeteredChannel", () => {
     expect(mockChannel.send).toHaveBeenCalledWith(mockContact, mockMessage);
 
     expect(mockMeter.record).toHaveBeenCalledWith(
-      CHANNEL_LATENCY_MS,
+      NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
       expect.any(Number),
       { channel: CHANNEL_TYPES.EMAIL, status: "failure" }
     );
 
     expect(mockMeter.increment).toHaveBeenCalledWith(
-      NOTIFICATIONS_PROCESSED_BY_CHANNEL,
+      NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
       { status: "failure" }
     );
   });
@@ -109,7 +109,6 @@ describe("createMeteredChannel", () => {
   it("should calculate latency correctly (within reasonable bounds)", async () => {
     const mockChannel = createMockChannel();
     (mockChannel.send as ReturnType<typeof vi.fn>).mockImplementation(async () => {
-      // Имитация задержки
       await new Promise(resolve => setTimeout(resolve, 5));
     });
 
@@ -181,7 +180,7 @@ describe("createMeteredChannel", () => {
 
     expect(mockChannel.send).toHaveBeenCalledWith(mockBitrixContact, mockMessage);
     expect(mockMeter.increment).toHaveBeenCalledWith(
-      NOTIFICATIONS_PROCESSED_BY_CHANNEL,
+      NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
       { status: "success" }
     );
   });

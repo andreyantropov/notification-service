@@ -1,9 +1,10 @@
 {
-  "extends": "../tsconfig.base.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
     "noEmit": true,
-    "composite": true
+    "composite": true,
+    "declaration": true,
   },
   "include": [
     "src"
