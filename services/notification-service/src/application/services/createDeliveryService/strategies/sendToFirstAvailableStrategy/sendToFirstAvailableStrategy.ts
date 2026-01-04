@@ -1,5 +1,5 @@
 import type { Channel } from "../../../../../domain/ports/index.js";
-import type { Notification } from "../../../../../domain/types/index.js";
+import type { Notification } from "@notification-platform/shared";
 import type { Result, Warning } from "../../interfaces/index.js";
 import type { Strategy } from "../../types/index.js";
 

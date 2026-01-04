@@ -3,8 +3,8 @@ import type {
   LoggedDeliveryServiceDependencies,
   Summary,
 } from "./interfaces/index.js";
-import type { Notification } from "../../../../../domain/types/index.js";
-import { EventType } from "../../../../enums/index.js";
+import type { Notification } from "@notification-platform/shared";
+import { EventType } from "@notification-platform/shared";
 import type { DeliveryService, Result } from "../../interfaces/index.js";
 
 export const createLoggedDeliveryService = (
@@ -119,26 +119,26 @@ export const createLoggedDeliveryService = (
 
   const checkHealth = deliveryService.checkHealth
     ? async (): Promise<void> => {
-        const start = Date.now();
-        try {
-          await deliveryService.checkHealth!();
-          const durationMs = Date.now() - start;
-          logger.debug({
-            message: "Сервис доставки уведомлений готов к работе",
-            eventType: EventType.HealthCheck,
-            durationMs,
-          });
-        } catch (error) {
-          const durationMs = Date.now() - start;
-          logger.error({
-            message: "Сервис доставки уведомлений не отвечает",
-            eventType: EventType.HealthCheck,
-            durationMs,
-            error,
-          });
-          throw error;
-        }
+      const start = Date.now();
+      try {
+        await deliveryService.checkHealth!();
+        const durationMs = Date.now() - start;
+        logger.debug({
+          message: "Сервис доставки уведомлений готов к работе",
+          eventType: EventType.HealthCheck,
+          durationMs,
+        });
+      } catch (error) {
+        const durationMs = Date.now() - start;
+        logger.error({
+          message: "Сервис доставки уведомлений не отвечает",
+          eventType: EventType.HealthCheck,
+          durationMs,
+          error,
+        });
+        throw error;
       }
+    }
     : undefined;
 
   return {

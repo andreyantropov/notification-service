@@ -6,11 +6,6 @@ import {
   createDeliveryService,
   createLoggedDeliveryService,
 } from "../../application/services/createDeliveryService/index.js";
-import {
-  createLoggedRetryService,
-  createMeteredRetryService,
-  createRetryService,
-} from "../../application/services/createRetryService/index.js";
 import type { Container } from "../types/index.js";
 
 export const registerServices = (container: AwilixContainer<Container>) => {
@@ -37,18 +32,5 @@ export const registerServices = (container: AwilixContainer<Container>) => {
         return meteredLoggedDeliveryService;
       },
     ).singleton(),
-    retryService: asFunction(({ logger, meter }) => {
-      const retryService = createRetryService();
-      const loggedRetryService = createLoggedRetryService({
-        retryService,
-        logger,
-      });
-      const meteredLoggedRetryService = createMeteredRetryService({
-        retryService: loggedRetryService,
-        meter,
-      });
-
-      return meteredLoggedRetryService;
-    }).singleton(),
   });
 };

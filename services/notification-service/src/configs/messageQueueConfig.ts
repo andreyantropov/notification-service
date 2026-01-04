@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { MessageQueueConfig } from "../infrastructure/queues/index.js";
+import type { MessageQueueConfig } from "@notification-platform/queues";
 
 const schema = z.object({
   url: z

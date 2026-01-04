@@ -6,10 +6,9 @@ import {
   DEFAULT_SEND_TIMEOUT_MS,
 } from "./constants/index.js";
 import type { BitrixChannelConfig } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import { CHANNEL_TYPES, isContactOfType } from "@notification-platform/shared";
 import type { Channel } from "../../../domain/ports/index.js";
-import type { Contact } from "../../../domain/types/index.js";
-import { isContactOfType } from "../../../domain/types/index.js";
+import type { Contact } from "@notification-platform/shared";
 
 export const createBitrixChannel = (config: BitrixChannelConfig): Channel => {
   const {

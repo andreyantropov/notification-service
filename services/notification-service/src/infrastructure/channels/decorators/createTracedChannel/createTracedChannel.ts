@@ -1,6 +1,6 @@
 import type { TrasedChannelDependencies } from "./interfaces/index.js";
 import type { Channel } from "../../../../domain/ports/index.js";
-import type { Contact } from "../../../../domain/types/index.js";
+import type { Contact } from "@notification-platform/shared";
 
 export const createTracedChannel = (
   dependencies: TrasedChannelDependencies,
@@ -25,16 +25,16 @@ export const createTracedChannel = (
 
   const checkHealth = channel.checkHealth
     ? async (): Promise<void> => {
-        return tracer.startActiveSpan(
-          `${channel.type}.checkHealth`,
-          {
-            kind: "CLIENT",
-          },
-          async () => {
-            await channel.checkHealth!();
-          },
-        );
-      }
+      return tracer.startActiveSpan(
+        `${channel.type}.checkHealth`,
+        {
+          kind: "CLIENT",
+        },
+        async () => {
+          await channel.checkHealth!();
+        },
+      );
+    }
     : undefined;
 
   return {

@@ -1,4 +1,4 @@
-import type { Notification } from "../../domain/types/index.js";
+import type { Notification } from "@notification-platform/shared";
 
 export type IncomingNotification = Omit<
   Notification,

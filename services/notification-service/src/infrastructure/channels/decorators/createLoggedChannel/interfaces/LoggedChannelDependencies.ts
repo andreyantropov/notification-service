@@ -1,4 +1,4 @@
-import type { Logger } from "../../../../../application/ports/index.js";
+import type { Logger } from "@notification-platform/shared";
 import type { Channel } from "../../../../../domain/ports/index.js";
 
 export interface LoggedChannelDependencies {

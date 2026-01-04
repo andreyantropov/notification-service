@@ -7,23 +7,21 @@ import type {
   Meter,
   Producer,
   Tracer,
-} from "../../application/ports/index.js";
+  Notification,
+  Server,
+} from "@notification-platform/shared";
 import type { DeliveryService } from "../../application/services/createDeliveryService/index.js";
-import type { RetryService } from "../../application/services/createRetryService/index.js";
 import type { Generator } from "../../application/types/index.js";
 import type { CheckHealthUseCase } from "../../application/useCases/createCheckHealthUseCase/index.js";
 import type { HandleIncomingNotificationsUseCase } from "../../application/useCases/createHandleIncomingNotificationsUseCase/index.js";
 import type { Channel } from "../../domain/ports/index.js";
-import type { Notification } from "../../domain/types/index.js";
 import type {
-  Server,
   HealthcheckController,
   NotificationController,
 } from "../../infrastructure/http/index.js";
 
 export type Container = {
   readonly deliveryService: DeliveryService;
-  readonly retryService: RetryService;
 
   readonly handleIncomingNotificationsUseCase: HandleIncomingNotificationsUseCase;
   readonly checkHealthUseCase: CheckHealthUseCase;
@@ -46,7 +44,6 @@ export type Container = {
 
   readonly producer: Producer<Notification>;
   readonly batchConsumer: Consumer;
-  readonly retryConsumer: Consumer;
 
   readonly tracer: Tracer;
   readonly logger: Logger;

@@ -1,7 +1,7 @@
 import type { LoggedChannelDependencies } from "./interfaces/index.js";
-import { EventType } from "../../../../application/enums/index.js";
+import { EventType } from "@notification-platform/shared";
 import type { Channel } from "../../../../domain/ports/index.js";
-import type { Contact } from "../../../../domain/types/index.js";
+import type { Contact } from "@notification-platform/shared";
 
 export const createLoggedChannel = (
   dependencies: LoggedChannelDependencies,
@@ -34,28 +34,28 @@ export const createLoggedChannel = (
 
   const checkHealth = channel.checkHealth
     ? async (): Promise<void> => {
-        const start = Date.now();
-        try {
-          await channel.checkHealth!();
-          const durationMs = Date.now() - start;
-          logger.debug({
-            message: `Канал ${channel.type} готов к работе`,
-            eventType: EventType.HealthCheck,
-            durationMs,
-            details: { channelType: channel.type },
-          });
-        } catch (error) {
-          const durationMs = Date.now() - start;
-          logger.error({
-            message: `Канал ${channel.type} не отвечает`,
-            eventType: EventType.HealthCheck,
-            durationMs,
-            details: { channelType: channel.type },
-            error,
-          });
-          throw error;
-        }
+      const start = Date.now();
+      try {
+        await channel.checkHealth!();
+        const durationMs = Date.now() - start;
+        logger.debug({
+          message: `Канал ${channel.type} готов к работе`,
+          eventType: EventType.HealthCheck,
+          durationMs,
+          details: { channelType: channel.type },
+        });
+      } catch (error) {
+        const durationMs = Date.now() - start;
+        logger.error({
+          message: `Канал ${channel.type} не отвечает`,
+          eventType: EventType.HealthCheck,
+          durationMs,
+          details: { channelType: channel.type },
+          error,
+        });
+        throw error;
       }
+    }
     : undefined;
 
   return {

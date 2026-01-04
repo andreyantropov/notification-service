@@ -15,14 +15,16 @@ import {
   createRequestLoggerMiddleware,
   createAuthenticationMiddleware,
   createAuthorizationMiddleware,
-  createNotificationController,
-  createHealthcheckController,
   createNotFoundMiddleware,
   createInternalServerErrorMiddleware,
   createServer,
   createTimeoutErrorMiddleware,
+  createLoggedServer,
+} from "@notification-platform/http";
+import {
+  createNotificationController,
+  createHealthcheckController,
 } from "../../infrastructure/http/index.js";
-import { createLoggedServer } from "../../infrastructure/http/index.js";
 import { createSwaggerSpecification } from "../../presentation/createSwaggerSpecification/index.js";
 import type { Container } from "../types/index.js";
 

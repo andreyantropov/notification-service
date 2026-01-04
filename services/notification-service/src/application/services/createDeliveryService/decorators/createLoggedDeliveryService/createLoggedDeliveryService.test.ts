@@ -2,10 +2,8 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 
 import { createLoggedDeliveryService } from "./createLoggedDeliveryService.js";
 import type { LoggedDeliveryServiceDependencies } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../../../domain/constants/index.js";
-import type { Notification } from "../../../../../domain/types/index.js";
-import { EventType } from "../../../../enums/index.js";
-import type { Logger } from "../../../../ports/index.js";
+import { CHANNEL_TYPES, EventType } from "@notification-platform/shared";
+import type { Notification, Logger } from "@notification-platform/shared";
 import type { DeliveryService, Result } from "../../interfaces/index.js";
 
 type MockedDeliveryService = {

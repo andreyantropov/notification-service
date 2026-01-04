@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { createEmailChannel } from "./createEmailChannel.js";
 import type { EmailChannelConfig } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../domain/ports/index.js";
 import type { Contact } from "../../../domain/types/index.js";
 import { noop } from "../../../shared/utils/index.js";
@@ -104,7 +104,7 @@ describe("createEmailChannel", () => {
     it("should reject with timeout error if sendMail hangs", async () => {
       vi.useFakeTimers();
 
-      transporter.sendMail.mockReturnValue(new Promise(() => {}));
+      transporter.sendMail.mockReturnValue(new Promise(() => { }));
 
       const sendPromise = channel.send(contact, message);
 

@@ -3,7 +3,7 @@ import type {
   Notification,
   Contact,
   ChannelType,
-} from "../../../../../domain/types/index.js";
+} from "@notification-platform/shared";
 import type { Result, Warning } from "../../interfaces/index.js";
 import type { Strategy } from "../../types/index.js";
 

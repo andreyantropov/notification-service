@@ -8,5 +8,4 @@ export { telemetryConfig } from "./telemetryConfig.js";
 export { messageQueueConfig } from "./messageQueueConfig.js";
 export { producerConfig } from "./producerConfig.js";
 export { batchConsumerConfig } from "./batchConsumerConfig.js";
-export { retryConsumerConfig } from "./retryConsumerConfig.js";
 export { serviceConfig } from "./serviceConfig.js";

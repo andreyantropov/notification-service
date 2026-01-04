@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createCheckHealthUseCase } from "./createCheckHealthUseCase.js";
-import type { Notification } from "../../../domain/types/index.js";
-import type { Consumer, Producer } from "../../ports/index.js";
+import type { Notification, Consumer, Producer } from "@notification-platform/shared";
 import type { DeliveryService } from "../../services/createDeliveryService/index.js";
 
 const createMockProducer = (
@@ -36,18 +35,15 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const serviceCheckHealth = vi.fn().mockResolvedValue(undefined);
     const producerCheckHealth = vi.fn().mockResolvedValue(undefined);
     const batchConsumerCheckHealth = vi.fn().mockResolvedValue(undefined);
-    const retryConsumerCheckHealth = vi.fn().mockResolvedValue(undefined);
 
     const deliveryService = createMockDeliveryService(serviceCheckHealth);
     const producer = createMockProducer(producerCheckHealth);
     const batchConsumer = createMockConsumer(batchConsumerCheckHealth);
-    const retryConsumer = createMockConsumer(retryConsumerCheckHealth);
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await useCase.checkHealth();
@@ -55,7 +51,6 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     expect(serviceCheckHealth).toHaveBeenCalledTimes(1);
     expect(producerCheckHealth).toHaveBeenCalledTimes(1);
     expect(batchConsumerCheckHealth).toHaveBeenCalledTimes(1);
-    expect(retryConsumerCheckHealth).toHaveBeenCalledTimes(1);
   });
 
   it("should call only DeliveryService.checkHealth when others lack it", async () => {
@@ -63,13 +58,11 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const deliveryService = createMockDeliveryService(serviceCheckHealth);
     const producer = createMockProducer();
     const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await useCase.checkHealth();
@@ -81,13 +74,11 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const deliveryService = createMockDeliveryService();
     const producer = createMockProducer(vi.fn().mockResolvedValue(undefined));
     const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await useCase.checkHealth();
@@ -101,13 +92,11 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const batchConsumer = createMockConsumer(
       vi.fn().mockResolvedValue(undefined),
     );
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await useCase.checkHealth();
@@ -115,37 +104,15 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     expect(batchConsumer.checkHealth).toHaveBeenCalledTimes(1);
   });
 
-  it("should call only retryConsumer.checkHealth when others lack it", async () => {
-    const deliveryService = createMockDeliveryService();
-    const producer = createMockProducer();
-    const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer(
-      vi.fn().mockResolvedValue(undefined),
-    );
-
-    const useCase = createCheckHealthUseCase({
-      deliveryService,
-      producer,
-      batchConsumer,
-      retryConsumer,
-    });
-
-    await useCase.checkHealth();
-
-    expect(retryConsumer.checkHealth).toHaveBeenCalledTimes(1);
-  });
-
   it("should do nothing (and not throw) when no component has checkHealth", async () => {
     const deliveryService = createMockDeliveryService();
     const producer = createMockProducer();
     const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await expect(useCase.checkHealth()).resolves.toBeUndefined();
@@ -159,13 +126,11 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const deliveryService = createMockDeliveryService(serviceCheckHealth);
     const producer = createMockProducer();
     const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await expect(useCase.checkHealth()).rejects.toThrow(errorMessage);
@@ -179,13 +144,11 @@ describe("CheckNotificationServiceHealthUseCase", () => {
       vi.fn().mockRejectedValue(new Error(errorMessage)),
     );
     const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await expect(useCase.checkHealth()).rejects.toThrow(errorMessage);
@@ -199,44 +162,21 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const batchConsumer = createMockConsumer(
       vi.fn().mockRejectedValue(new Error(errorMessage)),
     );
-    const retryConsumer = createMockConsumer();
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await expect(useCase.checkHealth()).rejects.toThrow(errorMessage);
     expect(batchConsumer.checkHealth).toHaveBeenCalledTimes(1);
   });
 
-  it("should propagate errors from retryConsumer.checkHealth", async () => {
-    const errorMessage = "Retry consumer is unreachable";
-    const deliveryService = createMockDeliveryService();
-    const producer = createMockProducer();
-    const batchConsumer = createMockConsumer();
-    const retryConsumer = createMockConsumer(
-      vi.fn().mockRejectedValue(new Error(errorMessage)),
-    );
-
-    const useCase = createCheckHealthUseCase({
-      deliveryService,
-      producer,
-      batchConsumer,
-      retryConsumer,
-    });
-
-    await expect(useCase.checkHealth()).rejects.toThrow(errorMessage);
-    expect(retryConsumer.checkHealth).toHaveBeenCalledTimes(1);
-  });
-
   it("should run all health checks in parallel and fail fast on first rejection (Promise.all semantics)", async () => {
     const serviceError = new Error("Service down");
     const producerError = new Error("Producer down");
     const batchError = new Error("Batch consumer down");
-    const retryError = new Error("Retry consumer down");
 
     const deliveryService = createMockDeliveryService(
       vi.fn().mockRejectedValue(serviceError),
@@ -247,21 +187,16 @@ describe("CheckNotificationServiceHealthUseCase", () => {
     const batchConsumer = createMockConsumer(
       vi.fn().mockRejectedValue(batchError),
     );
-    const retryConsumer = createMockConsumer(
-      vi.fn().mockRejectedValue(retryError),
-    );
 
     const useCase = createCheckHealthUseCase({
       deliveryService,
       producer,
       batchConsumer,
-      retryConsumer,
     });
 
     await expect(useCase.checkHealth()).rejects.toThrow();
     expect(deliveryService.checkHealth).toHaveBeenCalledTimes(1);
     expect(producer.checkHealth).toHaveBeenCalledTimes(1);
     expect(batchConsumer.checkHealth).toHaveBeenCalledTimes(1);
-    expect(retryConsumer.checkHealth).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 
 import { sendToFirstAvailableStrategy } from "./sendToFirstAvailableStrategy.js";
-import { CHANNEL_TYPES } from "../../../../../domain/constants/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../../../domain/ports/index.js";
 import type {
   Contact,
   Notification,
-} from "../../../../../domain/types/index.js";
+} from "@notification-platform/shared";
 
 class MockEmailChannel implements Channel {
   readonly type = CHANNEL_TYPES.EMAIL;

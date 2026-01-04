@@ -6,7 +6,7 @@ import {
   createLogger,
   createMeter,
   createTracer,
-} from "../../infrastructure/telemetry/index.js";
+} from "@notification-platform/telemetry";
 import type { Container } from "../types/Container.js";
 
 export const registerTelemetry = (container: AwilixContainer<Container>) => {

@@ -6,7 +6,7 @@ import type {
 export const createCheckHealthUseCase = (
   dependencies: CheckHealthUseCaseDependencies,
 ): CheckHealthUseCase => {
-  const { deliveryService, producer, batchConsumer, retryConsumer } =
+  const { deliveryService, producer, batchConsumer } =
     dependencies;
 
   const checkHealth = async (): Promise<void> => {
@@ -22,10 +22,6 @@ export const createCheckHealthUseCase = (
 
     if (batchConsumer.checkHealth) {
       promises.push(batchConsumer.checkHealth());
-    }
-
-    if (retryConsumer.checkHealth) {
-      promises.push(retryConsumer.checkHealth());
     }
 
     await Promise.all(promises);

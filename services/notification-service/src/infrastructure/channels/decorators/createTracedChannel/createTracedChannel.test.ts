@@ -2,10 +2,9 @@ import { describe, it, expect, vi, beforeEach, Mocked } from "vitest";
 
 import { createTracedChannel } from "./createTracedChannel.js";
 import type { TrasedChannelDependencies } from "./interfaces/index.js";
-import type { Tracer } from "../../../../application/ports/index.js";
-import { CHANNEL_TYPES } from "../../../../domain/constants/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../../domain/ports/index.js";
-import type { Contact } from "../../../../domain/types/index.js";
+import type { Contact, Tracer } from "@notification-platform/shared";
 
 describe("createTracedChannel", () => {
   let mockChannel: Mocked<Channel>;
@@ -94,8 +93,8 @@ describe("createTracedChannel", () => {
 
       tracer.startActiveSpan.mockImplementation(async (name, options, fn) => {
         return await fn({
-          recordException: vi.fn().mockImplementation(() => {}),
-          setStatus: vi.fn().mockImplementation(() => {}),
+          recordException: vi.fn().mockImplementation(() => { }),
+          setStatus: vi.fn().mockImplementation(() => { }),
         });
       });
 

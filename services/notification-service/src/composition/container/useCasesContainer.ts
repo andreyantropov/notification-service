@@ -20,12 +20,11 @@ export const registerUseCases = (container: AwilixContainer<Container>) => {
       },
     ).singleton(),
     checkHealthUseCase: asFunction(
-      ({ deliveryService, producer, batchConsumer, retryConsumer }) => {
+      ({ deliveryService, producer, batchConsumer }) => {
         const checkNotificationServiceHealth = createCheckHealthUseCase({
           deliveryService,
           producer,
           batchConsumer,
-          retryConsumer,
         });
 
         return checkNotificationServiceHealth;

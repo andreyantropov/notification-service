@@ -9,8 +9,8 @@ import {
   sendToFirstAvailableStrategy,
 } from "./strategies/index.js";
 import type { Strategy } from "./types/index.js";
-import { DeliveryStrategy } from "../../../domain/enums/index.js";
-import type { Notification } from "../../../domain/types/index.js";
+import { DeliveryStrategy } from "@notification-platform/shared";
+import type { Notification } from "@notification-platform/shared";
 
 export const createDeliveryService = (
   dependencies: DeliveryServiceDependencies,

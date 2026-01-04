@@ -1,5 +1,4 @@
-import type { ChannelType } from "../types/ChannelType.js";
-import type { Contact } from "../types/Contact.js";
+import type { Contact, ChannelType } from "@notification-platform/shared";
 
 export interface Channel {
   readonly type: ChannelType;

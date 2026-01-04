@@ -7,10 +7,9 @@ import {
   DEFAULT_HEALTHCHECK_TIMEOUT_MS,
 } from "./constants/index.js";
 import type { EmailChannelConfig } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import { CHANNEL_TYPES, isContactOfType } from "@notification-platform/shared";
 import type { Channel } from "../../../domain/ports/index.js";
-import type { Contact } from "../../../domain/types/index.js";
-import { isContactOfType } from "../../../domain/types/index.js";
+import type { Contact } from "@notification-platform/shared";
 
 export const createEmailChannel = (config: EmailChannelConfig): Channel => {
   const {

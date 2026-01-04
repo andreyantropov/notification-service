@@ -1,5 +1,4 @@
-import type { Notification } from "../../../../domain/types/index.js";
-import type { Producer } from "../../../ports/index.js";
+import type { Notification, Producer } from "@notification-platform/shared";
 import type { DeliveryService } from "../../../services/createDeliveryService/index.js";
 import type { Generator } from "../../../types/index.js";
 

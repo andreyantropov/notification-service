@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
 import { sendToAllAvailableStrategy } from "./sendToAllAvailableStrategy.js";
-import { CHANNEL_TYPES } from "../../../../../domain/constants/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../../../domain/ports/index.js";
 import type {
   Contact,
   Notification,
-} from "../../../../../domain/types/index.js";
+} from "@notification-platform/shared";
 
 const createMockChannel = (
   type: Channel["type"],

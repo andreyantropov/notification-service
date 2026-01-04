@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { AuthorizationMiddlewareConfig } from "../infrastructure/http/index.js";
+import type { AuthorizationMiddlewareConfig } from "@notification-platform/http";
 
 const schema = z.object({
   serviceClientId: z

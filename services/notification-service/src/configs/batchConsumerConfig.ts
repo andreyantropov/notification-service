@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { messageQueueConfig } from "./messageQueueConfig.js";
-import type { BatchConsumerConfig } from "../infrastructure/queues/index.js";
+import type { BatchConsumerConfig } from "@notification-platform/queues";
 
 const { url } = messageQueueConfig;
 

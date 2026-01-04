@@ -3,7 +3,7 @@ import type {
   CategorizedNotifications,
   HandleIncomingNotificationsUseCaseDependencies,
 } from "./interfaces/index.js";
-import type { Notification, Subject } from "../../../domain/types/index.js";
+import type { Notification, Subject } from "@notification-platform/shared";
 import type { IncomingNotification } from "../../types/index.js";
 
 export const createHandleIncomingNotificationsUseCase = (

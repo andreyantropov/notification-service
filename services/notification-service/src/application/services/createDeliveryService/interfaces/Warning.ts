@@ -1,4 +1,4 @@
-import type { ChannelType } from "../../../../domain/types/index.js";
+import type { ChannelType } from "@notification-platform/shared";
 
 export interface Warning {
   readonly message: string;

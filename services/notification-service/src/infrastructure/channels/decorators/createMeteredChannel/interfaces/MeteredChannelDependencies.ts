@@ -1,4 +1,4 @@
-import type { Meter } from "../../../../../application/ports/index.js";
+import type { Meter } from "@notification-platform/shared";
 import type { Channel } from "../../../../../domain/ports/index.js";
 
 export interface MeteredChannelDependencies {

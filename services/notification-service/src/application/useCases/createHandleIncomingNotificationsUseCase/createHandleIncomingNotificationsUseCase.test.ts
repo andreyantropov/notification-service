@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createHandleIncomingNotificationsUseCase } from "./createHandleIncomingNotificationsUseCase.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
-import type { Notification, Subject } from "../../../domain/types/index.js";
-import type { Producer } from "../../ports/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
+import type { Notification, Subject, Producer } from "@notification-platform/shared";
 import type {
   DeliveryService,
   Result,

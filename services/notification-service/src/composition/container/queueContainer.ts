@@ -1,20 +1,19 @@
 import type { AwilixContainer } from "awilix";
 import { asFunction } from "awilix";
 
-import { EventType } from "../../application/enums/index.js";
+import { EventType } from "@notification-platform/shared";
 import {
   batchConsumerConfig,
   producerConfig,
-  retryConsumerConfig,
 } from "../../configs/index.js";
-import type { Notification } from "../../domain/types/Notification.js";
+import type { Notification } from "@notification-platform/shared";
 import {
   createBatchConsumer,
   createLoggedConsumer,
   createRetryConsumer,
   createLoggedProducer,
   createProducer,
-} from "../../infrastructure/queues/index.js";
+} from "@notification-platform/queues";
 import type { Container } from "../types/Container.js";
 
 export const registerQueue = (container: AwilixContainer<Container>) => {
@@ -36,27 +35,7 @@ export const registerQueue = (container: AwilixContainer<Container>) => {
         { handler: deliveryService.send },
         {
           ...batchConsumerConfig,
-          onError: (error) =>
-            logger.error({
-              message: `Ошибка в работе Consumer`,
-              eventType: EventType.InfrastructureFailure,
-              error,
-            }),
-        },
-      );
-      const loggedConsumer = createLoggedConsumer({
-        consumer: consumer,
-        logger,
-      });
-
-      return loggedConsumer;
-    }).singleton(),
-    retryConsumer: asFunction(({ retryService, logger }) => {
-      const consumer = createRetryConsumer(
-        { handler: retryService.getQueueName },
-        {
-          ...retryConsumerConfig,
-          onError: (error) =>
+          onError: (error: unknown) =>
             logger.error({
               message: `Ошибка в работе Consumer`,
               eventType: EventType.InfrastructureFailure,

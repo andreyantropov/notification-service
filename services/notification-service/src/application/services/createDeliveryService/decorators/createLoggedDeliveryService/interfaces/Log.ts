@@ -1,4 +1,4 @@
-import { EventType } from "../../../../../enums/index.js";
+import { EventType } from "@notification-platform/shared";
 
 export interface Log {
   readonly logLevel: "error" | "warning" | "info";

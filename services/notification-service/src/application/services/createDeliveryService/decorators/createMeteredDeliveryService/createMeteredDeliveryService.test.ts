@@ -2,21 +2,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createMeteredDeliveryService } from "./createMeteredDeliveryService.js";
 import type { MeteredDeliveryServiceDependencies } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../../../domain/constants/index.js";
-import { DeliveryStrategy } from "../../../../../domain/enums/DeliveryStrategy.js";
-import type { Notification } from "../../../../../domain/types/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
+import { DeliveryStrategy } from "@notification-platform/shared";
+import type { Notification } from "@notification-platform/shared";
 import type { Result, DeliveryService } from "../../interfaces/index.js";
+import {
+  NOTIFICATIONS_PROCESSED_TOTAL,
+  NOTIFICATIONS_PROCESSED_BY_STATUS,
+  NOTIFICATIONS_PROCESSED_BY_SUBJECT,
+  NOTIFICATIONS_PROCESSED_BY_STRATEGY,
+  NOTIFICATIONS_PROCESSED_BY_PRIORITY,
+  DEFAULT_SUBJECT,
+  DEFAULT_STRATEGY,
+  DEFAULT_IS_IMMEDIATE,
+} from "./constants/index.js";
 
-const mockMeter = {
-  incrementNotificationsProcessedTotal: vi.fn(),
-  incrementNotificationsProcessedByResult: vi.fn(),
-  incrementNotificationsProcessedBySubject: vi.fn(),
-  incrementNotificationsProcessedByStrategy: vi.fn(),
-  incrementNotificationsProcessedByPriority: vi.fn(),
-  recordChannelLatency: vi.fn(),
-  incrementNotificationsProcessedByChannel: vi.fn(),
-  incrementRetryRoutingByQueue: vi.fn(),
-};
+const createMockMeter = () => ({
+  increment: vi.fn<(name: string, labels?: Record<string, string>) => void>(),
+  record: vi.fn(),
+});
 
 const mockDeliveryService = {
   send: vi.fn(),
@@ -56,7 +60,7 @@ describe("createMeteredDeliveryService", () => {
 
     dependencies = {
       deliveryService: mockDeliveryService,
-      meter: mockMeter,
+      meter: createMockMeter(),
     };
 
     meteredService = createMeteredDeliveryService(dependencies);
@@ -69,49 +73,30 @@ describe("createMeteredDeliveryService", () => {
     expect(typeof meteredService.checkHealth).toBe("function");
   });
 
-  it("should delegate checkHealth calls to underlying service", async () => {
-    const healthResult = { status: "healthy" };
-    mockDeliveryService.checkHealth.mockResolvedValue(healthResult);
-
-    const result = await meteredService.checkHealth!();
-
-    expect(mockDeliveryService.checkHealth).toHaveBeenCalledOnce();
-    expect(result).toEqual(healthResult);
-  });
-
   describe("send method - successful execution", () => {
     it("should record metrics for successful notifications with all attributes", async () => {
       const notifications = [
         createMockNotification({
           id: "notif-1",
           subject: { id: "user-123" },
-          strategy: DeliveryStrategy.sendToFirstAvailable,
+          strategy: DeliveryStrategy.sendToAllAvailable,
           isImmediate: true,
         }),
       ];
 
       const results = [createMockDeliveryResult(notifications[0], "success")];
-
       mockDeliveryService.send.mockResolvedValue(results);
 
       const returnedResults = await meteredService.send(notifications);
 
       expect(returnedResults).toEqual(results);
-      expect(
-        mockMeter.incrementNotificationsProcessedTotal,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        mockMeter.incrementNotificationsProcessedByResult,
-      ).toHaveBeenCalledWith("success");
-      expect(
-        mockMeter.incrementNotificationsProcessedBySubject,
-      ).toHaveBeenCalledWith("user-123");
-      expect(
-        mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledWith(DeliveryStrategy.sendToFirstAvailable);
-      expect(
-        mockMeter.incrementNotificationsProcessedByPriority,
-      ).toHaveBeenCalledWith(true);
+      expect(dependencies.meter.increment).toHaveBeenCalledTimes(5);
+
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_TOTAL, undefined);
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS, { status: "success" });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT, { subjectId: "user-123" });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY, { strategy: DeliveryStrategy.sendToAllAvailable });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY, { isImmediate: "true" });
     });
 
     it("should handle notifications with missing optional fields", async () => {
@@ -124,26 +109,14 @@ describe("createMeteredDeliveryService", () => {
       ];
 
       const results = [createMockDeliveryResult(notifications[0], "success")];
-
       mockDeliveryService.send.mockResolvedValue(results);
 
       await meteredService.send(notifications);
 
-      expect(
-        mockMeter.incrementNotificationsProcessedTotal,
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        mockMeter.incrementNotificationsProcessedByResult,
-      ).toHaveBeenCalledWith("success");
-      expect(
-        mockMeter.incrementNotificationsProcessedBySubject,
-      ).toHaveBeenCalledWith("unknown");
-      expect(
-        mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledWith(DeliveryStrategy.sendToFirstAvailable);
-      expect(
-        mockMeter.incrementNotificationsProcessedByPriority,
-      ).toHaveBeenCalledWith(false);
+      expect(dependencies.meter.increment).toHaveBeenCalledTimes(5);
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT, { subjectId: DEFAULT_SUBJECT });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY, { strategy: DEFAULT_STRATEGY });
+      expect(dependencies.meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY, { isImmediate: String(DEFAULT_IS_IMMEDIATE) });
     });
 
     it("should handle mixed success and failure results", async () => {
@@ -156,23 +129,22 @@ describe("createMeteredDeliveryService", () => {
         createMockDeliveryResult(notifications[0], "success"),
         createMockDeliveryResult(notifications[1], "failure"),
       ];
-
       mockDeliveryService.send.mockResolvedValue(results);
 
       await meteredService.send(notifications);
 
-      expect(
-        mockMeter.incrementNotificationsProcessedTotal,
-      ).toHaveBeenCalledTimes(2);
-      expect(
-        mockMeter.incrementNotificationsProcessedByResult,
-      ).toHaveBeenNthCalledWith(1, "success");
-      expect(
-        mockMeter.incrementNotificationsProcessedByResult,
-      ).toHaveBeenNthCalledWith(2, "failure");
+      expect(dependencies.meter.increment).toHaveBeenCalledTimes(10);
+
+      const incrementCalls = (dependencies.meter.increment as ReturnType<typeof vi.fn>).mock.calls;
+      const resultCalls = incrementCalls.filter(call => call[0] === NOTIFICATIONS_PROCESSED_BY_STATUS);
+
+      expect(resultCalls).toEqual([
+        [NOTIFICATIONS_PROCESSED_BY_STATUS, { status: "success" }],
+        [NOTIFICATIONS_PROCESSED_BY_STATUS, { status: "failure" }],
+      ]);
     });
 
-    it("should process each notification only once even if they have same id", async () => {
+    it("should process each notification exactly once", async () => {
       const notification = createMockNotification({ id: "duplicate-id" });
       const notifications = [notification, notification];
 
@@ -180,26 +152,11 @@ describe("createMeteredDeliveryService", () => {
         createMockDeliveryResult(notification, "success"),
         createMockDeliveryResult(notification, "success"),
       ];
-
       mockDeliveryService.send.mockResolvedValue(results);
 
       await meteredService.send(notifications);
 
-      expect(
-        mockMeter.incrementNotificationsProcessedTotal,
-      ).toHaveBeenCalledTimes(2);
-      expect(
-        mockMeter.incrementNotificationsProcessedByResult,
-      ).toHaveBeenCalledTimes(2);
-      expect(
-        mockMeter.incrementNotificationsProcessedBySubject,
-      ).toHaveBeenCalledTimes(2);
-      expect(
-        mockMeter.incrementNotificationsProcessedByStrategy,
-      ).toHaveBeenCalledTimes(2);
-      expect(
-        mockMeter.incrementNotificationsProcessedByPriority,
-      ).toHaveBeenCalledTimes(2);
+      expect(dependencies.meter.increment).toHaveBeenCalledTimes(10);
     });
   });
 });

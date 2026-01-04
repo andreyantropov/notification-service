@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createMeteredRetryService } from "./createMeteredRetryService.js";
 import type { Meter } from "@notification-platform/shared";
 import type { RetryService } from "../../interfaces/RetryService.js";
-import { NOTIFICATIONS_RETRY_ROUTING_TOTAL } from "./constants/index.js";
+import { RETRY_ROUTING } from "./constants/index.js";
 
 const createMockRetryService = (returnValue: string): RetryService => ({
   getRetryQueue: vi.fn().mockReturnValue(returnValue),
@@ -58,7 +58,7 @@ describe("createMeteredRetryService", () => {
     meteredRetryService.getRetryQueue(2);
 
     expect(meter.increment).toHaveBeenCalledTimes(1);
-    expect(meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_RETRY_ROUTING_TOTAL, {
+    expect(meter.increment).toHaveBeenCalledWith(RETRY_ROUTING, {
       retryQueue: queue,
     });
   });
@@ -75,7 +75,7 @@ describe("createMeteredRetryService", () => {
 
     meteredRetryService.getRetryQueue(999);
 
-    expect(meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_RETRY_ROUTING_TOTAL, {
+    expect(meter.increment).toHaveBeenCalledWith(RETRY_ROUTING, {
       retryQueue: dlq,
     });
   });
@@ -103,17 +103,17 @@ describe("createMeteredRetryService", () => {
     expect(meter.increment).toHaveBeenCalledTimes(3);
     expect(meter.increment).toHaveBeenNthCalledWith(
       1,
-      NOTIFICATIONS_RETRY_ROUTING_TOTAL,
+      RETRY_ROUTING,
       { retryQueue: "notifications.retry.30m" },
     );
     expect(meter.increment).toHaveBeenNthCalledWith(
       2,
-      NOTIFICATIONS_RETRY_ROUTING_TOTAL,
+      RETRY_ROUTING,
       { retryQueue: "notifications.retry.2h" },
     );
     expect(meter.increment).toHaveBeenNthCalledWith(
       3,
-      NOTIFICATIONS_RETRY_ROUTING_TOTAL,
+      RETRY_ROUTING,
       { retryQueue: "notifications.dlq" },
     );
   });

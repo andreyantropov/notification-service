@@ -1,4 +1,4 @@
-import type { Logger } from "../../../../../ports/index.js";
+import type { Logger } from "@notification-platform/shared";
 import type { DeliveryService } from "../../../interfaces/DeliveryService.js";
 
 export interface LoggedDeliveryServiceDependencies {

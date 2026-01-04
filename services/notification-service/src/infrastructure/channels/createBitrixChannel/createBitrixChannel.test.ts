@@ -3,9 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createBitrixChannel } from "./createBitrixChannel.js";
 import type { BitrixChannelConfig } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../domain/ports/index.js";
-import type { Contact } from "../../../domain/types/index.js";
+import type { Contact } from "@notification-platform/shared";
 
 vi.mock("axios");
 
@@ -116,7 +116,7 @@ describe("createBitrixChannel", () => {
     it("should reject with timeout error if axios.post hangs", async () => {
       vi.useFakeTimers();
 
-      vi.mocked(axios.post).mockReturnValue(new Promise(() => {}));
+      vi.mocked(axios.post).mockReturnValue(new Promise(() => { }));
 
       const sendPromise = channel.send(contact, message);
 
@@ -178,7 +178,7 @@ describe("createBitrixChannel", () => {
     it("should reject with timeout error if axios.get hangs", async () => {
       vi.useFakeTimers();
 
-      vi.mocked(axios.get).mockReturnValue(new Promise(() => {}));
+      vi.mocked(axios.get).mockReturnValue(new Promise(() => { }));
 
       const healthPromise = channel.checkHealth!();
 

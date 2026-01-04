@@ -11,9 +11,6 @@ export const start = async () => {
   const batchConsumer = container.resolve("batchConsumer");
   await batchConsumer.start();
 
-  const retryConsumer = container.resolve("retryConsumer");
-  await retryConsumer.start();
-
   const server = container.resolve("server");
   await server.start();
 };
