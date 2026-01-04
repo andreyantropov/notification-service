@@ -5,8 +5,7 @@ import { serviceConfig } from "../../configs/index.js";
 import {
   createLogger,
   createMeter,
-  createTracer,
-} from "../../infrastructure/telemetry/index.js";
+} from "@notification-platform/telemetry";
 import type { Container } from "../types/Container.js";
 
 export const registerTelemetry = (container: AwilixContainer<Container>) => {
@@ -15,13 +14,6 @@ export const registerTelemetry = (container: AwilixContainer<Container>) => {
       const logger = createLogger();
 
       return logger;
-    }).singleton(),
-    tracer: asFunction(() => {
-      const { name } = serviceConfig;
-
-      const tracer = createTracer({ serviceName: name });
-
-      return tracer;
     }).singleton(),
     meter: asFunction(() => {
       const { name } = serviceConfig;

@@ -9,11 +9,5 @@ export const shutdown = async () => {
   const retryConsumer = container.resolve("retryConsumer");
   await retryConsumer.shutdown();
 
-  const batchConsumer = container.resolve("batchConsumer");
-  await batchConsumer.shutdown();
-
-  const producer = container.resolve("producer");
-  await producer.shutdown();
-
   telemetry.shutdown();
 };

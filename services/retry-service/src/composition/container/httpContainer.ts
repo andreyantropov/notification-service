@@ -2,29 +2,21 @@ import type { AwilixContainer } from "awilix";
 import { asFunction } from "awilix";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
-import swaggerUi from "swagger-ui-express";
 
 import {
-  authenticationMiddlewareConfig,
-  authorizationMiddlewareConfig,
   healthcheckControllerConfig,
   serviceConfig,
-  notificationControllerConfig,
 } from "../../configs/index.js";
 import {
   createRequestLoggerMiddleware,
-  createAuthenticationMiddleware,
-  createAuthorizationMiddleware,
-  createNotificationController,
-  createHealthcheckController,
   createNotFoundMiddleware,
   createInternalServerErrorMiddleware,
-  createServer,
   createTimeoutErrorMiddleware,
-} from "../../infrastructure/http/index.js";
-import { createLoggedServer } from "../../infrastructure/http/index.js";
-import { createSwaggerSpecification } from "../../presentation/createSwaggerSpecification/index.js";
+  createServer,
+  createLoggedServer,
+} from "@notification-platform/http";
 import type { Container } from "../types/index.js";
+import { createHealthcheckController } from "../../infrastracture/http/index.js";
 
 export const registerHttp = (container: AwilixContainer<Container>) => {
   container.register({
@@ -48,16 +40,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
 
       return internalServerMiddleware;
     }).singleton(),
-    authenticationMiddleware: asFunction(() => {
-      return authenticationMiddlewareConfig
-        ? createAuthenticationMiddleware(authenticationMiddlewareConfig)
-        : undefined;
-    }).singleton(),
-    authorizationMiddleware: asFunction(() => {
-      return authorizationMiddlewareConfig
-        ? createAuthorizationMiddleware(authorizationMiddlewareConfig)
-        : undefined;
-    }).singleton(),
     healthcheckController: asFunction(({ checkHealthUseCase }) => {
       const healthcheckController = createHealthcheckController(
         { checkHealthUseCase },
@@ -66,38 +48,10 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
 
       return healthcheckController;
     }).singleton(),
-    notificationController: asFunction(
-      ({ handleIncomingNotificationsUseCase }) => {
-        const notificationController = createNotificationController(
-          {
-            handleIncomingNotificationsUseCase,
-          },
-          notificationControllerConfig,
-        );
-
-        return notificationController;
-      },
-    ).singleton(),
-    swaggerSpecification: asFunction(() => {
-      const { title, version, publicUrl, description } = serviceConfig;
-
-      const swaggerSpecification = createSwaggerSpecification({
-        title,
-        version,
-        url: publicUrl,
-        description,
-      });
-
-      return swaggerSpecification;
-    }).singleton(),
     server: asFunction(
       ({
         requestLoggerMiddleware,
-        authenticationMiddleware,
-        authorizationMiddleware,
         healthcheckController,
-        notificationController,
-        swaggerSpecification,
         notFoundMiddleware,
         timeoutErrorMiddleware,
         internalServerErrorMiddleware,
@@ -115,26 +69,6 @@ export const registerHttp = (container: AwilixContainer<Container>) => {
         app.get(
           "/api/health/ready",
           expressAsyncHandler(healthcheckController.ready),
-        );
-
-        const notificationMiddleware: express.RequestHandler[] = [];
-        if (authenticationMiddleware) {
-          notificationMiddleware.push(authenticationMiddleware);
-        }
-        if (authorizationMiddleware) {
-          notificationMiddleware.push(authorizationMiddleware);
-        }
-
-        app.post(
-          "/api/v1/notifications",
-          ...notificationMiddleware,
-          expressAsyncHandler(notificationController.handle),
-        );
-
-        app.use(
-          "/api-docs",
-          swaggerUi.serve,
-          swaggerUi.setup(swaggerSpecification),
         );
 
         app.use(notFoundMiddleware);

@@ -17,7 +17,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@notification-platform/shared": "1.0.0"
+    "@notification-platform/shared": "^1.0.0"
   },
   "peerDependencies": {
     "express": "^5.1.0"

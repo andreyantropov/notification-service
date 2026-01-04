@@ -1,7 +1,5 @@
 import { createContainer, InjectionMode } from "awilix";
 
-import { registerChannels } from "./channelsContainer.js";
-import { registerGenerator } from "./generatorContainer.js";
 import { registerHttp } from "./httpContainer.js";
 import { registerQueue } from "./queueContainer.js";
 import { registerServices } from "./servicesContainer.js";
@@ -16,8 +14,6 @@ const container = createContainer<Container>({
 registerTelemetry(container);
 registerQueue(container);
 registerHttp(container);
-registerChannels(container);
-registerGenerator(container);
 registerServices(container);
 registerUseCases(container);
 
