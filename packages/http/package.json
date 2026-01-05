@@ -13,6 +13,12 @@
     "src"
   ],
   "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --fix --ext .ts,.tsx .",
+    "lint:format": "prettier . --write",
     "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
@@ -21,10 +27,5 @@
   },
   "peerDependencies": {
     "express": "^5.1.0"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.3",
-    "express-oauth2-jwt-bearer": "^1.7.1",
-    "typescript": "^5.9.3"
   }
 }

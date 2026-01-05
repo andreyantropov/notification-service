@@ -13,6 +13,12 @@
     "src"
   ],
   "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --fix --ext .ts,.tsx .",
+    "lint:format": "prettier . --write",
     "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
@@ -23,8 +29,5 @@
     "serialize-error": "^12.0.0",
     "uuid": "^11.1.0",
     "winston": "^3.18.3"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3"
   }
 }

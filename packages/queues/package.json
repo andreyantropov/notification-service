@@ -13,6 +13,12 @@
     "src"
   ],
   "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --fix --ext .ts,.tsx .",
+    "lint:format": "prettier . --write",
     "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
@@ -20,8 +26,5 @@
     "@notification-platform/shared": "^1.0.0",
     "@cloudamqp/amqp-client": "^3.3.2",
     "p-timeout": "^6.1.4"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3"
   }
 }
