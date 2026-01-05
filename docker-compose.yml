@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq-setup:
+    image: rabbitmq:3.13-management
+    volumes:
+      - ./infra/rabbitmq:/config
+    env_file:
+      - infra/rabbitmq/.env.dev
+    command: >
+      sh -c "
+        until rabbitmq-diagnostics -q ping; do sleep 2; done
+        if ! command -v jq >/dev/null; then apk add --no-cache jq; fi
+        /config/apply-queues.sh
+      "
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    ports:
+      - "3001:3000"
+    env_file:
+      - services/notification-service/.env.dev
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  retry-service:
+    build:
+      context: .
+      dockerfile: services/retry-service/Dockerfile
+    ports:
+      - "3002:3000"
+    env_file:
+      - services/retry-service/.env.dev
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
