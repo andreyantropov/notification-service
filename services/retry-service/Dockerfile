@@ -1,29 +1,27 @@
-# === BUILD STAGE ===
+# --- STAGE 1: сборка ---
 FROM node:23.11.0-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
+COPY services/retry-service/package*.json ./services/retry-service/
 
 RUN npm ci
 
-COPY . ./
+COPY . .
 
-RUN npm run build
+RUN npm run build --workspace=retry-service
 
-# === PRODUCTION STAGE ===
+
+# --- STAGE 2: production ---
 FROM node:23.11.0-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-
+COPY services/retry-service/package*.json ./
 RUN npm ci --only=production
 
-RUN apk add --no-cache curl
-
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/services/retry-service/dist ./dist
 
 EXPOSE 3000
-
 CMD ["node", "dist/index.js"]
