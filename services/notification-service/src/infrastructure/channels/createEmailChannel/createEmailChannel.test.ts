@@ -5,8 +5,7 @@ import { createEmailChannel } from "./createEmailChannel.js";
 import type { EmailChannelConfig } from "./interfaces/index.js";
 import { CHANNEL_TYPES } from "@notification-platform/shared";
 import type { Channel } from "../../../domain/ports/index.js";
-import type { Contact } from "../../../domain/types/index.js";
-import { noop } from "../../../shared/utils/index.js";
+import type { Contact } from "@notification-platform/shared";
 
 vi.mock("nodemailer");
 
@@ -170,7 +169,7 @@ describe("createEmailChannel", () => {
     });
 
     it("should reject with 'SMTP сервер недоступен' on timeout", async () => {
-      const pendingPromise = new Promise(noop);
+      const pendingPromise = new Promise(() => { });
       const mockVerify = vi
         .fn()
         .mockImplementation((callback) => pendingPromise.then(callback));

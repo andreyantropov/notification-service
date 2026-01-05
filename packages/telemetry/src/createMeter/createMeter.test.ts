@@ -1,110 +1,246 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { metrics } from '@opentelemetry/api';
-import type { Meter, Counter, Histogram } from '@opentelemetry/api';
 
 import { createMeter } from './createMeter.js';
 import type { MeterConfig } from './interfaces/index.js';
+import { mapKeysToSnakeCase } from '../utils/index.js';
 
-vi.mock('@opentelemetry/api', () => {
-  const mockCounter = {
-    add: vi.fn(),
-  };
-  const mockHistogram = {
-    record: vi.fn(),
-  };
-  const mockMeter = {
-    createCounter: vi.fn().mockReturnValue(mockCounter),
-    createHistogram: vi.fn().mockReturnValue(mockHistogram),
-  };
-  const mockMetrics = {
-    getMeter: vi.fn().mockReturnValue(mockMeter),
-  };
+vi.mock('@opentelemetry/api');
+vi.mock('../utils/index.js');
 
-  return {
-    metrics: mockMetrics,
-    Counter: undefined,
-    Histogram: undefined,
-  };
-});
+const mockMapKeysToSnakeCase = vi.mocked(mapKeysToSnakeCase);
+const mockMetrics = vi.mocked(metrics);
 
 describe('createMeter', () => {
-  let config: MeterConfig;
-  let mockOtelMeter: Meter;
-  let mockCounter: Counter;
-  let mockHistogram: Histogram;
+  const mockServiceName = 'test-service';
+  const mockConfig: MeterConfig = { serviceName: mockServiceName };
+
+  let mockOtelMeter: {
+    createCounter: Mock;
+    createHistogram: Mock;
+  };
+  let mockCounter: {
+    add: Mock;
+  };
+  let mockHistogram: {
+    record: Mock;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    config = { serviceName: 'test-service' };
+    mockCounter = {
+      add: vi.fn(),
+    };
 
-    mockOtelMeter = (metrics.getMeter as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-    mockCounter = (mockOtelMeter.createCounter as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-    mockHistogram = (mockOtelMeter.createHistogram as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    mockHistogram = {
+      record: vi.fn(),
+    };
+
+    mockOtelMeter = {
+      createCounter: vi.fn().mockReturnValue(mockCounter),
+      createHistogram: vi.fn().mockReturnValue(mockHistogram),
+    };
+
+    mockMetrics.getMeter = vi.fn().mockReturnValue(mockOtelMeter);
+
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
   });
 
-  it('creates OpenTelemetry meter with correct service name', () => {
-    createMeter(config);
-    expect(metrics.getMeter).toHaveBeenCalledWith('test-service');
+  it('should create a meter with increment and record methods', () => {
+    const meter = createMeter(mockConfig);
+
+    expect(typeof meter.increment).toBe('function');
+    expect(typeof meter.record).toBe('function');
   });
 
-  it('increments a counter with snake_case labels', () => {
-    const meter = createMeter(config);
-    const labels = { myLabel: 'value', anotherLabel: 'test' };
+  it('should get OpenTelemetry meter with service name', () => {
+    createMeter(mockConfig);
 
-    meter.increment('test_counter', labels);
+    expect(mockMetrics.getMeter).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.getMeter).toHaveBeenCalledWith(mockServiceName);
+  });
 
-    expect(mockOtelMeter.createCounter).toHaveBeenCalledWith('test_counter');
-    expect(mockCounter.add).toHaveBeenCalledWith(1, {
-      my_label: 'value',
-      another_label: 'test',
+  describe('increment', () => {
+    it('should create counter on first call and reuse on subsequent calls', () => {
+      const meter = createMeter(mockConfig);
+      const counterName = 'test_counter';
+
+      meter.increment(counterName);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledWith(counterName);
+
+      meter.increment(counterName);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
+    });
+
+    it('should increment counter by 1 without labels', () => {
+      const meter = createMeter(mockConfig);
+      const counterName = 'test_counter';
+
+      meter.increment(counterName);
+
+      expect(mockCounter.add).toHaveBeenCalledTimes(1);
+      expect(mockCounter.add).toHaveBeenCalledWith(1, undefined);
+    });
+
+    it('should increment counter by 1 with transformed labels', () => {
+      const meter = createMeter(mockConfig);
+      const counterName = 'test_counter';
+      const labels = { testLabel: 'value', anotherLabel: 'value2' };
+      const transformedLabels = { test_label: 'value', another_label: 'value2' };
+
+      mockMapKeysToSnakeCase.mockReturnValue(transformedLabels);
+
+      meter.increment(counterName, labels);
+
+      expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(labels);
+      expect(mockCounter.add).toHaveBeenCalledTimes(1);
+      expect(mockCounter.add).toHaveBeenCalledWith(1, transformedLabels);
+    });
+
+    it('should handle different counter names separately', () => {
+      const meter = createMeter(mockConfig);
+
+      meter.increment('counter1');
+      meter.increment('counter2');
+
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(2);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledWith('counter1');
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledWith('counter2');
     });
   });
 
-  it('increments a counter without labels', () => {
-    const meter = createMeter(config);
-    meter.increment('test_counter');
+  describe('record', () => {
+    it('should create histogram on first call and reuse on subsequent calls', () => {
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
 
+      meter.record(histogramName, 42);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith(histogramName);
+
+      meter.record(histogramName, 100);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
+    });
+
+    it('should record value without labels', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+      const value = 42.5;
+
+      meter.record(histogramName, value);
+
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(value, undefined);
+    });
+
+    it('should record value with transformed labels', () => {
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+      const value = 100;
+      const labels = { requestType: 'http', statusCode: '200' };
+      const transformedLabels = { request_type: 'http', status_code: '200' };
+
+      mockMapKeysToSnakeCase.mockReturnValue(transformedLabels);
+
+      meter.record(histogramName, value, labels);
+
+      expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(labels);
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(value, transformedLabels);
+    });
+
+    it('should handle different histogram names separately', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+
+      meter.record('histogram1', 10);
+      meter.record('histogram2', 20);
+
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(2);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith('histogram1');
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith('histogram2');
+    });
+
+    it('should record zero value', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+
+      meter.record(histogramName, 0);
+
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(0, undefined);
+    });
+
+    it('should record negative value', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+
+      meter.record(histogramName, -5);
+
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(-5, undefined);
+    });
+  });
+
+  it('should maintain separate caches for counters and histograms', () => {
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+    const meter = createMeter(mockConfig);
+    const name = 'same_name_but_different_type';
+
+    meter.increment(name);
+    expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
+    expect(mockOtelMeter.createHistogram).not.toHaveBeenCalled();
+
+    meter.record(name, 42);
+    expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
+    expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle undefined labels in increment', () => {
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+    const meter = createMeter(mockConfig);
+    const counterName = 'test_counter';
+
+    meter.increment(counterName, undefined);
+
+    expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(undefined);
     expect(mockCounter.add).toHaveBeenCalledWith(1, undefined);
   });
 
-  it('records a histogram value with snake_case labels', () => {
-    const meter = createMeter(config);
-    const labels = { latencyType: 'p99', region: 'us-east' };
+  it('should handle undefined labels in record', () => {
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
 
-    meter.record('http_request_duration_ms', 150, labels);
+    const meter = createMeter(mockConfig);
+    const histogramName = 'test_histogram';
 
-    expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith('http_request_duration_ms');
-    expect(mockHistogram.record).toHaveBeenCalledWith(150, {
-      latency_type: 'p99',
-      region: 'us-east',
-    });
+    meter.record(histogramName, 42, undefined);
+
+    expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(undefined);
+    expect(mockHistogram.record).toHaveBeenCalledWith(42, undefined);
   });
 
-  it('records a histogram value without labels', () => {
-    const meter = createMeter(config);
-    meter.record('http_request_duration_ms', 200);
+  it('should handle empty labels object', () => {
+    const meter = createMeter(mockConfig);
+    const counterName = 'test_counter';
+    const emptyLabels = {};
 
-    expect(mockHistogram.record).toHaveBeenCalledWith(200, undefined);
-  });
+    mockMapKeysToSnakeCase.mockReturnValue(emptyLabels);
 
-  it('reuses the same counter for repeated metric names', () => {
-    const meter = createMeter(config);
+    meter.increment(counterName, emptyLabels);
 
-    meter.increment('reused_counter', { a: '1' });
-    meter.increment('reused_counter', { b: '2' });
-
-    expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
-    expect(mockCounter.add).toHaveBeenCalledTimes(2);
-  });
-
-  it('reuses the same histogram for repeated metric names', () => {
-    const meter = createMeter(config);
-
-    meter.record('reused_histogram', 100, { a: '1' });
-    meter.record('reused_histogram', 200, { b: '2' });
-
-    expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
-    expect(mockHistogram.record).toHaveBeenCalledTimes(2);
+    expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(emptyLabels);
+    expect(mockCounter.add).toHaveBeenCalledWith(1, emptyLabels);
   });
 });

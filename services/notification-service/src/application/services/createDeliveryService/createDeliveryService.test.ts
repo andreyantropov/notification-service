@@ -59,8 +59,18 @@ describe("createDeliveryService", () => {
     const service = createDeliveryService({ channels: [channel] });
     const result = await service.send([notification]);
 
-    expect(result).toEqual<Result[]>([{ status: "success", notification }]);
-    expect(channel.send).toHaveBeenCalledWith(notification);
+    expect(result).toEqual<Result[]>([
+      {
+        status: "success",
+        notification,
+        details: {
+          channel: "email",
+          contact: emailContact,
+        },
+        warnings: [],
+      },
+    ]);
+    expect(channel.send).toHaveBeenCalledWith(emailContact, notification.message);
   });
 
   it("should use sendToFirstAvailableStrategy when strategy is sendToFirstAvailable", async () => {
@@ -74,8 +84,18 @@ describe("createDeliveryService", () => {
     const service = createDeliveryService({ channels: [channel] });
     const result = await service.send([notification]);
 
-    expect(result).toEqual<Result[]>([{ status: "success", notification }]);
-    expect(channel.send).toHaveBeenCalledWith(notification);
+    expect(result).toEqual<Result[]>([
+      {
+        status: "success",
+        notification,
+        details: {
+          channel: "email",
+          contact: emailContact,
+        },
+        warnings: [],
+      },
+    ]);
+    expect(channel.send).toHaveBeenCalledWith(emailContact, notification.message);
   });
 
   it("should use sendToAllAvailableStrategy when strategy is sendToAllAvailable", async () => {
@@ -89,8 +109,20 @@ describe("createDeliveryService", () => {
     const service = createDeliveryService({ channels: [channel] });
     const result = await service.send([notification]);
 
-    expect(result).toEqual<Result[]>([{ status: "success", notification }]);
-    expect(channel.send).toHaveBeenCalledWith(notification);
+    expect(result).toEqual<Result[]>([
+      {
+        status: "success",
+        notification,
+        details: [
+          {
+            channel: "email",
+            contact: emailContact,
+          },
+        ],
+        warnings: [],
+      },
+    ]);
+    expect(channel.send).toHaveBeenCalledWith(emailContact, notification.message);
   });
 
   it("should return failure result when channel.send rejects", async () => {
@@ -103,15 +135,29 @@ describe("createDeliveryService", () => {
     const result = await service.send([notification]);
 
     expect(result).toEqual<Result[]>([
-      { status: "failure", notification, error: sendError },
+      {
+        status: "failure",
+        notification,
+        error: new Error("Не удалось отправить уведомление ни одним из доступных способов"),
+        warnings: [
+          {
+            channel: "email",
+            contact: "email",
+            details: sendError,
+            message: "Ошибка отправки через канал email",
+          },
+        ],
+      },
     ]);
   });
 
   it("should handle array of notifications", async () => {
     const channel = createMockChannel(() => true);
+    const firstCallError = new Error("Failed");
+
     (channel.send as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error("Failed"));
+      .mockRejectedValueOnce(firstCallError);
 
     const notif1 = createNotification({ message: "Msg 1" });
     const notif2 = createNotification({ message: "Msg 2" });
@@ -120,10 +166,32 @@ describe("createDeliveryService", () => {
     const result = await service.send([notif1, notif2]);
 
     expect(result).toEqual<Result[]>([
-      { status: "success", notification: notif1 },
-      { status: "failure", notification: notif2, error: expect.any(Error) },
+      {
+        status: "success",
+        notification: notif1,
+        details: {
+          channel: "email",
+          contact: emailContact,
+        },
+        warnings: [],
+      },
+      {
+        status: "failure",
+        notification: notif2,
+        error: new Error("Не удалось отправить уведомление ни одним из доступных способов"),
+        warnings: [
+          {
+            channel: "email",
+            contact: "email",
+            details: firstCallError,
+            message: "Ошибка отправки через канал email",
+          },
+        ],
+      },
     ]);
     expect(channel.send).toHaveBeenCalledTimes(2);
+    expect(channel.send).toHaveBeenCalledWith(emailContact, notif1.message);
+    expect(channel.send).toHaveBeenCalledWith(emailContact, notif2.message);
   });
 
   it("should return empty result array when empty input array is provided", async () => {

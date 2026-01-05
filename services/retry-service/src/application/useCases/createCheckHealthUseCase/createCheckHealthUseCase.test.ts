@@ -15,9 +15,6 @@ describe("CheckNotificationServiceHealthUseCase", () => {
   });
 
   it("should call checkHealth on all components when implemented", async () => {
-    const serviceCheckHealth = vi.fn().mockResolvedValue(undefined);
-    const producerCheckHealth = vi.fn().mockResolvedValue(undefined);
-    const batchConsumerCheckHealth = vi.fn().mockResolvedValue(undefined);
     const retryConsumerCheckHealth = vi.fn().mockResolvedValue(undefined);
 
     const retryConsumer = createMockConsumer(retryConsumerCheckHealth);
@@ -28,9 +25,6 @@ describe("CheckNotificationServiceHealthUseCase", () => {
 
     await useCase.checkHealth();
 
-    expect(serviceCheckHealth).toHaveBeenCalledTimes(1);
-    expect(producerCheckHealth).toHaveBeenCalledTimes(1);
-    expect(batchConsumerCheckHealth).toHaveBeenCalledTimes(1);
     expect(retryConsumerCheckHealth).toHaveBeenCalledTimes(1);
   });
 
