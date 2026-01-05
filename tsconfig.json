@@ -22,5 +22,11 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "removeComments": true,
-  }
+    "noEmit": true
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "eslint.config.js"
+  ]
 }
