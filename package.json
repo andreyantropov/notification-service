@@ -4,15 +4,6 @@
   "description": "Платформа уведомлений: микросервисы для доставки сообщений через Bitrix24, Email и другие каналы.",
   "private": true,
   "type": "module",
-  "scripts": {
-    "build:all": "npm run build --workspaces --if-present",
-    "test:all": "npm run test --workspaces --if-present",
-    "test:coverage:all": "npm run test:coverage --workspaces --if-present",
-    "lint:all": "npm run lint --workspaces --if-present",
-    "lint:fix:all": "npm run lint:fix --workspaces --if-present",
-    "format:all": "npm run lint:format --workspaces --if-present",
-    "typecheck:all": "npm run typecheck --workspaces --if-present"
-  },
   "workspaces": [
     "shared",
     "packages/*",
