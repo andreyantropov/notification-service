@@ -73,7 +73,7 @@ describe("createMeteredChannel", () => {
 
     expect(mockMeter.increment).toHaveBeenCalledWith(
       NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-      { status: "success" }
+      { channel: CHANNEL_TYPES.EMAIL, status: "success" }
     );
   });
 
@@ -102,7 +102,7 @@ describe("createMeteredChannel", () => {
 
     expect(mockMeter.increment).toHaveBeenCalledWith(
       NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-      { status: "failure" }
+      { channel: CHANNEL_TYPES.EMAIL, status: "failure" }
     );
   });
 
@@ -181,7 +181,7 @@ describe("createMeteredChannel", () => {
     expect(mockChannel.send).toHaveBeenCalledWith(mockBitrixContact, mockMessage);
     expect(mockMeter.increment).toHaveBeenCalledWith(
       NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-      { status: "success" }
+      { channel: CHANNEL_TYPES.BITRIX, status: "success" }
     );
   });
 });

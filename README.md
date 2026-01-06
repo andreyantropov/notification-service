@@ -14,7 +14,7 @@ notification-platform/
 ├── shared/                 # Shared Kernel (DDD)
 ├── packages/               # Библиотеки: http, queues, telemetry
 ├── services/               # Микросервисы: notification-service, retry-service
-├── infra/                  # Конфигурации RabbitMQ, Nginx, Keycloak
+├── infra/                  # Конфигурации RabbitMQ, Nginx
 ├── docs/                   # Архитектура, ADR, гайдлайны
 └── docker-compose.yml      # Локальное развёртывание
 ```

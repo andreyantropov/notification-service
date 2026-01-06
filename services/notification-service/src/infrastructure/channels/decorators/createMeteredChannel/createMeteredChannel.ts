@@ -15,12 +15,12 @@ export const createMeteredChannel = (
       const durationMs = Date.now() - start;
 
       meter.record(NOTIFICATIONS_CHANNEL_SEND_DURATION_MS, durationMs, { channel: channel.type, status: "success" });
-      meter.increment(NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL, { status: "success" });
+      meter.increment(NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL, { channel: channel.type, status: "success" });
     } catch (error) {
       const durationMs = Date.now() - start;
 
       meter.record(NOTIFICATIONS_CHANNEL_SEND_DURATION_MS, durationMs, { channel: channel.type, status: "failure" });
-      meter.increment(NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL, { status: "failure" });
+      meter.increment(NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL, { channel: channel.type, status: "failure" });
 
       throw error;
     }
