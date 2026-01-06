@@ -1,6 +1,7 @@
 # API
 
-Этот документ описывает HTTP API сервиса уведомлений.  
+Этот документ описывает HTTP API сервиса уведомлений `notification-service`.  
+Вся HTTP-логика (сервер, middleware, graceful shutdown) реализована в пакете [`@notification-platform/http`](../../packages/http).  
 Полная спецификация доступна в интерактивном виде по адресу `/api-docs` (Swagger UI).
 
 ---
@@ -257,7 +258,7 @@ Authorization: Bearer <JWT>
 
 ## Middleware
 
-Все запросы проходят через:
+Все запросы проходят через middleware из пакета [`@notification-platform/http`](../../packages/http):
 
 1. **Логгирование** — метод, путь, статус, время.
 2. **Валидация тела** — по схеме Zod, с частичной обработкой.

@@ -1,0 +1,46 @@
+{
+    "queues": [
+        {
+            "name": "notifications",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "notifications.retry.router"
+            }
+        },
+        {
+            "name": "notifications.retry.router",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "notifications.retry.router.dlq"
+            }
+        },
+        {
+            "name": "notifications.retry.router.dlq",
+            "durable": true
+        },
+        {
+            "name": "notifications.dlq",
+            "durable": true
+        },
+        {
+            "name": "notifications.retry.30m",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "notifications",
+                "x-message-ttl": 1800000
+            }
+        },
+        {
+            "name": "notifications.retry.2h",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "notifications",
+                "x-message-ttl": 7200000
+            }
+        }
+    ]
+}

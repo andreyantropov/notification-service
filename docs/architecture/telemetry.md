@@ -1,6 +1,11 @@
 # Телеметрия
 
-Сервис уведомлений обеспечивает полную **наблюдаемость (observability)** через **структурированное логирование**, **сквозную корреляцию**, **сбор метрик** и **централизованный экспорт телеметрии** с использованием стандарта **OpenTelemetry (OTel)**.
+Платформа уведомлений обеспечивает полную **наблюдаемость (observability)** через **структурированное логирование**, **сквозную корреляцию**, **сбор метрик** и **централизованный экспорт телеметрии** с использованием стандарта **OpenTelemetry (OTel)**.
+
+Вся логика телеметрии инкапсулирована в пакете [`@notification-platform/telemetry`](../../packages/telemetry), который предоставляет:
+- реализации `Logger`, `Tracer`, `Meter` поверх OpenTelemetry API,
+- адаптеры для `winston` и OTLP,
+- декораторы (`createMeteredChannel`, `createLoggedProducer`) с автоматическим преобразованием в `snake_case`.
 
 Архитектура телеметрии построена на следующих принципах:
 
@@ -135,17 +140,17 @@ interface Meter {
 | Метрика                                     | Тип     | Атрибуты                        |
 | ------------------------------------------- | ------- | ------------------------------- |
 | `notifications_processed_total`             | Counter | —                               |
-| `notifications_processed_by_result_total`   | Counter | `status`                        |
+| `notifications_processed_by_status_total`   | Counter | `status`                        |
 | `notifications_processed_by_subject_total`  | Counter | `subjectId`                     |
 | `notifications_processed_by_strategy_total` | Counter | `strategy` (`DeliveryStrategy`) |
 | `notifications_processed_by_priority_total` | Counter | `isImmediate`                   |
-| `retry_routing_by_queue_total`              | Counter | `queue`                         |
+| `notifications_retry_routing_total`         | Counter | `retryQueue`                    |
 
 ### Метрики каналов
 
 | Метрика                                    | Тип       | Атрибуты                            |
 | ------------------------------------------ | --------- | ----------------------------------- |
-| `channel_latency_ms`                       | Histogram | `channel`, `status`, `operation`    |
+| `notifications_channel_send_duration_ms`   | Histogram | `channel`, `status`                 |
 | `notifications_processed_by_channel_total` | Counter   | `channel` (`ChannelType`), `status` |
 
 ---

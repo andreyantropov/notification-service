@@ -1,0 +1,33 @@
+{
+  "name": "@notification-platform/telemetry",
+  "version": "1.0.0",
+  "description": "Телеметрия для @notification-platform: логирование, трассировка, метрики.",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --fix --ext .ts,.tsx .",
+    "lint:format": "prettier . --write",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@notification-platform/shared": "^1.0.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/winston-transport": "^0.19.0",
+    "serialize-error": "^12.0.0",
+    "uuid": "^11.1.0",
+    "winston": "^3.18.3"
+  }
+}
