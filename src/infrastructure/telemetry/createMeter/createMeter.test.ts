@@ -1,385 +1,246 @@
-import { metrics } from "@opentelemetry/api";
-import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
+import { metrics } from '@opentelemetry/api';
 
-import { createMeter } from "./createMeter.js";
-import type { Meter } from "../../../application/ports/index.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
-import { DeliveryStrategy } from "../../../domain/enums/DeliveryStrategy.js";
-import { mapKeysToSnakeCase } from "../../../shared/utils/index.js";
+import { createMeter } from './createMeter.js';
+import type { MeterConfig } from './interfaces/index.js';
+import { mapKeysToSnakeCase } from '../../../shared/utils/index.js';
 
-vi.mock("@opentelemetry/api", () => ({
-  metrics: {
-    getMeter: vi.fn(),
-  },
-}));
+vi.mock('@opentelemetry/api');
+vi.mock('../../../shared/utils/index.js');
 
-describe("createMeter", () => {
-  const mockHistogram = {
-    record: vi.fn(),
+const mockMapKeysToSnakeCase = vi.mocked(mapKeysToSnakeCase);
+const mockMetrics = vi.mocked(metrics);
+
+describe('createMeter', () => {
+  const mockServiceName = 'test-service';
+  const mockConfig: MeterConfig = { serviceName: mockServiceName };
+
+  let mockOtelMeter: {
+    createCounter: Mock;
+    createHistogram: Mock;
   };
-
-  const mockCounter = {
-    add: vi.fn(),
+  let mockCounter: {
+    add: Mock;
   };
-
-  const mockMeter = {
-    createHistogram: vi.fn().mockReturnValue(mockHistogram),
-    createCounter: vi.fn().mockReturnValue(mockCounter),
-  };
-
-  const mockConfig = {
-    serviceName: "test-service",
+  let mockHistogram: {
+    record: Mock;
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (metrics.getMeter as Mock).mockReturnValue(mockMeter);
-    mockMeter.createHistogram.mockReturnValue(mockHistogram);
-    mockMeter.createCounter.mockReturnValue(mockCounter);
+
+    mockCounter = {
+      add: vi.fn(),
+    };
+
+    mockHistogram = {
+      record: vi.fn(),
+    };
+
+    mockOtelMeter = {
+      createCounter: vi.fn().mockReturnValue(mockCounter),
+      createHistogram: vi.fn().mockReturnValue(mockHistogram),
+    };
+
+    mockMetrics.getMeter = vi.fn().mockReturnValue(mockOtelMeter);
+
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
   });
 
-  it("should create meter with correct name", () => {
+  it('should create a meter with increment and record methods', () => {
+    const meter = createMeter(mockConfig);
+
+    expect(typeof meter.increment).toBe('function');
+    expect(typeof meter.record).toBe('function');
+  });
+
+  it('should get OpenTelemetry meter with service name', () => {
     createMeter(mockConfig);
-    expect(metrics.getMeter).toHaveBeenCalledWith(mockConfig.serviceName);
+
+    expect(mockMetrics.getMeter).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.getMeter).toHaveBeenCalledWith(mockServiceName);
   });
 
-  describe("recordChannelLatency", () => {
-    it("should record latency with correct histogram and transformed attributes", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const latency = 150;
-      const originalAttributes = {
-        channelType: CHANNEL_TYPES.EMAIL,
-        success: true,
-      };
+  describe('increment', () => {
+    it('should create counter on first call and reuse on subsequent calls', () => {
+      const meter = createMeter(mockConfig);
+      const counterName = 'test_counter';
 
-      meter.recordChannelLatency(latency, originalAttributes);
+      meter.increment(counterName);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledWith(counterName);
 
-      expect(mockMeter.createHistogram).toHaveBeenCalledWith(
-        "channel_latency_ms",
-        {
-          description: "Время выполнения channel.send() в миллисекундах",
-        },
-      );
-      expect(mockHistogram.record).toHaveBeenCalledWith(
-        latency,
-        mapKeysToSnakeCase(originalAttributes),
-      );
+      meter.increment(counterName);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle different latency values and valid channel types", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const testCases = [
-        {
-          latency: 0,
-          attributes: { channelType: CHANNEL_TYPES.EMAIL, success: false },
-        },
-        {
-          latency: 1000,
-          attributes: { channelType: CHANNEL_TYPES.BITRIX, success: true },
-        },
-        {
-          latency: 42.5,
-          attributes: { channelType: CHANNEL_TYPES.EMAIL, success: true },
-        },
-      ];
+    it('should increment counter by 1 without labels', () => {
+      const meter = createMeter(mockConfig);
+      const counterName = 'test_counter';
 
-      testCases.forEach(({ latency, attributes }) => {
-        mockHistogram.record.mockClear();
-        meter.recordChannelLatency(latency, attributes);
-        expect(mockHistogram.record).toHaveBeenCalledWith(
-          latency,
-          mapKeysToSnakeCase(attributes),
-        );
-      });
-    });
-  });
+      meter.increment(counterName);
 
-  describe("incrementNotificationsProcessedByChannel", () => {
-    it("should increment counter with correct transformed channel and status attributes for success", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const channel = CHANNEL_TYPES.EMAIL;
-      const status = "success" as const;
-      const originalAttrs = { channel, status };
-
-      meter.incrementNotificationsProcessedByChannel(channel, status);
-
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_processed_by_channel_total",
-        {
-          description:
-            "Общее количество уведомлений по каналу отправки и результату",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase(originalAttrs),
-      );
+      expect(mockCounter.add).toHaveBeenCalledTimes(1);
+      expect(mockCounter.add).toHaveBeenCalledWith(1, undefined);
     });
 
-    it("should increment counter with correct transformed channel and status attributes for failure", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const channel = CHANNEL_TYPES.BITRIX;
-      const status = "failure" as const;
-      const originalAttrs = { channel, status };
+    it('should increment counter by 1 with transformed labels', () => {
+      const meter = createMeter(mockConfig);
+      const counterName = 'test_counter';
+      const labels = { testLabel: 'value', anotherLabel: 'value2' };
+      const transformedLabels = { test_label: 'value', another_label: 'value2' };
 
-      meter.incrementNotificationsProcessedByChannel(channel, status);
+      mockMapKeysToSnakeCase.mockReturnValue(transformedLabels);
 
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase(originalAttrs),
-      );
+      meter.increment(counterName, labels);
+
+      expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(labels);
+      expect(mockCounter.add).toHaveBeenCalledTimes(1);
+      expect(mockCounter.add).toHaveBeenCalledWith(1, transformedLabels);
     });
 
-    it("should handle different valid channels and results", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const testCases = [
-        { channel: CHANNEL_TYPES.EMAIL, status: "success" as const },
-        { channel: CHANNEL_TYPES.BITRIX, status: "failure" as const },
-        { channel: CHANNEL_TYPES.EMAIL, status: "failure" as const },
-        { channel: CHANNEL_TYPES.BITRIX, status: "success" as const },
-      ];
+    it('should handle different counter names separately', () => {
+      const meter = createMeter(mockConfig);
 
-      testCases.forEach(({ channel, status }) => {
-        const originalAttrs = { channel, status };
-        mockCounter.add.mockClear();
-        meter.incrementNotificationsProcessedByChannel(channel, status);
-        expect(mockCounter.add).toHaveBeenCalledWith(
-          1,
-          mapKeysToSnakeCase(originalAttrs),
-        );
-      });
+      meter.increment('counter1');
+      meter.increment('counter2');
+
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(2);
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledWith('counter1');
+      expect(mockOtelMeter.createCounter).toHaveBeenCalledWith('counter2');
     });
   });
 
-  describe("incrementNotificationsProcessedTotal", () => {
-    it("should increment total notifications counter", () => {
-      const meter: Meter = createMeter(mockConfig);
-      meter.incrementNotificationsProcessedTotal();
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_processed_total",
-        {
-          description: "Общее количество уведомлений, обработанных сервисом",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(1);
+  describe('record', () => {
+    it('should create histogram on first call and reuse on subsequent calls', () => {
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+
+      meter.record(histogramName, 42);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith(histogramName);
+
+      meter.record(histogramName, 100);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle multiple increments", () => {
-      const meter: Meter = createMeter(mockConfig);
-      meter.incrementNotificationsProcessedTotal();
-      meter.incrementNotificationsProcessedTotal();
-      meter.incrementNotificationsProcessedTotal();
-      expect(mockCounter.add).toHaveBeenCalledTimes(3);
-    });
-  });
+    it('should record value without labels', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
 
-  describe("incrementNotificationsProcessedByResult", () => {
-    it("should increment counter with correct transformed status attribute for success", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const status = "success" as const;
-      meter.incrementNotificationsProcessedByResult(status);
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_processed_by_result_total",
-        {
-          description:
-            "Общее количество уведомлений, обработанных сервисом, по результату",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ status }),
-      );
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+      const value = 42.5;
+
+      meter.record(histogramName, value);
+
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(value, undefined);
     });
 
-    it("should handle different results", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const results = ["success", "failure"] as const;
-      results.forEach((status) => {
-        const originalAttrs = { status };
-        mockCounter.add.mockClear();
-        meter.incrementNotificationsProcessedByResult(status);
-        expect(mockCounter.add).toHaveBeenCalledWith(
-          1,
-          mapKeysToSnakeCase(originalAttrs),
-        );
-      });
-    });
-  });
+    it('should record value with transformed labels', () => {
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+      const value = 100;
+      const labels = { requestType: 'http', statusCode: '200' };
+      const transformedLabels = { request_type: 'http', status_code: '200' };
 
-  describe("incrementNotificationsProcessedBySubject", () => {
-    it("should increment counter with correct transformed subjectId attribute", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const subjectId = "user-123";
-      meter.incrementNotificationsProcessedBySubject(subjectId);
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_processed_by_subject_total",
-        {
-          description:
-            "Общее количество обработанных уведомлений по subject.id",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ subjectId }),
-      );
+      mockMapKeysToSnakeCase.mockReturnValue(transformedLabels);
+
+      meter.record(histogramName, value, labels);
+
+      expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(labels);
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(value, transformedLabels);
     });
 
-    it("should handle different subject IDs", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const subjectIds = ["user-123", "user-456", "admin-789"];
-      subjectIds.forEach((subjectId) => {
-        const originalAttrs = { subjectId };
-        mockCounter.add.mockClear();
-        meter.incrementNotificationsProcessedBySubject(subjectId);
-        expect(mockCounter.add).toHaveBeenCalledWith(
-          1,
-          mapKeysToSnakeCase(originalAttrs),
-        );
-      });
+    it('should handle different histogram names separately', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+
+      meter.record('histogram1', 10);
+      meter.record('histogram2', 20);
+
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(2);
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith('histogram1');
+      expect(mockOtelMeter.createHistogram).toHaveBeenCalledWith('histogram2');
+    });
+
+    it('should record zero value', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+
+      meter.record(histogramName, 0);
+
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(0, undefined);
+    });
+
+    it('should record negative value', () => {
+      mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+      const meter = createMeter(mockConfig);
+      const histogramName = 'test_histogram';
+
+      meter.record(histogramName, -5);
+
+      expect(mockHistogram.record).toHaveBeenCalledTimes(1);
+      expect(mockHistogram.record).toHaveBeenCalledWith(-5, undefined);
     });
   });
 
-  describe("incrementNotificationsProcessedByStrategy", () => {
-    it("should increment counter with correct transformed strategy attribute", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const strategy = DeliveryStrategy.sendToFirstAvailable;
-      meter.incrementNotificationsProcessedByStrategy(strategy);
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_processed_by_strategy_total",
-        {
-          description: "Общее количество обработанных уведомлений по стратегии",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ strategy }),
-      );
-    });
+  it('should maintain separate caches for counters and histograms', () => {
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
 
-    it("should handle different valid strategies", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const strategies = [
-        DeliveryStrategy.sendToFirstAvailable,
-        DeliveryStrategy.sendToAllAvailable,
-      ];
-      strategies.forEach((strategy) => {
-        const originalAttrs = { strategy };
-        mockCounter.add.mockClear();
-        meter.incrementNotificationsProcessedByStrategy(strategy);
-        expect(mockCounter.add).toHaveBeenCalledWith(
-          1,
-          mapKeysToSnakeCase(originalAttrs),
-        );
-      });
-    });
+    const meter = createMeter(mockConfig);
+    const name = 'same_name_but_different_type';
+
+    meter.increment(name);
+    expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
+    expect(mockOtelMeter.createHistogram).not.toHaveBeenCalled();
+
+    meter.record(name, 42);
+    expect(mockOtelMeter.createHistogram).toHaveBeenCalledTimes(1);
+    expect(mockOtelMeter.createCounter).toHaveBeenCalledTimes(1);
   });
 
-  describe("incrementNotificationsProcessedByPriority", () => {
-    it("should increment counter with transformed isImmediate true for immediate notifications", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const isImmediate = true;
-      meter.incrementNotificationsProcessedByPriority(isImmediate);
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_processed_by_priority_total",
-        {
-          description:
-            "Общее количество обработанных уведомлений по признаку срочности (isImmediate)",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ isImmediate }),
-      );
-    });
+  it('should handle undefined labels in increment', () => {
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
 
-    it("should handle both priority types", () => {
-      const meter: Meter = createMeter(mockConfig);
-      meter.incrementNotificationsProcessedByPriority(true);
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ isImmediate: true }),
-      );
-      mockCounter.add.mockClear();
-      meter.incrementNotificationsProcessedByPriority(false);
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ isImmediate: false }),
-      );
-    });
+    const meter = createMeter(mockConfig);
+    const counterName = 'test_counter';
+
+    meter.increment(counterName, undefined);
+
+    expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(undefined);
+    expect(mockCounter.add).toHaveBeenCalledWith(1, undefined);
   });
 
-  it("should create all metrics instruments only once", () => {
-    createMeter(mockConfig);
-    expect(mockMeter.createHistogram).toHaveBeenCalledOnce();
-    expect(mockMeter.createCounter).toHaveBeenCalledTimes(7);
+  it('should handle undefined labels in record', () => {
+    mockMapKeysToSnakeCase.mockReturnValue(undefined);
+
+    const meter = createMeter(mockConfig);
+    const histogramName = 'test_histogram';
+
+    meter.record(histogramName, 42, undefined);
+
+    expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(undefined);
+    expect(mockHistogram.record).toHaveBeenCalledWith(42, undefined);
   });
 
-  it("should return all meter functions", () => {
-    const meter: Meter = createMeter(mockConfig);
-    const expectedMethods = [
-      "recordChannelLatency",
-      "incrementNotificationsProcessedByChannel",
-      "incrementNotificationsProcessedTotal",
-      "incrementNotificationsProcessedByResult",
-      "incrementNotificationsProcessedBySubject",
-      "incrementNotificationsProcessedByStrategy",
-      "incrementNotificationsProcessedByPriority",
-      "incrementRetryRoutingByQueue",
-    ] as const;
-    expectedMethods.forEach((method) => {
-      expect(meter).toHaveProperty(method);
-      expect(typeof meter[method]).toBe("function");
-    });
-  });
+  it('should handle empty labels object', () => {
+    const meter = createMeter(mockConfig);
+    const counterName = 'test_counter';
+    const emptyLabels = {};
 
-  describe("incrementRetryRoutingByQueue", () => {
-    it("should increment retry routing counter with correct transformed queue attribute", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const queue = "notifications.retry.30m";
+    mockMapKeysToSnakeCase.mockReturnValue(emptyLabels);
 
-      meter.incrementRetryRoutingByQueue(queue);
+    meter.increment(counterName, emptyLabels);
 
-      expect(mockMeter.createCounter).toHaveBeenCalledWith(
-        "notifications_retry_routing_total",
-        {
-          description:
-            "Количество сообщений, направленных в retry-очередь или DLQ",
-        },
-      );
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ queue }),
-      );
-    });
-
-    it("should handle different queue types including DLQ", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const queues = [
-        "notifications.retry.30m",
-        "notifications.retry.2h",
-        "notifications.dlq",
-      ];
-
-      queues.forEach((queue) => {
-        mockCounter.add.mockClear();
-        meter.incrementRetryRoutingByQueue(queue);
-        expect(mockCounter.add).toHaveBeenCalledWith(
-          1,
-          mapKeysToSnakeCase({ queue }),
-        );
-      });
-    });
-
-    it("should treat queue name as string attribute without validation", () => {
-      const meter: Meter = createMeter(mockConfig);
-      const unknownQueue = "some.unknown.queue.name";
-
-      meter.incrementRetryRoutingByQueue(unknownQueue);
-
-      expect(mockCounter.add).toHaveBeenCalledWith(
-        1,
-        mapKeysToSnakeCase({ queue: unknownQueue }),
-      );
-    });
+    expect(mockMapKeysToSnakeCase).toHaveBeenCalledWith(emptyLabels);
+    expect(mockCounter.add).toHaveBeenCalledWith(1, emptyLabels);
   });
 });

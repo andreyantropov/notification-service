@@ -1,0 +1,2 @@
+export const NOTIFICATIONS_CHANNEL_SEND_DURATION_MS = "notifications_channel_send_duration_ms";
+export const NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL = "notifications_processed_by_channel_total";

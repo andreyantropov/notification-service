@@ -1,143 +1,45 @@
-import type { Attributes, Counter } from "@opentelemetry/api";
+import type { Counter, Histogram } from "@opentelemetry/api";
 import { metrics } from "@opentelemetry/api";
 
 import type { MeterConfig } from "./interfaces/index.js";
 import type { Meter } from "../../../application/ports/index.js";
-import type { DeliveryStrategy } from "../../../domain/enums/index.js";
-import type { ChannelType } from "../../../domain/types/index.js";
 import { mapKeysToSnakeCase } from "../../../shared/utils/index.js";
 
 export const createMeter = (config: MeterConfig): Meter => {
   const { serviceName } = config;
-  const meter = metrics.getMeter(serviceName);
+  const otelMeter = metrics.getMeter(serviceName);
 
-  const addWithSnakeCaseAttributes = (
-    counter: Counter<Attributes>,
-    value: number,
-    attributes?: Record<string, string | boolean>,
-  ): void => {
-    if (attributes) {
-      counter.add(value, mapKeysToSnakeCase(attributes));
-    } else {
-      counter.add(value);
+  const counters = new Map<string, Counter>();
+  const histograms = new Map<string, Histogram>();
+
+  const getOrCreateCounter = (name: string): Counter => {
+    if (!counters.has(name)) {
+      const counter = otelMeter.createCounter(name);
+      counters.set(name, counter);
     }
+    return counters.get(name)!;
   };
 
-  const notificationProcessedTotalCounter = meter.createCounter(
-    "notifications_processed_total",
-    {
-      description: "Общее количество уведомлений, обработанных сервисом",
-    },
-  );
-  const incrementNotificationsProcessedTotal = (): void => {
-    addWithSnakeCaseAttributes(notificationProcessedTotalCounter, 1);
+  const getOrCreateHistogram = (name: string): Histogram => {
+    if (!histograms.has(name)) {
+      const histogram = otelMeter.createHistogram(name);
+      histograms.set(name, histogram);
+    }
+    return histograms.get(name)!;
   };
 
-  const notificationProcessedByResultCounter = meter.createCounter(
-    "notifications_processed_by_result_total",
-    {
-      description:
-        "Общее количество уведомлений, обработанных сервисом, по результату",
-    },
-  );
-
-  const incrementNotificationsProcessedByResult = (
-    status: "success" | "failure",
-  ): void => {
-    addWithSnakeCaseAttributes(notificationProcessedByResultCounter, 1, {
-      status,
-    });
+  const increment = (name: string, labels?: Record<string, string>): void => {
+    const counter = getOrCreateCounter(name);
+    counter.add(1, mapKeysToSnakeCase(labels));
   };
 
-  const notificationProcessedBySubjectCounter = meter.createCounter(
-    "notifications_processed_by_subject_total",
-    {
-      description: "Общее количество обработанных уведомлений по subject.id",
-    },
-  );
-  const incrementNotificationsProcessedBySubject = (
-    subjectId: string,
-  ): void => {
-    addWithSnakeCaseAttributes(notificationProcessedBySubjectCounter, 1, {
-      subjectId,
-    });
-  };
-
-  const notificationProcessedByStrategyCounter = meter.createCounter(
-    "notifications_processed_by_strategy_total",
-    {
-      description: "Общее количество обработанных уведомлений по стратегии",
-    },
-  );
-  const incrementNotificationsProcessedByStrategy = (
-    strategy: DeliveryStrategy,
-  ): void => {
-    addWithSnakeCaseAttributes(notificationProcessedByStrategyCounter, 1, {
-      strategy,
-    });
-  };
-
-  const notificationProcessedByPriorityCounter = meter.createCounter(
-    "notifications_processed_by_priority_total",
-    {
-      description:
-        "Общее количество обработанных уведомлений по признаку срочности (isImmediate)",
-    },
-  );
-  const incrementNotificationsProcessedByPriority = (
-    isImmediate: boolean,
-  ): void => {
-    addWithSnakeCaseAttributes(notificationProcessedByPriorityCounter, 1, {
-      isImmediate,
-    });
-  };
-
-  const retryRoutingByQueueCounter = meter.createCounter(
-    "notifications_retry_routing_total",
-    {
-      description: "Количество сообщений, направленных в retry-очередь или DLQ",
-    },
-  );
-  const incrementRetryRoutingByQueue = (queue: string): void => {
-    addWithSnakeCaseAttributes(retryRoutingByQueueCounter, 1, { queue });
-  };
-
-  const channelLatencyHistogram = meter.createHistogram("channel_latency_ms", {
-    description: "Время выполнения channel.send() в миллисекундах",
-  });
-  const recordChannelLatency = (
-    latency: number,
-    attributes: Record<string, string | boolean>,
-  ): void => {
-    channelLatencyHistogram.record(latency, mapKeysToSnakeCase(attributes));
-  };
-
-  const notificationProcessedByChannelCounter = meter.createCounter(
-    "notifications_processed_by_channel_total",
-    {
-      description:
-        "Общее количество уведомлений по каналу отправки и результату",
-    },
-  );
-  const incrementNotificationsProcessedByChannel = (
-    channel: ChannelType,
-    status: "success" | "failure",
-  ): void => {
-    addWithSnakeCaseAttributes(notificationProcessedByChannelCounter, 1, {
-      channel,
-      status,
-    });
+  const record = (name: string, value: number, labels?: Record<string, string>): void => {
+    const histogram = getOrCreateHistogram(name);
+    histogram.record(value, mapKeysToSnakeCase(labels));
   };
 
   return {
-    incrementNotificationsProcessedTotal,
-    incrementNotificationsProcessedByResult,
-    incrementNotificationsProcessedBySubject,
-    incrementNotificationsProcessedByStrategy,
-    incrementNotificationsProcessedByPriority,
-    incrementRetryRoutingByQueue,
-
-    recordChannelLatency,
-    incrementNotificationsProcessedByChannel,
+    increment,
+    record,
   };
 };

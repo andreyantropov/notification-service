@@ -1,30 +1,30 @@
-import type { LoggedRetryServiceConfig } from "./interfaces/index.js";
+import type { LoggedRetryServiceDependencies } from "./interfaces/index.js";
 import { EventType } from "../../../../enums/index.js";
 import { NOTIFICATIONS_DQL } from "../../constants/index.js";
 import type { RetryService } from "../../interfaces/RetryService.js";
 
 export const createLoggedRetryService = (
-  config: LoggedRetryServiceConfig,
+  dependencies: LoggedRetryServiceDependencies,
 ): RetryService => {
-  const { retryService, logger } = config;
+  const { retryService, logger } = dependencies;
 
   const getRetryQueue = (retryCount: number): string => {
     const start = Date.now();
-    const result = retryService.getRetryQueue(retryCount);
+    const retryQueue = retryService.getRetryQueue(retryCount);
     const durationMs = Date.now() - start;
 
-    const logLevel = result === NOTIFICATIONS_DQL ? "error" : "warning";
+    const logLevel = retryQueue === NOTIFICATIONS_DQL ? "error" : "warning";
     logger[logLevel]({
-      message: `Уведомление отправлено в retry-очередь ${result}`,
+      message: `Уведомление отправлено в retry-очередь ${retryQueue}`,
       eventType: EventType.MessagePublish,
       durationMs,
       details: {
         retryCount,
-        target: result,
+        target: retryQueue,
       },
     });
 
-    return result;
+    return retryQueue;
   };
 
   return { getRetryQueue };

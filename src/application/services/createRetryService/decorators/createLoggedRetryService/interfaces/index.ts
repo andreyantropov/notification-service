@@ -1,1 +1,1 @@
-export type { LoggedRetryServiceConfig } from "./LoggedRetryServiceConfig.js";
+export type { LoggedRetryServiceDependencies } from "./LoggedRetryServiceDependencies.js";

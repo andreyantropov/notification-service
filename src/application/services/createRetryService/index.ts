@@ -1,8 +1,8 @@
 export type { RetryService } from "./interfaces/index.js";
 export { createRetryService } from "./createRetryService.js";
 export type {
-  LoggedRetryServiceConfig,
-  MeteredRetryServiceConfig,
+  LoggedRetryServiceDependencies,
+  MeteredRetryServiceDependencies,
 } from "./decorators/index.js";
 export {
   createLoggedRetryService,
