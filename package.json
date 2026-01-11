@@ -38,7 +38,7 @@
       "email": "andrey.antropov@planarchel.ru"
     }
   ],
-  "license": "ISC",
+  "license": "MIT",
   "engines": {
     "node": ">=23.0.0",
     "npm": ">=9.0.0"
