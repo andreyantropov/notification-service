@@ -180,12 +180,16 @@ describe("createLoggedDeliveryService", () => {
         checkHealth: undefined,
       };
 
-      const dependenciesWithoutHealthCheck: LoggedDeliveryServiceDependencies = {
-        deliveryService: serviceWithoutHealthCheck as unknown as DeliveryService,
-        logger: mockLogger,
-      };
+      const dependenciesWithoutHealthCheck: LoggedDeliveryServiceDependencies =
+        {
+          deliveryService:
+            serviceWithoutHealthCheck as unknown as DeliveryService,
+          logger: mockLogger,
+        };
 
-      const loggedService = createLoggedDeliveryService(dependenciesWithoutHealthCheck);
+      const loggedService = createLoggedDeliveryService(
+        dependenciesWithoutHealthCheck,
+      );
       expect(loggedService.checkHealth).toBeUndefined();
     });
 
@@ -207,7 +211,9 @@ describe("createLoggedDeliveryService", () => {
       mockDeliveryService.checkHealth!.mockRejectedValue(testError);
 
       const loggedService = createLoggedDeliveryService(dependencies);
-      await expect(loggedService.checkHealth!()).rejects.toThrow("Health check failed");
+      await expect(loggedService.checkHealth!()).rejects.toThrow(
+        "Health check failed",
+      );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.objectContaining({

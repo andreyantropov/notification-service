@@ -17,16 +17,20 @@ const mockContact: Contact = {
 
 const mockMessage = "Test message";
 
-const createMockChannel = (): Channel => ({
-  type: CHANNEL_TYPES.EMAIL,
-  isSupports: vi.fn().mockReturnValue(true),
-  send: vi.fn(),
-  checkHealth: vi.fn().mockResolvedValue(undefined),
-}) satisfies Channel;
+const createMockChannel = (): Channel =>
+  ({
+    type: CHANNEL_TYPES.EMAIL,
+    isSupports: vi.fn().mockReturnValue(true),
+    send: vi.fn(),
+    checkHealth: vi.fn().mockResolvedValue(undefined),
+  }) satisfies Channel;
 
 const createMockMeter = () => ({
   increment: vi.fn<(name: string, labels?: Record<string, string>) => void>(),
-  record: vi.fn<(name: string, value: number, labels?: Record<string, string>) => void>(),
+  record:
+    vi.fn<
+      (name: string, value: number, labels?: Record<string, string>) => void
+    >(),
 });
 
 describe("createMeteredChannel", () => {
@@ -68,12 +72,12 @@ describe("createMeteredChannel", () => {
     expect(mockMeter.record).toHaveBeenCalledWith(
       NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
       expect.any(Number),
-      { channel: CHANNEL_TYPES.EMAIL, status: "success" }
+      { channel: CHANNEL_TYPES.EMAIL, status: "success" },
     );
 
     expect(mockMeter.increment).toHaveBeenCalledWith(
       NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-      { channel: CHANNEL_TYPES.EMAIL, status: "success" }
+      { channel: CHANNEL_TYPES.EMAIL, status: "success" },
     );
   });
 
@@ -90,27 +94,31 @@ describe("createMeteredChannel", () => {
 
     const meteredChannel = createMeteredChannel(dependencies);
 
-    await expect(meteredChannel.send(mockContact, mockMessage)).rejects.toThrow(sendError);
+    await expect(meteredChannel.send(mockContact, mockMessage)).rejects.toThrow(
+      sendError,
+    );
 
     expect(mockChannel.send).toHaveBeenCalledWith(mockContact, mockMessage);
 
     expect(mockMeter.record).toHaveBeenCalledWith(
       NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
       expect.any(Number),
-      { channel: CHANNEL_TYPES.EMAIL, status: "failure" }
+      { channel: CHANNEL_TYPES.EMAIL, status: "failure" },
     );
 
     expect(mockMeter.increment).toHaveBeenCalledWith(
       NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-      { channel: CHANNEL_TYPES.EMAIL, status: "failure" }
+      { channel: CHANNEL_TYPES.EMAIL, status: "failure" },
     );
   });
 
   it("should calculate latency correctly (within reasonable bounds)", async () => {
     const mockChannel = createMockChannel();
-    (mockChannel.send as ReturnType<typeof vi.fn>).mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    });
+    (mockChannel.send as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      },
+    );
 
     const mockMeter = createMockMeter();
     const dependencies: MeteredChannelDependencies = {
@@ -121,7 +129,8 @@ describe("createMeteredChannel", () => {
     const meteredChannel = createMeteredChannel(dependencies);
     await meteredChannel.send(mockContact, mockMessage);
 
-    const recordedLatency = (mockMeter.record as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    const recordedLatency = (mockMeter.record as ReturnType<typeof vi.fn>).mock
+      .calls[0][1];
     expect(recordedLatency).toBeGreaterThanOrEqual(5);
     expect(recordedLatency).toBeLessThan(100);
   });
@@ -178,10 +187,13 @@ describe("createMeteredChannel", () => {
     const meteredChannel = createMeteredChannel(dependencies);
     await meteredChannel.send(mockBitrixContact, mockMessage);
 
-    expect(mockChannel.send).toHaveBeenCalledWith(mockBitrixContact, mockMessage);
+    expect(mockChannel.send).toHaveBeenCalledWith(
+      mockBitrixContact,
+      mockMessage,
+    );
     expect(mockMeter.increment).toHaveBeenCalledWith(
       NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-      { channel: CHANNEL_TYPES.BITRIX, status: "success" }
+      { channel: CHANNEL_TYPES.BITRIX, status: "success" },
     );
   });
 });

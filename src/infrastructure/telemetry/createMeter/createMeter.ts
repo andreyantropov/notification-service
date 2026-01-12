@@ -33,7 +33,11 @@ export const createMeter = (config: MeterConfig): Meter => {
     counter.add(1, mapKeysToSnakeCase(labels));
   };
 
-  const record = (name: string, value: number, labels?: Record<string, string>): void => {
+  const record = (
+    name: string,
+    value: number,
+    labels?: Record<string, string>,
+  ): void => {
     const histogram = getOrCreateHistogram(name);
     histogram.record(value, mapKeysToSnakeCase(labels));
   };

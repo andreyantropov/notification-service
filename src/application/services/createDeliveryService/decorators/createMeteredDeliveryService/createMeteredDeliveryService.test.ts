@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Mock } from "vitest";
 
 import {
   DEFAULT_SUBJECT,
@@ -10,16 +10,15 @@ import {
   NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL,
   NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL,
   NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
-} from './constants/index.js';
-import { createMeteredDeliveryService } from './createMeteredDeliveryService.js';
-import type { MeteredDeliveryServiceDependencies } from './interfaces/index.js';
-import { DeliveryStrategy } from '../../../../../domain/enums/DeliveryStrategy.js';
-import type { Notification } from '../../../../../domain/types/Notification.js';
-import type { Meter } from '../../../../ports/index.js';
-import type { Result } from '../../interfaces/index.js';
+} from "./constants/index.js";
+import { createMeteredDeliveryService } from "./createMeteredDeliveryService.js";
+import type { MeteredDeliveryServiceDependencies } from "./interfaces/index.js";
+import { DeliveryStrategy } from "../../../../../domain/enums/DeliveryStrategy.js";
+import type { Notification } from "../../../../../domain/types/Notification.js";
+import type { Meter } from "../../../../ports/index.js";
+import type { Result } from "../../interfaces/index.js";
 
-
-describe('createMeteredDeliveryService', () => {
+describe("createMeteredDeliveryService", () => {
   let mockDeliveryService: {
     send: Mock;
     checkHealth?: Mock;
@@ -49,14 +48,14 @@ describe('createMeteredDeliveryService', () => {
     };
   });
 
-  it('should create a service with send and checkHealth methods', () => {
+  it("should create a service with send and checkHealth methods", () => {
     const service = createMeteredDeliveryService(dependencies);
 
-    expect(typeof service.send).toBe('function');
-    expect(typeof service.checkHealth).toBe('function');
+    expect(typeof service.send).toBe("function");
+    expect(typeof service.checkHealth).toBe("function");
   });
 
-  it('should proxy checkHealth to underlying delivery service', async () => {
+  it("should proxy checkHealth to underlying delivery service", async () => {
     mockDeliveryService.checkHealth = vi.fn().mockResolvedValue(undefined);
     const service = createMeteredDeliveryService(dependencies);
 
@@ -65,15 +64,15 @@ describe('createMeteredDeliveryService', () => {
     expect(mockDeliveryService.checkHealth).toHaveBeenCalledTimes(1);
   });
 
-  describe('send', () => {
+  describe("send", () => {
     const mockNotification: Notification = {
-      id: 'test-id',
-      createdAt: '2024-01-01T00:00:00Z',
+      id: "test-id",
+      createdAt: "2024-01-01T00:00:00Z",
       contacts: [],
-      message: 'Test message',
+      message: "Test message",
     };
 
-    it('should call underlying delivery service send method', async () => {
+    it("should call underlying delivery service send method", async () => {
       const mockResults: Result[] = [];
       mockDeliveryService.send.mockResolvedValue(mockResults);
       const service = createMeteredDeliveryService(dependencies);
@@ -86,10 +85,10 @@ describe('createMeteredDeliveryService', () => {
       expect(results).toBe(mockResults);
     });
 
-    it('should increment metrics for each result', async () => {
+    it("should increment metrics for each result", async () => {
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: mockNotification,
         },
       ];
@@ -99,22 +98,36 @@ describe('createMeteredDeliveryService', () => {
       await service.send([mockNotification]);
 
       expect(mockMeter.increment).toHaveBeenCalledTimes(5);
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_TOTAL);
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: 'success' });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL, { subjectId: DEFAULT_SUBJECT });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL, { strategy: DEFAULT_STRATEGY });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL, { isImmediate: DEFAULT_IS_IMMEDIATE ? 'true' : 'false' });
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_TOTAL,
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL,
+        { status: "success" },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL,
+        { subjectId: DEFAULT_SUBJECT },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL,
+        { strategy: DEFAULT_STRATEGY },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
+        { isImmediate: DEFAULT_IS_IMMEDIATE ? "true" : "false" },
+      );
     });
 
-    it('should handle multiple notifications', async () => {
+    it("should handle multiple notifications", async () => {
       const mockResults: Result[] = [
         {
-          status: 'success',
-          notification: { ...mockNotification, id: 'id1' },
+          status: "success",
+          notification: { ...mockNotification, id: "id1" },
         },
         {
-          status: 'failure',
-          notification: { ...mockNotification, id: 'id2' },
+          status: "failure",
+          notification: { ...mockNotification, id: "id2" },
         },
       ];
       mockDeliveryService.send.mockResolvedValue(mockResults);
@@ -123,23 +136,31 @@ describe('createMeteredDeliveryService', () => {
       await service.send([mockNotification, mockNotification]);
 
       expect(mockMeter.increment).toHaveBeenCalledTimes(10);
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_TOTAL);
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: 'success' });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: 'failure' });
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_TOTAL,
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL,
+        { status: "success" },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL,
+        { status: "failure" },
+      );
     });
 
-    it('should use notification subject ID when present', async () => {
+    it("should use notification subject ID when present", async () => {
       const notificationWithSubject: Notification = {
         ...mockNotification,
         subject: {
-          id: 'custom-subject-id',
-          name: 'Test Subject',
+          id: "custom-subject-id",
+          name: "Test Subject",
         },
       };
 
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: notificationWithSubject,
         },
       ];
@@ -150,11 +171,11 @@ describe('createMeteredDeliveryService', () => {
 
       expect(mockMeter.increment).toHaveBeenCalledWith(
         NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL,
-        { subjectId: 'custom-subject-id' }
+        { subjectId: "custom-subject-id" },
       );
     });
 
-    it('should use default subject when notification has no subject', async () => {
+    it("should use default subject when notification has no subject", async () => {
       const notificationWithoutSubject: Notification = {
         ...mockNotification,
         subject: undefined,
@@ -162,7 +183,7 @@ describe('createMeteredDeliveryService', () => {
 
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: notificationWithoutSubject,
         },
       ];
@@ -173,11 +194,11 @@ describe('createMeteredDeliveryService', () => {
 
       expect(mockMeter.increment).toHaveBeenCalledWith(
         NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL,
-        { subjectId: DEFAULT_SUBJECT }
+        { subjectId: DEFAULT_SUBJECT },
       );
     });
 
-    it('should use default strategy when not provided', async () => {
+    it("should use default strategy when not provided", async () => {
       const notificationWithoutStrategy: Notification = {
         ...mockNotification,
         strategy: undefined,
@@ -185,7 +206,7 @@ describe('createMeteredDeliveryService', () => {
 
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: notificationWithoutStrategy,
         },
       ];
@@ -196,11 +217,11 @@ describe('createMeteredDeliveryService', () => {
 
       expect(mockMeter.increment).toHaveBeenCalledWith(
         NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL,
-        { strategy: DEFAULT_STRATEGY }
+        { strategy: DEFAULT_STRATEGY },
       );
     });
 
-    it('should handle immediate notifications', async () => {
+    it("should handle immediate notifications", async () => {
       const immediateNotification: Notification = {
         ...mockNotification,
         isImmediate: true,
@@ -208,7 +229,7 @@ describe('createMeteredDeliveryService', () => {
 
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: immediateNotification,
         },
       ];
@@ -219,11 +240,11 @@ describe('createMeteredDeliveryService', () => {
 
       expect(mockMeter.increment).toHaveBeenCalledWith(
         NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
-        { isImmediate: 'true' }
+        { isImmediate: "true" },
       );
     });
 
-    it('should handle non-immediate notifications', async () => {
+    it("should handle non-immediate notifications", async () => {
       const nonImmediateNotification: Notification = {
         ...mockNotification,
         isImmediate: false,
@@ -231,7 +252,7 @@ describe('createMeteredDeliveryService', () => {
 
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: nonImmediateNotification,
         },
       ];
@@ -242,11 +263,11 @@ describe('createMeteredDeliveryService', () => {
 
       expect(mockMeter.increment).toHaveBeenCalledWith(
         NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
-        { isImmediate: 'false' }
+        { isImmediate: "false" },
       );
     });
 
-    it('should use default isImmediate when not provided', async () => {
+    it("should use default isImmediate when not provided", async () => {
       const notificationWithoutPriority: Notification = {
         ...mockNotification,
         isImmediate: undefined,
@@ -254,7 +275,7 @@ describe('createMeteredDeliveryService', () => {
 
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: notificationWithoutPriority,
         },
       ];
@@ -265,16 +286,16 @@ describe('createMeteredDeliveryService', () => {
 
       expect(mockMeter.increment).toHaveBeenCalledWith(
         NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
-        { isImmediate: DEFAULT_IS_IMMEDIATE ? 'true' : 'false' }
+        { isImmediate: DEFAULT_IS_IMMEDIATE ? "true" : "false" },
       );
     });
 
-    it('should handle results with additional properties', async () => {
+    it("should handle results with additional properties", async () => {
       const mockResults: Result[] = [
         {
-          status: 'success',
+          status: "success",
           notification: mockNotification,
-          details: { some: 'detail' },
+          details: { some: "detail" },
           error: null,
           warnings: [],
         },
@@ -287,16 +308,18 @@ describe('createMeteredDeliveryService', () => {
       expect(mockMeter.increment).toHaveBeenCalledTimes(5);
     });
 
-    it('should propagate errors from underlying service', async () => {
-      const error = new Error('Delivery failed');
+    it("should propagate errors from underlying service", async () => {
+      const error = new Error("Delivery failed");
       mockDeliveryService.send.mockRejectedValue(error);
       const service = createMeteredDeliveryService(dependencies);
 
-      await expect(service.send([mockNotification])).rejects.toThrow('Delivery failed');
+      await expect(service.send([mockNotification])).rejects.toThrow(
+        "Delivery failed",
+      );
       expect(mockMeter.increment).not.toHaveBeenCalled();
     });
 
-    it('should work with empty notifications array', async () => {
+    it("should work with empty notifications array", async () => {
       const mockResults: Result[] = [];
       mockDeliveryService.send.mockResolvedValue(mockResults);
       const service = createMeteredDeliveryService(dependencies);
@@ -307,25 +330,25 @@ describe('createMeteredDeliveryService', () => {
       expect(mockMeter.increment).not.toHaveBeenCalled();
     });
 
-    it('should handle notification with all optional fields', async () => {
+    it("should handle notification with all optional fields", async () => {
       const completeNotification: Notification = {
-        id: 'complete-id',
-        createdAt: '2024-01-01T00:00:00Z',
+        id: "complete-id",
+        createdAt: "2024-01-01T00:00:00Z",
         contacts: [],
-        message: 'Complete message',
+        message: "Complete message",
         isImmediate: true,
         strategy: DeliveryStrategy.sendToFirstAvailable,
         subject: {
-          id: 'subject-id',
-          name: 'Subject Name',
+          id: "subject-id",
+          name: "Subject Name",
         },
       };
 
       const mockResults: Result[] = [
         {
-          status: 'failure',
+          status: "failure",
           notification: completeNotification,
-          error: 'Some error',
+          error: "Some error",
         },
       ];
       mockDeliveryService.send.mockResolvedValue(mockResults);
@@ -333,21 +356,35 @@ describe('createMeteredDeliveryService', () => {
 
       await service.send([completeNotification]);
 
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_TOTAL);
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL, { status: 'failure' });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL, { subjectId: 'subject-id' });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL, { strategy: 'send_to_first_available' });
-      expect(mockMeter.increment).toHaveBeenCalledWith(NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL, { isImmediate: 'true' });
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_TOTAL,
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_STATUS_TOTAL,
+        { status: "failure" },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_SUBJECT_TOTAL,
+        { subjectId: "subject-id" },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL,
+        { strategy: "send_to_first_available" },
+      );
+      expect(mockMeter.increment).toHaveBeenCalledWith(
+        NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
+        { isImmediate: "true" },
+      );
     });
   });
 
-  it('should return the same checkHealth function reference', () => {
+  it("should return the same checkHealth function reference", () => {
     const service = createMeteredDeliveryService(dependencies);
 
     expect(service.checkHealth).toBe(mockDeliveryService.checkHealth);
   });
 
-  it('should handle delivery service without checkHealth', () => {
+  it("should handle delivery service without checkHealth", () => {
     const dependenciesWithoutHealthCheck: MeteredDeliveryServiceDependencies = {
       deliveryService: {
         send: vi.fn(),
@@ -355,7 +392,9 @@ describe('createMeteredDeliveryService', () => {
       meter: mockMeter as Meter,
     };
 
-    const service = createMeteredDeliveryService(dependenciesWithoutHealthCheck);
+    const service = createMeteredDeliveryService(
+      dependenciesWithoutHealthCheck,
+    );
 
     expect(service.checkHealth).toBeUndefined();
   });

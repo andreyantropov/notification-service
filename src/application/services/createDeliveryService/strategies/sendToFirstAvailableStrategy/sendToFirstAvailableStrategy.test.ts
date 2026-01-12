@@ -14,7 +14,7 @@ class MockEmailChannel implements Channel {
   constructor(
     public isHealthy = true,
     public supports = true,
-  ) { }
+  ) {}
 
   isSupports(contact: Contact): boolean {
     return this.supports && contact.type === CHANNEL_TYPES.EMAIL;
@@ -36,7 +36,7 @@ class MockBitrixChannel implements Channel {
   constructor(
     public isHealthy = true,
     public supports = true,
-  ) { }
+  ) {}
 
   isSupports(contact: Contact): boolean {
     return this.supports && contact.type === CHANNEL_TYPES.BITRIX;

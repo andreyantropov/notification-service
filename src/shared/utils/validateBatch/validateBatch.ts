@@ -1,10 +1,7 @@
 import type { SafeParseReturnType } from "zod";
 import { ZodSchema } from "zod";
 
-import type {
-  ValidationResult,
-  ValidationError,
-} from "./interfaces/index.js";
+import type { ValidationResult, ValidationError } from "./interfaces/index.js";
 
 export const validateBatch = <T>(
   items: unknown[],

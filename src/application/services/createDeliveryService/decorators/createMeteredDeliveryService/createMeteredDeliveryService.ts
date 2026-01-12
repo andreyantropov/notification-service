@@ -35,7 +35,9 @@ export const createMeteredDeliveryService = (
       meter.increment(NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL, { strategy });
 
       const isImmediate = notification.isImmediate ?? DEFAULT_IS_IMMEDIATE;
-      meter.increment(NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL, { isImmediate: isImmediate ? "true" : "false" });
+      meter.increment(NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL, {
+        isImmediate: isImmediate ? "true" : "false",
+      });
     }
 
     return results;

@@ -28,9 +28,8 @@ Composition Root — это **единственное место** в прил�
 
 ```ts
 container.register({
-  sendNotificationUseCase: asFunction(
-    ({ buffer, deliveryService, logger }) =>
-      createSendNotificationUseCase(buffer, deliveryService, logger),
+  sendNotificationUseCase: asFunction(({ buffer, deliveryService, logger }) =>
+    createSendNotificationUseCase(buffer, deliveryService, logger),
   ).singleton(),
 });
 ```
@@ -63,7 +62,7 @@ composition/
 
 ## Контракт контейнера
 
-Полный интерфейс зависимостей описан в типе [`Container`](../types/Container.ts).  
+Полный интерфейс зависимостей описан в типе [`Container`](../types/Container.ts).
 Он включает:
 
 - Сервисы доставки и retry,

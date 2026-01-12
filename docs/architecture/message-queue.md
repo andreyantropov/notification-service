@@ -28,14 +28,14 @@
 
 Система использует **6 очередей**, объявляемых при запуске миграции (`npm run migrate:prod`). Все — **durable**.
 
-| Очередь                                | Назначение                                               |
-| -------------------------------------- | -------------------------------------------------------- |
-| `notifications`                        | Основная очередь для обработки                           |
-| `notifications.retry.router`           | Промежуточная очередь для маршрутизации retry            |
-| `notifications.retry.30m`              | Задержка 30 минут → возврат в `notifications`            |
-| `notifications.retry.2h`               | Задержка 2 часа → возврат в `notifications`              |
-| `notifications.dlq`                    | Окончательная DLQ для проваленных уведомлений            |
-| `notifications.retry.router.dlq`       | DLQ для ошибок маршрутизации в `RetryConsumer`           |
+| Очередь                          | Назначение                                     |
+| -------------------------------- | ---------------------------------------------- |
+| `notifications`                  | Основная очередь для обработки                 |
+| `notifications.retry.router`     | Промежуточная очередь для маршрутизации retry  |
+| `notifications.retry.30m`        | Задержка 30 минут → возврат в `notifications`  |
+| `notifications.retry.2h`         | Задержка 2 часа → возврат в `notifications`    |
+| `notifications.dlq`              | Окончательная DLQ для проваленных уведомлений  |
+| `notifications.retry.router.dlq` | DLQ для ошибок маршрутизации в `RetryConsumer` |
 
 ---
 
@@ -49,8 +49,9 @@
 - `notifications.retry.router` → при `nack` → `notifications.retry.router.dlq`
 - `notifications.dlq` и `notifications.retry.router.dlq` — **без consumer’ов**, только для алертинга и анализа.
 
-> ⚠️ **Две DLQ**:  
-> - `notifications.dlq` — бизнес-ошибки (канал недоступен, невалидные данные),  
+> ⚠️ **Две DLQ**:
+>
+> - `notifications.dlq` — бизнес-ошибки (канал недоступен, невалидные данные),
 > - `notifications.retry.router.dlq` — инфраструктурные ошибки `notifications.retry.router` (сбой маршрутизации).
 
 ---
@@ -59,20 +60,22 @@
 
 Сообщение — JSON-сериализованный объект `Notification` с заголовками:
 
-| Заголовок           | Тип      | Описание                                      |
-|--------------------|----------|-----------------------------------------------|
-| `x-retry-count`    | `number` | Номер попытки (0 — первая)                    |
+| Заголовок       | Тип      | Описание                   |
+| --------------- | -------- | -------------------------- |
+| `x-retry-count` | `number` | Номер попытки (0 — первая) |
 
 ---
 
 ## Поведение компонентов
 
 ### `BatchConsumer`
+
 - Читает из `notifications`.
 - При ошибке → `nack(false, false)` → сообщение уходит в `notifications.retry.router`.
 - Успешные → `ack`.
 
 ### `RetryConsumer`
+
 - Читает из `notifications.retry.router`.
 - Увеличивает `x-retry-count`:
   - `1` → публикует в `notifications.retry.30m`,
@@ -81,6 +84,7 @@
 - При ошибках маршрутизации → `nack` → сообщение попадает в `notifications.retry.router.dlq`.
 
 ### Очереди с TTL
+
 - `notifications.retry.30m` и `notifications.retry.2h` — **не имеют consumer’ов**.
 - Используют `x-message-ttl` + `x-dead-letter-*` для автоматического возврата в `notifications`.
 
@@ -113,6 +117,7 @@ npm run migrate:prod
 ```
 
 Скрипт:
+
 - идемпотентен,
 - объявляет все 6 очередей с правильными `x-dead-letter-*` и `x-message-ttl`,
 - выполняет откат при ошибке.
@@ -130,6 +135,7 @@ npm run migrate:prod
 ## Перспективы
 
 В будущем `RetryConsumer` может быть **вынесен в отдельный сервис**, чтобы:
+
 - быть общим для нескольких микросервисов,
 - масштабироваться независимо,
 - упростить основной сервис уведомлений.
@@ -144,4 +150,7 @@ npm run migrate:prod
  – `BatchConsumer` — бизнес-логика,  
  – `RetryConsumer` — инфраструктурная маршрутизация.  
 ✅ **Расширяемость**: легко добавить новые этапы retry.
+
+```
+
 ```

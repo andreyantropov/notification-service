@@ -58,9 +58,12 @@ describe("createMeteredRetryService", () => {
     meteredRetryService.getRetryQueue(2);
 
     expect(meter.increment).toHaveBeenCalledTimes(1);
-    expect(meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_RETRY_ROUTING_TOTAL, {
-      retryQueue: queue,
-    });
+    expect(meter.increment).toHaveBeenCalledWith(
+      NOTIFICATIONS_RETRY_ROUTING_TOTAL,
+      {
+        retryQueue: queue,
+      },
+    );
   });
 
   it("should handle DLQ routing correctly", () => {
@@ -75,9 +78,12 @@ describe("createMeteredRetryService", () => {
 
     meteredRetryService.getRetryQueue(999);
 
-    expect(meter.increment).toHaveBeenCalledWith(NOTIFICATIONS_RETRY_ROUTING_TOTAL, {
-      retryQueue: dlq,
-    });
+    expect(meter.increment).toHaveBeenCalledWith(
+      NOTIFICATIONS_RETRY_ROUTING_TOTAL,
+      {
+        retryQueue: dlq,
+      },
+    );
   });
 
   it("should not interfere with the retry service logic", () => {
@@ -95,7 +101,9 @@ describe("createMeteredRetryService", () => {
       meter,
     });
 
-    expect(meteredRetryService.getRetryQueue(1)).toBe("notifications.retry.30m");
+    expect(meteredRetryService.getRetryQueue(1)).toBe(
+      "notifications.retry.30m",
+    );
     expect(meteredRetryService.getRetryQueue(2)).toBe("notifications.retry.2h");
     expect(meteredRetryService.getRetryQueue(3)).toBe("notifications.dlq");
 
