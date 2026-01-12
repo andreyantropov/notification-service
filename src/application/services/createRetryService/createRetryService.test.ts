@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import { createRetryService } from "./createRetryService.js";
 import {
   NOTIFICATIONS_DQL,
   NOTIFICATIONS_RETRY_30M,
   NOTIFICATIONS_RETRY_2H,
 } from "./constants/index.js";
+import { createRetryService } from "./createRetryService.js";
 
 describe("RetryService", () => {
   const service = createRetryService();

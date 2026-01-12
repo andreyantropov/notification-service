@@ -1,7 +1,7 @@
+import { NOTIFICATIONS_CHANNEL_SEND_DURATION_MS, NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL } from "./constants/index.js";
 import type { MeteredChannelDependencies } from "./interfaces/index.js";
 import type { Channel } from "../../../../domain/ports/index.js";
 import type { Contact } from "../../../../domain/types/Contact.js";
-import { NOTIFICATIONS_CHANNEL_SEND_DURATION_MS, NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL } from "./constants/index.js";
 
 export const createMeteredChannel = (
   dependencies: MeteredChannelDependencies,

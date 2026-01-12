@@ -1,6 +1,6 @@
+import { metrics } from '@opentelemetry/api';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
-import { metrics } from '@opentelemetry/api';
 
 import { createMeter } from './createMeter.js';
 import type { MeterConfig } from './interfaces/index.js';

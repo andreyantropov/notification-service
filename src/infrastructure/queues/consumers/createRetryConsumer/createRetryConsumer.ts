@@ -1,5 +1,6 @@
 import { AMQPClient, AMQPMessage, AMQPChannel } from "@cloudamqp/amqp-client";
 import type { Field } from "@cloudamqp/amqp-client";
+import type { AMQPBaseClient } from "@cloudamqp/amqp-client/amqp-base-client";
 import pTimeout from "p-timeout";
 
 import {
@@ -12,7 +13,6 @@ import type { RetryConsumerConfig } from "./interfaces/index.js";
 import type { RetryConsumerDependencies } from "./interfaces/RetryConsumerDependencies.js";
 import type { Consumer } from "../../../../application/ports/index.js";
 import { noop } from "../../../../shared/utils/index.js";
-import type { AMQPConnection } from "../../types/index.js";
 
 export const createRetryConsumer = (
   dependencies: RetryConsumerDependencies,
@@ -30,7 +30,7 @@ export const createRetryConsumer = (
 
   const client = new AMQPClient(url);
 
-  let conn: AMQPConnection | null = null;
+  let conn: AMQPBaseClient | null = null;
   let ch: AMQPChannel | null = null;
   let abortController: AbortController | null = null;
   let isStarting = false;
@@ -168,7 +168,7 @@ export const createRetryConsumer = (
   };
 
   const checkHealth = async (): Promise<void> => {
-    let tempConn: AMQPConnection | null = null;
+    let tempConn: AMQPBaseClient | null = null;
     try {
       const tempClient = new AMQPClient(url);
       tempConn = await pTimeout(tempClient.connect(), {

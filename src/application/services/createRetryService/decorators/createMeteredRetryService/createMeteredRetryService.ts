@@ -1,6 +1,6 @@
+import { NOTIFICATIONS_RETRY_ROUTING_TOTAL } from "./constants/index.js";
 import type { MeteredRetryServiceDependencies } from "./interfaces/MeteredRetryServiceDependencies.js";
 import type { RetryService } from "../../interfaces/RetryService.js";
-import { NOTIFICATIONS_RETRY_ROUTING_TOTAL } from "./constants/index.js";
 
 export const createMeteredRetryService = (
   dependencies: MeteredRetryServiceDependencies,

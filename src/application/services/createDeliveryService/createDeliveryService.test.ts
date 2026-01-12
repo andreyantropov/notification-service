@@ -1,18 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Mock } from "vitest";
+
+import { createDeliveryService } from "./createDeliveryService.js";
+import type { Result } from "./interfaces/index.js";
+import {
+  sendToFirstAvailableStrategy,
+  sendToAllAvailableStrategy,
+} from "./strategies/index.js";
+import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
+import { DeliveryStrategy } from "../../../domain/enums/index.js";
+import type { Channel } from "../../../domain/ports/index.js";
+import type { Notification } from "../../../domain/types/index.js";
 
 vi.mock("./strategies/index.js", () => ({
   sendToFirstAvailableStrategy: vi.fn(),
   sendToAllAvailableStrategy: vi.fn(),
 }));
 
-import { createDeliveryService } from "./createDeliveryService.js";
-import type { Result } from "./interfaces/index.js";
-import { CHANNEL_TYPES } from "../../../domain/constants/index.js";
-import { DeliveryStrategy } from "../../../domain/enums/index.js";
-import type { Channel } from "../../../domain/ports/index.js";
-import type { Notification } from "../../../domain/types/index.js";
-
-import { sendToFirstAvailableStrategy, sendToAllAvailableStrategy } from "./strategies/index.js";
+const mockedSendToFirst = sendToFirstAvailableStrategy as Mock;
+const mockedSendToAll = sendToAllAvailableStrategy as Mock;
 
 const emailContact = {
   type: CHANNEL_TYPES.EMAIL,
@@ -63,7 +69,7 @@ describe("createDeliveryService", () => {
     const notification = createNotification();
 
     const mockResult: Result = { status: "success", notification };
-    (sendToFirstAvailableStrategy as any).mockResolvedValue(mockResult);
+    mockedSendToFirst.mockResolvedValue(mockResult);
 
     const service = createDeliveryService({
       channels: [channel],
@@ -72,7 +78,7 @@ describe("createDeliveryService", () => {
     const result = await service.send([notification]);
 
     expect(result).toEqual([mockResult]);
-    expect(sendToFirstAvailableStrategy).toHaveBeenCalledWith(notification, [channel]);
+    expect(mockedSendToFirst).toHaveBeenCalledWith(notification, [channel]);
   });
 
   it("should use sendToFirstAvailableStrategy when strategy is sendToFirstAvailable", async () => {
@@ -82,7 +88,7 @@ describe("createDeliveryService", () => {
     });
 
     const mockResult: Result = { status: "success", notification };
-    (sendToFirstAvailableStrategy as any).mockResolvedValue(mockResult);
+    mockedSendToFirst.mockResolvedValue(mockResult);
 
     const service = createDeliveryService({
       channels: [channel],
@@ -91,8 +97,8 @@ describe("createDeliveryService", () => {
     const result = await service.send([notification]);
 
     expect(result).toEqual([mockResult]);
-    expect(sendToFirstAvailableStrategy).toHaveBeenCalledWith(notification, [channel]);
-    expect(sendToAllAvailableStrategy).not.toHaveBeenCalled();
+    expect(mockedSendToFirst).toHaveBeenCalledWith(notification, [channel]);
+    expect(mockedSendToAll).not.toHaveBeenCalled();
   });
 
   it("should use sendToAllAvailableStrategy when strategy is sendToAllAvailable", async () => {
@@ -102,7 +108,7 @@ describe("createDeliveryService", () => {
     });
 
     const mockResult: Result = { status: "success", notification };
-    (sendToAllAvailableStrategy as any).mockResolvedValue(mockResult);
+    mockedSendToAll.mockResolvedValue(mockResult);
 
     const service = createDeliveryService({
       channels: [channel],
@@ -111,8 +117,8 @@ describe("createDeliveryService", () => {
     const result = await service.send([notification]);
 
     expect(result).toEqual([mockResult]);
-    expect(sendToAllAvailableStrategy).toHaveBeenCalledWith(notification, [channel]);
-    expect(sendToFirstAvailableStrategy).not.toHaveBeenCalled();
+    expect(mockedSendToAll).toHaveBeenCalledWith(notification, [channel]);
+    expect(mockedSendToFirst).not.toHaveBeenCalled();
   });
 
   it("should return success result when strategy succeeds", async () => {
@@ -120,7 +126,7 @@ describe("createDeliveryService", () => {
     const notification = createNotification();
 
     const mockResult: Result = { status: "success", notification };
-    (sendToFirstAvailableStrategy as any).mockResolvedValue(mockResult);
+    mockedSendToFirst.mockResolvedValue(mockResult);
 
     const service = createDeliveryService({
       channels: [channel],
@@ -136,7 +142,7 @@ describe("createDeliveryService", () => {
     const notification = createNotification();
 
     const strategyError = new Error("Delivery failed");
-    (sendToFirstAvailableStrategy as any).mockRejectedValue(strategyError);
+    mockedSendToFirst.mockRejectedValue(strategyError);
 
     const service = createDeliveryService({
       channels: [channel],
@@ -159,7 +165,7 @@ describe("createDeliveryService", () => {
     const notif2 = createNotification({ message: "Msg 2" });
 
     const failError = new Error("Failed");
-    (sendToFirstAvailableStrategy as any)
+    mockedSendToFirst
       .mockResolvedValueOnce({ status: "success", notification: notif1 })
       .mockRejectedValueOnce(failError);
 
@@ -174,7 +180,7 @@ describe("createDeliveryService", () => {
       { status: "failure", notification: notif2, error: failError },
     ]);
 
-    expect(sendToFirstAvailableStrategy).toHaveBeenCalledTimes(2);
+    expect(mockedSendToFirst).toHaveBeenCalledTimes(2);
   });
 
   it("should return empty result array when empty input array is provided", async () => {
@@ -186,13 +192,13 @@ describe("createDeliveryService", () => {
     const result = await service.send([]);
 
     expect(result).toEqual([]);
-    expect(sendToFirstAvailableStrategy).not.toHaveBeenCalled();
+    expect(mockedSendToFirst).not.toHaveBeenCalled();
   });
 
   it("should call checkHealth on all channels that support it", async () => {
     const healthyChannel = createMockChannel(
       () => true,
-      async () => { },
+      async () => {},
     );
 
     const unhealthyChannel = createMockChannel(
@@ -228,8 +234,14 @@ describe("createDeliveryService", () => {
   });
 
   it("should succeed checkHealth if all health checks pass", async () => {
-    const channel1 = createMockChannel(() => true, async () => { });
-    const channel2 = createMockChannel(() => true, async () => { });
+    const channel1 = createMockChannel(
+      () => true,
+      async () => {},
+    );
+    const channel2 = createMockChannel(
+      () => true,
+      async () => {},
+    );
 
     const service = createDeliveryService({
       channels: [channel1, channel2],

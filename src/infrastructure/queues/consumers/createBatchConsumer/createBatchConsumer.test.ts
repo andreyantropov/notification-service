@@ -24,19 +24,19 @@ interface TestAMQPChannel {
   close(): Promise<void>;
 }
 
-interface TestAMQPConnection {
+interface TestAMQPBaseClient {
   channel(): Promise<TestAMQPChannel>;
   close(): Promise<void>;
 }
 
 interface TestAMQPClient {
-  connect(): Promise<TestAMQPConnection>;
+  connect(): Promise<TestAMQPBaseClient>;
 }
 
 type Mocked<T> = {
   [K in keyof T]: T[K] extends (...args: infer A) => infer R
-  ? Mock<(...args: A) => R>
-  : T[K];
+    ? Mock<(...args: A) => R>
+    : T[K];
 };
 
 describe("RabbitMQConsumer", () => {
@@ -47,7 +47,7 @@ describe("RabbitMQConsumer", () => {
   };
 
   let mockClient: Mocked<TestAMQPClient>;
-  let mockConnection: Mocked<TestAMQPConnection>;
+  let mockConnection: Mocked<TestAMQPBaseClient>;
   let mockChannel: Mocked<TestAMQPChannel>;
   let consumeCallback: ((msg: TestAMQPMessage) => void) | null = null;
 
@@ -94,7 +94,9 @@ describe("RabbitMQConsumer", () => {
   };
 
   const createConsumer = <T>(
-    handler: (items: readonly T[]) => Promise<Array<{ status: "success" | "failure" }>>,
+    handler: (
+      items: readonly T[],
+    ) => Promise<Array<{ status: "success" | "failure" }>>,
   ) => {
     return createBatchConsumer({ handler }, mockConfig);
   };

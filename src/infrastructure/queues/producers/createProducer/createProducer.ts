@@ -1,4 +1,5 @@
 import { AMQPClient, AMQPChannel } from "@cloudamqp/amqp-client";
+import type { AMQPBaseClient } from "@cloudamqp/amqp-client/amqp-base-client";
 import pTimeout from "p-timeout";
 
 import {
@@ -8,7 +9,6 @@ import {
 } from "./constants/index.js";
 import type { ProducerConfig } from "./interfaces/index.js";
 import type { Producer } from "../../../../application/ports/index.js";
-import type { AMQPConnection } from "../../types/index.js";
 
 export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
   const {
@@ -19,7 +19,7 @@ export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
   } = config;
   const client = new AMQPClient(url);
 
-  let conn: AMQPConnection | null = null;
+  let conn: AMQPBaseClient | null = null;
   let ch: AMQPChannel | null = null;
   let isStarting = false;
   let isShuttingDown = false;
@@ -82,7 +82,7 @@ export const createProducer = <T>(config: ProducerConfig): Producer<T> => {
   };
 
   const checkHealth = async (): Promise<void> => {
-    let tempConn: AMQPConnection | null = null;
+    let tempConn: AMQPBaseClient | null = null;
     try {
       const tempClient = new AMQPClient(url);
       tempConn = await pTimeout(tempClient.connect(), {

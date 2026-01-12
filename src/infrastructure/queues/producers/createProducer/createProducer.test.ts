@@ -16,13 +16,13 @@ interface TestAMQPChannel {
   close(): Promise<void>;
 }
 
-interface TestAMQPConnection {
+interface TestAMQPBaseClient {
   channel(): Promise<TestAMQPChannel>;
   close(): Promise<void>;
 }
 
 interface TestAMQPClient {
-  connect(): Promise<TestAMQPConnection>;
+  connect(): Promise<TestAMQPBaseClient>;
 }
 
 type Mocked<T> = {
@@ -38,7 +38,7 @@ describe("Producer", () => {
   };
 
   let mockClient: Mocked<TestAMQPClient>;
-  let mockConnection: Mocked<TestAMQPConnection>;
+  let mockConnection: Mocked<TestAMQPBaseClient>;
   let mockChannel: Mocked<TestAMQPChannel>;
 
   beforeEach(() => {

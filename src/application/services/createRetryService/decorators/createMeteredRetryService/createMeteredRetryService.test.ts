@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 
+import { NOTIFICATIONS_RETRY_ROUTING_TOTAL } from "./constants/index.js";
 import { createMeteredRetryService } from "./createMeteredRetryService.js";
 import type { Meter } from "../../../../ports/index.js";
 import type { RetryService } from "../../interfaces/RetryService.js";
-import { NOTIFICATIONS_RETRY_ROUTING_TOTAL } from "./constants/index.js";
 
 const createMockRetryService = (returnValue: string): RetryService => ({
   getRetryQueue: vi.fn().mockReturnValue(returnValue),

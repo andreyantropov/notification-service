@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import {
+  NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
+  NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
+} from "./constants/index.js";
 import { createMeteredChannel } from "./createMeteredChannel.js";
 import type { MeteredChannelDependencies } from "./interfaces/index.js";
 import { CHANNEL_TYPES } from "../../../../domain/constants/constants.js";
 import type { Channel } from "../../../../domain/ports/index.js";
 import type { Contact } from "../../../../domain/types/Contact.js";
-import {
-  NOTIFICATIONS_CHANNEL_SEND_DURATION_MS,
-  NOTIFICATIONS_PROCESSED_BY_CHANNEL_TOTAL,
-} from "./constants/index.js";
 
 const mockContact: Contact = {
   type: CHANNEL_TYPES.EMAIL,

@@ -1,13 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 
-import { createMeteredDeliveryService } from './createMeteredDeliveryService.js';
-import type { MeteredDeliveryServiceDependencies } from './interfaces/index.js';
-import type { Result } from '../../interfaces/index.js';
-import { DeliveryStrategy } from '../../../../../domain/enums/DeliveryStrategy.js';
-import type { Notification } from '../../../../../domain/types/Notification.js';
-import type { Meter } from '../../../../ports/index.js';
-
 import {
   DEFAULT_SUBJECT,
   DEFAULT_STRATEGY,
@@ -18,6 +11,13 @@ import {
   NOTIFICATIONS_PROCESSED_BY_STRATEGY_TOTAL,
   NOTIFICATIONS_PROCESSED_BY_PRIORITY_TOTAL,
 } from './constants/index.js';
+import { createMeteredDeliveryService } from './createMeteredDeliveryService.js';
+import type { MeteredDeliveryServiceDependencies } from './interfaces/index.js';
+import { DeliveryStrategy } from '../../../../../domain/enums/DeliveryStrategy.js';
+import type { Notification } from '../../../../../domain/types/Notification.js';
+import type { Meter } from '../../../../ports/index.js';
+import type { Result } from '../../interfaces/index.js';
+
 
 describe('createMeteredDeliveryService', () => {
   let mockDeliveryService: {

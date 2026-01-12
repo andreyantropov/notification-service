@@ -32,13 +32,13 @@ interface MockAMQPChannel {
   close: Mock<() => Promise<void>>;
 }
 
-interface MockAMQPConnection {
+interface TestAMQPBaseClient {
   channel: Mock<() => Promise<MockAMQPChannel>>;
   close: Mock<() => Promise<void>>;
 }
 
 interface MockAMQPClient {
-  connect: Mock<() => Promise<MockAMQPConnection>>;
+  connect: Mock<() => Promise<TestAMQPBaseClient>>;
 }
 
 type Mocked<T> = {
@@ -68,7 +68,7 @@ describe("createRetryConsumer", () => {
   };
 
   let mockClient: Mocked<MockAMQPClient>;
-  let mockConn: Mocked<MockAMQPConnection>;
+  let mockConn: Mocked<TestAMQPBaseClient>;
   let mockChannel: Mocked<MockAMQPChannel>;
   let consumeCallback: ((msg: MockAMQPMessage) => void) | null = null;
   let onError: Mock<(err: unknown) => void>;

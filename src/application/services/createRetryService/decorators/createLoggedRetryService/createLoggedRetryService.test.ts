@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 
 import { createLoggedRetryService } from "./createLoggedRetryService.js";
 import { EventType } from "../../../../enums/EventType.js";
-import type { Log } from "../../../../types/Log.js";
 import type { Logger } from "../../../../ports/index.js";
+import type { Log } from "../../../../types/Log.js";
 import { NOTIFICATIONS_DQL } from "../../constants/constants.js";
 import type { RetryService } from "../../interfaces/RetryService.js";
 
