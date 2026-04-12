@@ -1,0 +1,33 @@
+{
+  "realm": "${KEYCLOCK_REALM}",
+  "roles": {
+    "realm": [
+      {
+        "name": "notification:admin",
+        "description": "Полный доступ к настройкам платформы уведомлений"
+      },
+      {
+        "name": "notification:send",
+        "description": "feat: Описание ролей keyclock переведено на русский"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "notification-service",
+      "secret": "${KEYCLOCK_NOTIFICATION_SERVICE_CLIENT_SECRET}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "attributes": { "use.refresh.tokens": "true" },
+      "defaultClientScopes": ["roles-scope"]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-notification-service",
+      "serviceAccountClientId": "notification-service",
+      "realmRoles": ["notification:admin"]
+    }
+  ]
+}
