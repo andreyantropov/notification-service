@@ -1,8 +1,2 @@
-export {
-  type LoggingDecoratorDependencies,
-  withLoggingDecorator,
-} from "./withLoggingDecorator/index.js";
-export {
-  type MetricsDecoratorDependencies,
-  withMetricsDecorator,
-} from "./withMetricsDecorator/index.js";
+export { type LoggingDependencies, withLogging } from "./withLogging/index.js";
+export { type MetricsDependencies, withMetrics } from "./withMetrics/index.js";
