@@ -37,4 +37,4 @@ COPY --from=builder --chown=node:node /app/package.json ./package.json
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "--import", "./dist/instrumentation.js", "./dist/index.js"]
